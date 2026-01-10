@@ -253,12 +253,76 @@ export function Departments() {
                 </Dialog>
             </div>
 
+            {/* Edit Department Dialog */}
+            <Dialog open={!!editingDept} onOpenChange={(open) => !open && setEditingDept(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Department</DialogTitle>
+                    </DialogHeader>
+                    {editingDept && (
+                        <div className="space-y-4 py-4">
+                            <div>
+                                <label className="text-sm font-medium">Name</label>
+                                <input
+                                    type="text"
+                                    value={editingDept.name}
+                                    onChange={(e) => setEditingDept({ ...editingDept, name: e.target.value })}
+                                    className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium">Description</label>
+                                <textarea
+                                    value={editingDept.description || ""}
+                                    onChange={(e) => setEditingDept({ ...editingDept, description: e.target.value })}
+                                    className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                    rows={3}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium">Department Head</label>
+                                <select
+                                    value={editingDept.departmentHeadId || ""}
+                                    onChange={(e) => {
+                                        setHeadMutation.mutate({
+                                            id: editingDept.id,
+                                            departmentHeadId: e.target.value || null,
+                                        });
+                                    }}
+                                    className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                >
+                                    <option value="">-- No head --</option>
+                                    {users?.map(u => (
+                                        <option key={u.id} value={u.id}>{u.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setEditingDept(null)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleUpdate}>Save Changes</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             {/* Department List */}
             {isLoading ? (
                 <div className="text-center py-8 text-muted-foreground">Loading...</div>
             ) : (
                 <div className="space-y-4">
-                    {departments?.map((dept) => (
+                    {[...(departments || [])].sort((a, b) => {
+                        // Sort by predefined order
+                        const order = ["Administrativ", "HR-Comunicare", "Vânzări", "Financiar", "Producție", "Calitate", "Extindere"];
+                        const aIdx = order.findIndex(n => a.name.toLowerCase().includes(n.toLowerCase()));
+                        const bIdx = order.findIndex(n => b.name.toLowerCase().includes(n.toLowerCase()));
+                        if (aIdx === -1 && bIdx === -1) return a.name.localeCompare(b.name);
+                        if (aIdx === -1) return 1;
+                        if (bIdx === -1) return -1;
+                        return aIdx - bIdx;
+                    }).map((dept) => (
                         <Card key={dept.id}>
                             <CardHeader className="pb-3">
                                 <div className="flex items-start justify-between">
@@ -290,64 +354,9 @@ export function Departments() {
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <Button size="sm" variant="outline" onClick={() => setEditingDept(dept)}>
-                                                    <Edit2 className="h-3 w-3" />
-                                                </Button>
-                                            </DialogTrigger>
-                                            <DialogContent>
-                                                <DialogHeader>
-                                                    <DialogTitle>Edit Department</DialogTitle>
-                                                </DialogHeader>
-                                                {editingDept && (
-                                                    <div className="space-y-4 py-4">
-                                                        <div>
-                                                            <label className="text-sm font-medium">Name</label>
-                                                            <input
-                                                                type="text"
-                                                                value={editingDept.name}
-                                                                onChange={(e) => setEditingDept({ ...editingDept, name: e.target.value })}
-                                                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <label className="text-sm font-medium">Description</label>
-                                                            <textarea
-                                                                value={editingDept.description || ""}
-                                                                onChange={(e) => setEditingDept({ ...editingDept, description: e.target.value })}
-                                                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
-                                                                rows={3}
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <label className="text-sm font-medium">Department Head</label>
-                                                            <select
-                                                                value={editingDept.departmentHeadId || ""}
-                                                                onChange={(e) => {
-                                                                    setHeadMutation.mutate({
-                                                                        id: editingDept.id,
-                                                                        departmentHeadId: e.target.value || null,
-                                                                    });
-                                                                }}
-                                                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
-                                                            >
-                                                                <option value="">-- No head --</option>
-                                                                {users?.map(u => (
-                                                                    <option key={u.id} value={u.id}>{u.name}</option>
-                                                                ))}
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                                <DialogFooter>
-                                                    <Button variant="outline" onClick={() => setEditingDept(null)}>
-                                                        Cancel
-                                                    </Button>
-                                                    <Button onClick={handleUpdate}>Save Changes</Button>
-                                                </DialogFooter>
-                                            </DialogContent>
-                                        </Dialog>
+                                        <Button size="sm" variant="outline" onClick={() => setEditingDept(dept)}>
+                                            <Edit2 className="h-3 w-3" />
+                                        </Button>
                                         <Button
                                             size="sm"
                                             variant="ghost"

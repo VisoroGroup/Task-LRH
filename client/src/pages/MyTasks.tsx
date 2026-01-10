@@ -2,6 +2,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { apiRequest, cn, formatDate, statusLabels, hierarchyLabels } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -9,6 +17,7 @@ import {
     Check,
     Clock,
     AlertCircle,
+    Calendar,
 } from "lucide-react";
 
 interface Task {
@@ -27,6 +36,10 @@ export function MyTasks() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
     const [statusFilter, setStatusFilter] = useState<string | null>(null);
+    const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
+    const [newTaskTitle, setNewTaskTitle] = useState("");
+    const [newTaskDate, setNewTaskDate] = useState("");
+    const [newTaskTime, setNewTaskTime] = useState("");
 
     // For now, we'll show all tasks (in production, filter by current user)
     const { data: tasks, isLoading } = useQuery({
@@ -58,6 +71,45 @@ export function MyTasks() {
             });
         },
     });
+
+    const createTaskMutation = useMutation({
+        mutationFn: async (data: { title: string; dueDate: string }) => {
+            return apiRequest("/api/tasks", {
+                method: "POST",
+                body: JSON.stringify(data),
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
+            toast({ title: "Task created", variant: "success" as any });
+            setIsNewTaskOpen(false);
+            setNewTaskTitle("");
+            setNewTaskDate("");
+            setNewTaskTime("");
+        },
+        onError: (error: Error) => {
+            toast({
+                title: "Failed to create task",
+                description: error.message,
+                variant: "destructive"
+            });
+        },
+    });
+
+    const handleCreateTask = () => {
+        if (!newTaskTitle.trim() || !newTaskDate) {
+            toast({
+                title: "Date is required",
+                description: "Please select a due date for the task",
+                variant: "destructive"
+            });
+            return;
+        }
+        const dueDate = newTaskTime
+            ? `${newTaskDate}T${newTaskTime}:00`
+            : `${newTaskDate}T23:59:59`;
+        createTaskMutation.mutate({ title: newTaskTitle, dueDate });
+    };
 
     const filteredTasks = tasks || [];
 
@@ -141,6 +193,37 @@ export function MyTasks() {
         );
     };
 
+    // Render a single column
+    const renderColumn = (title: string, tasks: Task[], dotColor: string, statusKey: string) => (
+        <Card>
+            <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                    <span className={`h-2 w-2 rounded-full ${dotColor}`} />
+                    {title}
+                    <span className="ml-auto text-sm font-normal text-muted-foreground">
+                        {tasks.length}
+                    </span>
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+                {tasks.length === 0 ? (
+                    <div className="text-center py-4 text-sm text-muted-foreground">
+                        No {title.toLowerCase()} tasks
+                    </div>
+                ) : (
+                    statusKey === "DONE"
+                        ? tasks.slice(0, 5).map((task) => <TaskCard key={task.id} task={task} />)
+                        : tasks.map((task) => <TaskCard key={task.id} task={task} />)
+                )}
+                {statusKey === "DONE" && tasks.length > 5 && (
+                    <div className="text-center text-sm text-muted-foreground">
+                        +{tasks.length - 5} more completed
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+
     if (isLoading) {
         return <div className="text-center py-8 text-muted-foreground">Loading tasks...</div>;
     }
@@ -153,11 +236,65 @@ export function MyTasks() {
                     <h2 className="text-2xl font-bold">My Tasks</h2>
                     <p className="text-muted-foreground">Your assigned action steps</p>
                 </div>
-                <Button>
+                <Button onClick={() => setIsNewTaskOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     New Task
                 </Button>
             </div>
+
+            {/* New Task Dialog */}
+            <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Create New Task</DialogTitle>
+                        <DialogDescription>
+                            Add a new task with a due date
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div>
+                            <label className="text-sm font-medium">Task Title *</label>
+                            <input
+                                type="text"
+                                value={newTaskTitle}
+                                onChange={(e) => setNewTaskTitle(e.target.value)}
+                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                placeholder="What needs to be done?"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium flex items-center gap-2">
+                                <Calendar className="h-4 w-4" />
+                                Due Date *
+                            </label>
+                            <input
+                                type="date"
+                                value={newTaskDate}
+                                onChange={(e) => setNewTaskDate(e.target.value)}
+                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium">Time (optional)</label>
+                            <input
+                                type="time"
+                                value={newTaskTime}
+                                onChange={(e) => setNewTaskTime(e.target.value)}
+                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsNewTaskOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleCreateTask} disabled={!newTaskTitle.trim() || !newTaskDate}>
+                            Create Task
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Filters */}
             <div className="flex gap-2">
@@ -177,78 +314,20 @@ export function MyTasks() {
                 ))}
             </div>
 
-            {/* Kanban-style columns */}
-            <div className="grid md:grid-cols-3 gap-6">
-                {/* TODO Column */}
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-base flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-slate-400" />
-                            To Do
-                            <span className="ml-auto text-sm font-normal text-muted-foreground">
-                                {todoTasks.length}
-                            </span>
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                        {todoTasks.length === 0 ? (
-                            <div className="text-center py-4 text-sm text-muted-foreground">
-                                No tasks to do
-                            </div>
-                        ) : (
-                            todoTasks.map((task) => <TaskCard key={task.id} task={task} />)
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* DOING Column */}
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-base flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-blue-500" />
-                            In Progress
-                            <span className="ml-auto text-sm font-normal text-muted-foreground">
-                                {doingTasks.length}
-                            </span>
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                        {doingTasks.length === 0 ? (
-                            <div className="text-center py-4 text-sm text-muted-foreground">
-                                No tasks in progress
-                            </div>
-                        ) : (
-                            doingTasks.map((task) => <TaskCard key={task.id} task={task} />)
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* DONE Column */}
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-base flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-green-500" />
-                            Completed
-                            <span className="ml-auto text-sm font-normal text-muted-foreground">
-                                {doneTasks.length}
-                            </span>
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                        {doneTasks.length === 0 ? (
-                            <div className="text-center py-4 text-sm text-muted-foreground">
-                                No completed tasks
-                            </div>
-                        ) : (
-                            doneTasks.slice(0, 5).map((task) => <TaskCard key={task.id} task={task} />)
-                        )}
-                        {doneTasks.length > 5 && (
-                            <div className="text-center text-sm text-muted-foreground">
-                                +{doneTasks.length - 5} more completed
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+            {/* Kanban-style columns - show only filtered column when filter is active */}
+            <div className={cn(
+                "grid gap-6",
+                statusFilter ? "md:grid-cols-1 max-w-md" : "md:grid-cols-3"
+            )}>
+                {(!statusFilter || statusFilter === "TODO") &&
+                    renderColumn("To Do", todoTasks, "bg-slate-400", "TODO")
+                }
+                {(!statusFilter || statusFilter === "DOING") &&
+                    renderColumn("In Progress", doingTasks, "bg-blue-500", "DOING")
+                }
+                {(!statusFilter || statusFilter === "DONE") &&
+                    renderColumn("Completed", doneTasks, "bg-green-500", "DONE")
+                }
             </div>
         </div>
     );

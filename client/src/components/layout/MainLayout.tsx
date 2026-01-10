@@ -68,10 +68,10 @@ export function MainLayout({ children }: MainLayoutProps) {
                             </div>
                             <div>
                                 <span className="font-bold text-lg bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
-                                    LRH Flow
+                                    Visoro Tasks
                                 </span>
                                 <div className="text-[10px] text-purple-300/60 font-medium tracking-wider">
-                                    EXECUTIVE SYSTEM
+                                    TASK MANAGER
                                 </div>
                             </div>
                         </div>

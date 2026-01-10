@@ -157,7 +157,7 @@ export function Settings() {
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">System</span>
-                                    <span>LRH Flow System</span>
+                                    <span>Visoro Task Manager</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Status</span>

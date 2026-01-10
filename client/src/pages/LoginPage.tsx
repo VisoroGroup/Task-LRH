@@ -22,7 +22,7 @@ export function LoginPage() {
                         <Target className="h-10 w-10 text-white" />
                     </div>
                     <h1 className="text-4xl font-bold login-title mb-2">
-                        LRH Flow System
+                        Visoro Task Manager
                     </h1>
                     <p className="text-muted-foreground">
                         Executive Management Platform
@@ -61,7 +61,7 @@ export function LoginPage() {
                     />
                     <Feature
                         icon={<Zap className="h-5 w-5" />}
-                        title="LRH Methodology"
+                        title="Goal Management"
                         description="Ideal Scene hierarchy management"
                         gradient="from-yellow-400 to-orange-500"
                     />

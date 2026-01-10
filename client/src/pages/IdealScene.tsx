@@ -1,8 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { apiRequest, cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 import {
     Plus,
     ChevronRight,
@@ -50,8 +59,14 @@ interface MainGoal {
 }
 
 export function IdealScene() {
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
     const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
+    const [isCreateGoalOpen, setIsCreateGoalOpen] = useState(false);
+    const [newGoalTitle, setNewGoalTitle] = useState("");
+    const [newGoalDescription, setNewGoalDescription] = useState("");
+    const [newGoalDepartment, setNewGoalDepartment] = useState("");
 
     const { data: departments } = useQuery({
         queryKey: ["departments"],
@@ -67,6 +82,38 @@ export function IdealScene() {
             return apiRequest<MainGoal[]>(url);
         },
     });
+
+    const createGoalMutation = useMutation({
+        mutationFn: (data: { title: string; description: string; departmentId: string }) =>
+            apiRequest("/api/main-goals", {
+                method: "POST",
+                body: JSON.stringify(data),
+            }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
+            toast({ title: "Main Goal created", variant: "success" as any });
+            setIsCreateGoalOpen(false);
+            setNewGoalTitle("");
+            setNewGoalDescription("");
+            setNewGoalDepartment("");
+        },
+        onError: (error: Error) => {
+            toast({
+                title: "Failed to create goal",
+                description: error.message,
+                variant: "destructive"
+            });
+        },
+    });
+
+    const handleCreateGoal = () => {
+        if (!newGoalTitle.trim()) return;
+        createGoalMutation.mutate({
+            title: newGoalTitle,
+            description: newGoalDescription,
+            departmentId: newGoalDepartment || (departments?.[0]?.id || ""),
+        });
+    };
 
     const toggleExpanded = (id: string) => {
         const newSet = new Set(expandedItems);
@@ -142,11 +189,66 @@ export function IdealScene() {
                         Organizational goals hierarchy: Main Goal → Subgoal → Program → Project → Instruction
                     </p>
                 </div>
-                <Button>
+                <Button onClick={() => setIsCreateGoalOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     New Main Goal
                 </Button>
             </div>
+
+            {/* Create Main Goal Dialog */}
+            <Dialog open={isCreateGoalOpen} onOpenChange={setIsCreateGoalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Create Main Goal</DialogTitle>
+                        <DialogDescription>
+                            Define the company's main objective
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div>
+                            <label className="text-sm font-medium">Goal Title *</label>
+                            <input
+                                type="text"
+                                value={newGoalTitle}
+                                onChange={(e) => setNewGoalTitle(e.target.value)}
+                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                placeholder="e.g., Increase market share by 20%"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium">Description</label>
+                            <textarea
+                                value={newGoalDescription}
+                                onChange={(e) => setNewGoalDescription(e.target.value)}
+                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                rows={3}
+                                placeholder="Detailed description of this goal..."
+                            />
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium">Department</label>
+                            <select
+                                value={newGoalDepartment}
+                                onChange={(e) => setNewGoalDepartment(e.target.value)}
+                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                            >
+                                <option value="">-- Select Department --</option>
+                                {departments?.map((dept) => (
+                                    <option key={dept.id} value={dept.id}>{dept.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsCreateGoalOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleCreateGoal} disabled={!newGoalTitle.trim()}>
+                            Create Goal
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Department Filter */}
             <div className="flex gap-2 flex-wrap">
@@ -249,7 +351,7 @@ export function IdealScene() {
                             <p className="text-muted-foreground mb-4">
                                 Start by creating a Main Goal for your organization
                             </p>
-                            <Button>
+                            <Button onClick={() => setIsCreateGoalOpen(true)}>
                                 <Plus className="h-4 w-4 mr-2" />
                                 Create Main Goal
                             </Button>

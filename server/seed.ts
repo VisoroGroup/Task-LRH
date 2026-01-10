@@ -2,42 +2,49 @@ import { db } from "./db";
 import { departments, users, settings } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
-// Default 7 departments as per LRH organizational structure
+// Default 7 departments in correct order
 const defaultDepartments = [
     {
         id: "dept-admin",
-        name: "Adminisztratív",
+        name: "Administrativ",
         description: "Internal administration, coordination, documentation, organizational control",
+        sortOrder: 1,
     },
     {
         id: "dept-hr",
-        name: "HR",
-        description: "Recruitment, training, onboarding, personnel handling",
+        name: "HR-Comunicare",
+        description: "Recruitment, training, onboarding, personnel handling, internal communication",
+        sortOrder: 2,
     },
     {
         id: "dept-sales",
         name: "Vânzări",
         description: "Sales activity, lead handling, contracts, client communication",
+        sortOrder: 3,
     },
     {
         id: "dept-finance",
         name: "Financiar",
         description: "Invoicing, cashflow, payments, financial control",
+        sortOrder: 4,
     },
     {
         id: "dept-production",
         name: "Producție",
         description: "Service delivery, execution, operational output",
+        sortOrder: 5,
     },
     {
         id: "dept-quality",
         name: "Calitate",
         description: "Quality control, verification, correction, standards enforcement",
+        sortOrder: 6,
     },
     {
         id: "dept-expansion",
         name: "Extindere",
         description: "PR, marketing, partnerships, expansion activities",
+        sortOrder: 7,
     },
 ];
 
