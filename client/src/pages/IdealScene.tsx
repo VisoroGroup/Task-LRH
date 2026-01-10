@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { apiRequest, cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 import {
     Plus,
     ChevronRight,
@@ -21,6 +22,7 @@ import {
     Layers,
     FolderKanban,
     ClipboardList,
+    Settings,
 } from "lucide-react";
 
 interface Instruction {
@@ -54,19 +56,24 @@ interface MainGoal {
     id: string;
     title: string;
     description: string | null;
-    department: { id: string; name: string };
+    department: { id: string; name: string } | null;
     subgoals: Subgoal[];
 }
+
+type HierarchyLevel = "subgoal" | "program" | "project" | "instruction";
 
 export function IdealScene() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
     const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
-    const [isCreateGoalOpen, setIsCreateGoalOpen] = useState(false);
-    const [newGoalTitle, setNewGoalTitle] = useState("");
-    const [newGoalDescription, setNewGoalDescription] = useState("");
-    const [newGoalDepartment, setNewGoalDepartment] = useState("");
+
+    // Dialog state for adding items
+    const [addDialogOpen, setAddDialogOpen] = useState(false);
+    const [addLevel, setAddLevel] = useState<HierarchyLevel>("subgoal");
+    const [addParentId, setAddParentId] = useState("");
+    const [addTitle, setAddTitle] = useState("");
+    const [addDescription, setAddDescription] = useState("");
 
     const { data: departments } = useQuery({
         queryKey: ["departments"],
@@ -83,35 +90,56 @@ export function IdealScene() {
         },
     });
 
-    const createGoalMutation = useMutation({
-        mutationFn: (data: { title: string; description: string; departmentId: string }) =>
-            apiRequest("/api/main-goals", {
+    const mainGoal = idealScene?.[0]; // Company has ONE main goal
+
+    const addItemMutation = useMutation({
+        mutationFn: (data: { level: HierarchyLevel; parentId: string; title: string; description: string }) => {
+            const endpoints: Record<HierarchyLevel, string> = {
+                subgoal: "/api/subgoals",
+                program: "/api/programs",
+                project: "/api/projects",
+                instruction: "/api/instructions",
+            };
+            return apiRequest(endpoints[data.level], {
                 method: "POST",
-                body: JSON.stringify(data),
-            }),
+                body: JSON.stringify({
+                    title: data.title,
+                    description: data.description,
+                    parentId: data.parentId,
+                }),
+            });
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
-            toast({ title: "Main Goal created", variant: "success" as any });
-            setIsCreateGoalOpen(false);
-            setNewGoalTitle("");
-            setNewGoalDescription("");
-            setNewGoalDepartment("");
+            toast({ title: "Item created", variant: "success" as any });
+            setAddDialogOpen(false);
+            setAddTitle("");
+            setAddDescription("");
         },
         onError: (error: Error) => {
             toast({
-                title: "Failed to create goal",
+                title: "Failed to create",
                 description: error.message,
                 variant: "destructive"
             });
         },
     });
 
-    const handleCreateGoal = () => {
-        if (!newGoalTitle.trim()) return;
-        createGoalMutation.mutate({
-            title: newGoalTitle,
-            description: newGoalDescription,
-            departmentId: newGoalDepartment || (departments?.[0]?.id || ""),
+    const handleOpenAddDialog = (level: HierarchyLevel, parentId: string) => {
+        setAddLevel(level);
+        setAddParentId(parentId);
+        setAddTitle("");
+        setAddDescription("");
+        setAddDialogOpen(true);
+    };
+
+    const handleAddItem = () => {
+        if (!addTitle.trim()) return;
+        addItemMutation.mutate({
+            level: addLevel,
+            parentId: addParentId,
+            title: addTitle,
+            description: addDescription,
         });
     };
 
@@ -125,6 +153,13 @@ export function IdealScene() {
         setExpandedItems(newSet);
     };
 
+    const levelLabels: Record<HierarchyLevel, string> = {
+        subgoal: "Alcél (Subgoal)",
+        program: "Program",
+        project: "Project",
+        instruction: "Instruction",
+    };
+
     const TreeItem = ({
         id,
         title,
@@ -132,7 +167,9 @@ export function IdealScene() {
         level,
         hasChildren,
         children,
-        icon
+        icon,
+        onAddChild,
+        childLabel,
     }: {
         id: string;
         title: string;
@@ -141,6 +178,8 @@ export function IdealScene() {
         hasChildren: boolean;
         children?: React.ReactNode;
         icon: React.ReactNode;
+        onAddChild?: () => void;
+        childLabel?: string;
     }) => {
         const isExpanded = expandedItems.has(id);
         const indent = level * 24;
@@ -149,30 +188,39 @@ export function IdealScene() {
             <div>
                 <div
                     className={cn(
-                        "flex items-start gap-2 py-2 px-3 rounded-lg hover:bg-accent/50 cursor-pointer transition-colors",
+                        "flex items-start gap-2 py-2 px-3 rounded-lg hover:bg-accent/50 transition-colors group",
                         level === 0 && "bg-card border mb-2"
                     )}
                     style={{ marginLeft: indent }}
-                    onClick={() => hasChildren && toggleExpanded(id)}
                 >
-                    {hasChildren ? (
-                        <button className="mt-1 text-muted-foreground hover:text-foreground">
-                            {isExpanded ? (
-                                <ChevronDown className="h-4 w-4" />
-                            ) : (
-                                <ChevronRight className="h-4 w-4" />
-                            )}
-                        </button>
-                    ) : (
-                        <span className="w-4" />
-                    )}
+                    <button
+                        className="mt-1 text-muted-foreground hover:text-foreground"
+                        onClick={() => hasChildren && toggleExpanded(id)}
+                    >
+                        {hasChildren ? (
+                            isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
+                        ) : (
+                            <span className="w-4" />
+                        )}
+                    </button>
                     <span className="mt-0.5">{icon}</span>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 cursor-pointer" onClick={() => hasChildren && toggleExpanded(id)}>
                         <div className="font-medium text-sm">{title}</div>
                         {description && (
                             <div className="text-xs text-muted-foreground truncate">{description}</div>
                         )}
                     </div>
+                    {onAddChild && (
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity h-6 px-2"
+                            onClick={onAddChild}
+                        >
+                            <Plus className="h-3 w-3 mr-1" />
+                            {childLabel}
+                        </Button>
+                    )}
                 </div>
                 {isExpanded && children}
             </div>
@@ -186,65 +234,54 @@ export function IdealScene() {
                 <div>
                     <h2 className="text-2xl font-bold">Ideal Scene</h2>
                     <p className="text-muted-foreground">
-                        Organizational goals hierarchy: Main Goal → Subgoal → Program → Project → Instruction
+                        Főcél → Alcél → Program → Project → Instruction
                     </p>
                 </div>
-                <Button onClick={() => setIsCreateGoalOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Main Goal
-                </Button>
+                {mainGoal && (
+                    <Button onClick={() => handleOpenAddDialog("subgoal", mainGoal.id)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Alcél
+                    </Button>
+                )}
             </div>
 
-            {/* Create Main Goal Dialog */}
-            <Dialog open={isCreateGoalOpen} onOpenChange={setIsCreateGoalOpen}>
+            {/* Add Item Dialog */}
+            <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Create Main Goal</DialogTitle>
+                        <DialogTitle>Add {levelLabels[addLevel]}</DialogTitle>
                         <DialogDescription>
-                            Define the company's main objective
+                            Create a new item in the hierarchy
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div>
-                            <label className="text-sm font-medium">Goal Title *</label>
+                            <label className="text-sm font-medium">Title *</label>
                             <input
                                 type="text"
-                                value={newGoalTitle}
-                                onChange={(e) => setNewGoalTitle(e.target.value)}
+                                value={addTitle}
+                                onChange={(e) => setAddTitle(e.target.value)}
                                 className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
-                                placeholder="e.g., Increase market share by 20%"
+                                placeholder={`Enter ${addLevel} title...`}
                             />
                         </div>
                         <div>
                             <label className="text-sm font-medium">Description</label>
                             <textarea
-                                value={newGoalDescription}
-                                onChange={(e) => setNewGoalDescription(e.target.value)}
+                                value={addDescription}
+                                onChange={(e) => setAddDescription(e.target.value)}
                                 className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
                                 rows={3}
-                                placeholder="Detailed description of this goal..."
+                                placeholder="Optional description..."
                             />
-                        </div>
-                        <div>
-                            <label className="text-sm font-medium">Department</label>
-                            <select
-                                value={newGoalDepartment}
-                                onChange={(e) => setNewGoalDepartment(e.target.value)}
-                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
-                            >
-                                <option value="">-- Select Department --</option>
-                                {departments?.map((dept) => (
-                                    <option key={dept.id} value={dept.id}>{dept.name}</option>
-                                ))}
-                            </select>
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsCreateGoalOpen(false)}>
+                        <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
                             Cancel
                         </Button>
-                        <Button onClick={handleCreateGoal} disabled={!newGoalTitle.trim()}>
-                            Create Goal
+                        <Button onClick={handleAddItem} disabled={!addTitle.trim()}>
+                            Create
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -257,7 +294,7 @@ export function IdealScene() {
                     variant={!selectedDepartment ? "default" : "outline"}
                     onClick={() => setSelectedDepartment(null)}
                 >
-                    All Departments
+                    All
                 </Button>
                 {departments?.map((dept) => (
                     <Button
@@ -276,85 +313,93 @@ export function IdealScene() {
                 <CardHeader>
                     <CardTitle>Goals Hierarchy</CardTitle>
                     <CardDescription>
-                        Click on items to expand and see their children
+                        Click to expand • Hover to add children
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
                         <div className="text-center py-8 text-muted-foreground">Loading...</div>
-                    ) : idealScene && idealScene.length > 0 ? (
+                    ) : mainGoal ? (
                         <div className="space-y-2">
-                            {idealScene.map((mainGoal) => (
-                                <TreeItem
-                                    key={mainGoal.id}
-                                    id={mainGoal.id}
-                                    title={mainGoal.title}
-                                    description={`${mainGoal.department?.name} • Main Goal`}
-                                    level={0}
-                                    hasChildren={mainGoal.subgoals.length > 0}
-                                    icon={<Target className="h-4 w-4 text-purple-500" />}
-                                >
-                                    {mainGoal.subgoals.map((subgoal) => (
-                                        <TreeItem
-                                            key={subgoal.id}
-                                            id={subgoal.id}
-                                            title={subgoal.title}
-                                            description={subgoal.description}
-                                            level={1}
-                                            hasChildren={subgoal.programs.length > 0}
-                                            icon={<Flag className="h-4 w-4 text-indigo-500" />}
-                                        >
-                                            {subgoal.programs.map((program) => (
-                                                <TreeItem
-                                                    key={program.id}
-                                                    id={program.id}
-                                                    title={program.title}
-                                                    description={program.description}
-                                                    level={2}
-                                                    hasChildren={program.projects.length > 0}
-                                                    icon={<Layers className="h-4 w-4 text-blue-500" />}
-                                                >
-                                                    {program.projects.map((project) => (
-                                                        <TreeItem
-                                                            key={project.id}
-                                                            id={project.id}
-                                                            title={project.title}
-                                                            description={project.description}
-                                                            level={3}
-                                                            hasChildren={project.instructions.length > 0}
-                                                            icon={<FolderKanban className="h-4 w-4 text-cyan-500" />}
-                                                        >
-                                                            {project.instructions.map((instruction) => (
-                                                                <TreeItem
-                                                                    key={instruction.id}
-                                                                    id={instruction.id}
-                                                                    title={instruction.title}
-                                                                    description={instruction.description}
-                                                                    level={4}
-                                                                    hasChildren={false}
-                                                                    icon={<ClipboardList className="h-4 w-4 text-teal-500" />}
-                                                                />
-                                                            ))}
-                                                        </TreeItem>
-                                                    ))}
-                                                </TreeItem>
-                                            ))}
-                                        </TreeItem>
-                                    ))}
-                                </TreeItem>
-                            ))}
+                            {/* Main Goal (root level, not editable here) */}
+                            <TreeItem
+                                id={mainGoal.id}
+                                title={mainGoal.title}
+                                description={mainGoal.description || "Company Main Goal"}
+                                level={0}
+                                hasChildren={mainGoal.subgoals.length > 0}
+                                icon={<Target className="h-4 w-4 text-purple-500" />}
+                                onAddChild={() => handleOpenAddDialog("subgoal", mainGoal.id)}
+                                childLabel="Alcél"
+                            >
+                                {mainGoal.subgoals.map((subgoal) => (
+                                    <TreeItem
+                                        key={subgoal.id}
+                                        id={subgoal.id}
+                                        title={subgoal.title}
+                                        description={subgoal.description}
+                                        level={1}
+                                        hasChildren={subgoal.programs.length > 0}
+                                        icon={<Flag className="h-4 w-4 text-indigo-500" />}
+                                        onAddChild={() => handleOpenAddDialog("program", subgoal.id)}
+                                        childLabel="Program"
+                                    >
+                                        {subgoal.programs.map((program) => (
+                                            <TreeItem
+                                                key={program.id}
+                                                id={program.id}
+                                                title={program.title}
+                                                description={program.description}
+                                                level={2}
+                                                hasChildren={program.projects.length > 0}
+                                                icon={<Layers className="h-4 w-4 text-blue-500" />}
+                                                onAddChild={() => handleOpenAddDialog("project", program.id)}
+                                                childLabel="Project"
+                                            >
+                                                {program.projects.map((project) => (
+                                                    <TreeItem
+                                                        key={project.id}
+                                                        id={project.id}
+                                                        title={project.title}
+                                                        description={project.description}
+                                                        level={3}
+                                                        hasChildren={project.instructions.length > 0}
+                                                        icon={<FolderKanban className="h-4 w-4 text-cyan-500" />}
+                                                        onAddChild={() => handleOpenAddDialog("instruction", project.id)}
+                                                        childLabel="Instruction"
+                                                    >
+                                                        {project.instructions.map((instruction) => (
+                                                            <TreeItem
+                                                                key={instruction.id}
+                                                                id={instruction.id}
+                                                                title={instruction.title}
+                                                                description={instruction.description}
+                                                                level={4}
+                                                                hasChildren={false}
+                                                                icon={<ClipboardList className="h-4 w-4 text-teal-500" />}
+                                                            />
+                                                        ))}
+                                                    </TreeItem>
+                                                ))}
+                                            </TreeItem>
+                                        ))}
+                                    </TreeItem>
+                                ))}
+                            </TreeItem>
                         </div>
                     ) : (
                         <div className="text-center py-12">
                             <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-medium mb-2">No Ideal Scene defined</h3>
+                            <h3 className="text-lg font-medium mb-2">No Main Goal configured</h3>
                             <p className="text-muted-foreground mb-4">
-                                Start by creating a Main Goal for your organization
+                                The company's Main Goal must be set in Settings first
                             </p>
-                            <Button onClick={() => setIsCreateGoalOpen(true)}>
-                                <Plus className="h-4 w-4 mr-2" />
-                                Create Main Goal
-                            </Button>
+                            <Link href="/settings">
+                                <Button>
+                                    <Settings className="h-4 w-4 mr-2" />
+                                    Go to Settings
+                                </Button>
+                            </Link>
                         </div>
                     )}
                 </CardContent>
@@ -366,11 +411,11 @@ export function IdealScene() {
                     <div className="flex flex-wrap gap-4 text-sm">
                         <div className="flex items-center gap-2">
                             <Target className="h-4 w-4 text-purple-500" />
-                            <span>Main Goal (Főcél)</span>
+                            <span>Főcél</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <Flag className="h-4 w-4 text-indigo-500" />
-                            <span>Subgoal (Alcél)</span>
+                            <span>Alcél</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <Layers className="h-4 w-4 text-blue-500" />
@@ -390,3 +435,4 @@ export function IdealScene() {
         </div>
     );
 }
+
