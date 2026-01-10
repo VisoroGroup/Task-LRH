@@ -1,83 +1,97 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target } from "lucide-react";
+import { LogIn, Sparkles, Shield, Target, BarChart3, Zap } from "lucide-react";
 
 export function LoginPage() {
-    const handleMicrosoftLogin = () => {
+    const handleLogin = () => {
         window.location.href = "/api/auth/microsoft";
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-            {/* Background pattern */}
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMyMjIiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
+        <div className="login-container">
+            {/* Animated orbs */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-[100px] animate-pulse" />
+                <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-pink-500/20 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: "1s" }} />
+                <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-blue-500/20 rounded-full blur-[80px] animate-pulse" style={{ animationDelay: "2s" }} />
+            </div>
 
-            <Card className="w-full max-w-md relative z-10 border-slate-700 bg-slate-800/90 backdrop-blur">
-                <CardHeader className="text-center pb-2">
-                    {/* Logo */}
-                    <div className="mx-auto mb-4 h-16 w-16 rounded-2xl bg-primary flex items-center justify-center">
-                        <Target className="h-9 w-9 text-primary-foreground" />
+            <div className="login-card relative z-10">
+                {/* Logo & Title */}
+                <div className="text-center mb-10">
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 mb-6 shadow-lg shadow-purple-500/25">
+                        <Target className="h-10 w-10 text-white" />
                     </div>
-
-                    <CardTitle className="text-2xl font-bold text-white">
+                    <h1 className="text-4xl font-bold login-title mb-2">
                         LRH Flow System
-                    </CardTitle>
-
-                    <CardDescription className="text-slate-400">
-                        Organizational Control Platform
-                    </CardDescription>
-                </CardHeader>
-
-                <CardContent className="space-y-6">
-                    {/* Description */}
-                    <p className="text-sm text-slate-300 text-center">
-                        Sign in with your Microsoft account to access the CEO dashboard, manage tasks, and track organizational flow.
+                    </h1>
+                    <p className="text-muted-foreground">
+                        Executive Management Platform
                     </p>
+                </div>
 
-                    {/* Microsoft Sign In Button */}
-                    <Button
-                        onClick={handleMicrosoftLogin}
-                        className="w-full h-12 bg-[#2F2F2F] hover:bg-[#3F3F3F] text-white font-medium"
-                    >
-                        <svg className="h-5 w-5 mr-3" viewBox="0 0 21 21">
-                            <rect x="1" y="1" width="9" height="9" fill="#F25022" />
-                            <rect x="11" y="1" width="9" height="9" fill="#7FBA00" />
-                            <rect x="1" y="11" width="9" height="9" fill="#00A4EF" />
-                            <rect x="11" y="11" width="9" height="9" fill="#FFB900" />
-                        </svg>
-                        Sign in with Microsoft
-                    </Button>
+                {/* Login Button */}
+                <Button
+                    onClick={handleLogin}
+                    className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 hover:from-purple-600 hover:via-pink-600 hover:to-purple-700 border-0 shadow-lg shadow-purple-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/40 hover:scale-[1.02]"
+                >
+                    <LogIn className="mr-3 h-5 w-5" />
+                    Sign in with Microsoft
+                </Button>
 
-                    {/* Features list */}
-                    <div className="pt-4 border-t border-slate-700">
-                        <p className="text-xs text-slate-500 text-center mb-3">
-                            Access includes:
-                        </p>
-                        <div className="grid grid-cols-2 gap-2 text-xs text-slate-400">
-                            <div className="flex items-center gap-2">
-                                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                                CEO Dashboard
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                                Ideal Scene
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                                Task Management
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                                Flow Control
-                            </div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+                {/* Divider */}
+                <div className="flex items-center my-8">
+                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                    <Sparkles className="mx-4 h-4 w-4 text-purple-400" />
+                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                </div>
 
-            {/* Footer */}
-            <div className="absolute bottom-4 text-center text-xs text-slate-500">
-                LRH-Compatible Organizational Control System
+                {/* Features */}
+                <div className="space-y-4">
+                    <Feature
+                        icon={<Shield className="h-5 w-5" />}
+                        title="Role-Based Access"
+                        description="CEO, Executive & User permissions"
+                        gradient="from-green-400 to-emerald-500"
+                    />
+                    <Feature
+                        icon={<BarChart3 className="h-5 w-5" />}
+                        title="Real-Time Dashboard"
+                        description="Track tasks, flow status & KPIs"
+                        gradient="from-blue-400 to-cyan-500"
+                    />
+                    <Feature
+                        icon={<Zap className="h-5 w-5" />}
+                        title="LRH Methodology"
+                        description="Ideal Scene hierarchy management"
+                        gradient="from-yellow-400 to-orange-500"
+                    />
+                </div>
+
+                {/* Footer */}
+                <div className="mt-10 pt-6 border-t border-white/5 text-center">
+                    <p className="text-xs text-muted-foreground">
+                        Powered by <span className="gradient-text font-semibold">VisoroGroup</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function Feature({ icon, title, description, gradient }: {
+    icon: React.ReactNode;
+    title: string;
+    description: string;
+    gradient: string;
+}) {
+    return (
+        <div className="flex items-center gap-4 p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 group">
+            <div className={`flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br ${gradient} text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                {icon}
+            </div>
+            <div>
+                <div className="font-medium text-sm">{title}</div>
+                <div className="text-xs text-muted-foreground">{description}</div>
             </div>
         </div>
     );
