@@ -1,0 +1,70 @@
+import { Route, Switch, useLocation } from "wouter";
+import { Toaster } from "@/components/ui/toaster";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { AuthProvider, RequireAuth } from "@/components/AuthProvider";
+import { CEODashboard } from "@/pages/CEODashboard";
+import { MyTasks } from "@/pages/MyTasks";
+import { IdealScene } from "@/pages/IdealScene";
+import { Departments } from "@/pages/Departments";
+import { Calendar } from "@/pages/Calendar";
+import { Settings } from "@/pages/Settings";
+import { LoginPage } from "@/pages/LoginPage";
+
+function AppRoutes() {
+  const [location] = useLocation();
+
+  // Login page without layout
+  if (location === "/login") {
+    return <LoginPage />;
+  }
+
+  return (
+    <RequireAuth>
+      <MainLayout>
+        <Switch>
+          {/* CEO & EXECUTIVE routes */}
+          <Route path="/">
+            <RequireAuth roles={["CEO", "EXECUTIVE"]}>
+              <CEODashboard />
+            </RequireAuth>
+          </Route>
+
+          {/* All authenticated users */}
+          <Route path="/my-tasks" component={MyTasks} />
+          <Route path="/calendar" component={Calendar} />
+
+          {/* CEO & EXECUTIVE routes */}
+          <Route path="/ideal-scene">
+            <RequireAuth roles={["CEO", "EXECUTIVE"]}>
+              <IdealScene />
+            </RequireAuth>
+          </Route>
+
+          <Route path="/departments">
+            <RequireAuth roles={["CEO", "EXECUTIVE"]}>
+              <Departments />
+            </RequireAuth>
+          </Route>
+
+          {/* CEO only */}
+          <Route path="/settings">
+            <RequireAuth roles={["CEO"]}>
+              <Settings />
+            </RequireAuth>
+          </Route>
+        </Switch>
+      </MainLayout>
+    </RequireAuth>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppRoutes />
+      <Toaster />
+    </AuthProvider>
+  );
+}
+
+export default App;
