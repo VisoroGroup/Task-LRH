@@ -344,10 +344,10 @@ export function MyTasks() {
         },
     });
 
-    // Get the main goal for the selected department (needed for creating subgoals)
+    // Get the main goal for the company (one main goal shared by all departments)
     const getMainGoal = () => {
-        if (!idealScene || !newTaskDepartmentId) return null;
-        return idealScene.find((goal: any) => goal.departmentId === newTaskDepartmentId);
+        if (!idealScene || idealScene.length === 0) return null;
+        return idealScene[0]; // The first (and only) main goal
     };
 
     const createTaskMutation = useMutation({
@@ -664,28 +664,13 @@ export function MyTasks() {
                                             <div className="flex gap-2 mt-2">
                                                 <Button
                                                     size="sm"
-                                                    onClick={async () => {
-                                                        let mainGoal = getMainGoal();
-
-                                                        // If no main goal exists for this department, create one automatically
+                                                    onClick={() => {
+                                                        const mainGoal = getMainGoal();
                                                         if (!mainGoal) {
-                                                            try {
-                                                                const newMainGoal = await apiRequest("/api/ideal-scene/main-goals", {
-                                                                    method: "POST",
-                                                                    body: JSON.stringify({
-                                                                        title: "Főcél - " + (departments?.find(d => d.id === newTaskDepartmentId)?.name || "Általános"),
-                                                                        departmentId: newTaskDepartmentId,
-                                                                    }),
-                                                                });
-                                                                mainGoal = newMainGoal as any;
-                                                                await queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
-                                                            } catch (error) {
-                                                                toast({ title: "Hiba a Főcél létrehozásánál", variant: "destructive" });
-                                                                return;
-                                                            }
+                                                            toast({ title: "Hiba: Nincs Főcél beállítva. Állítsd be a Settings oldalon!", variant: "destructive" });
+                                                            return;
                                                         }
-
-                                                        if (mainGoal && newSubgoalTitle.trim()) {
+                                                        if (newSubgoalTitle.trim()) {
                                                             createSubgoalMutation.mutate({
                                                                 title: newSubgoalTitle.trim(),
                                                                 mainGoalId: mainGoal.id,
