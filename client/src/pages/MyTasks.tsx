@@ -69,6 +69,16 @@ export function MyTasks() {
     const [newTaskHierarchyLevel, setNewTaskHierarchyLevel] = useState<string>("");
     const [newTaskParentItemId, setNewTaskParentItemId] = useState("");
 
+    // Completion report dialog state
+    const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
+    const [completingTaskId, setCompletingTaskId] = useState<string>("");
+    const [completingTaskTitle, setCompletingTaskTitle] = useState<string>("");
+    const [whatWasDone, setWhatWasDone] = useState("");
+    const [whenDone, setWhenDone] = useState("");
+    const [whereContext, setWhereContext] = useState("");
+    const [evidenceType, setEvidenceType] = useState<string>("");
+    const [evidenceUrl, setEvidenceUrl] = useState("");
+
     // Fetch departments
     const { data: departments } = useQuery({
         queryKey: ["departments"],
@@ -156,6 +166,75 @@ export function MyTasks() {
             });
         },
     });
+
+    // Complete task with evidence
+    const completeTaskMutation = useMutation({
+        mutationFn: async (data: {
+            taskId: string;
+            whatWasDone: string;
+            whenDone: string;
+            whereContext: string;
+            evidenceType: string;
+            evidenceUrl?: string;
+            submittedById: string;
+        }) => {
+            return apiRequest(`/api/tasks/${data.taskId}/complete`, {
+                method: "POST",
+                body: JSON.stringify(data),
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
+            toast({ title: "Task completed with report!", variant: "success" as any });
+            setIsCompleteDialogOpen(false);
+            // Reset form
+            setWhatWasDone("");
+            setWhenDone("");
+            setWhereContext("");
+            setEvidenceType("");
+            setEvidenceUrl("");
+            setCompletingTaskId("");
+            setCompletingTaskTitle("");
+        },
+        onError: (error: Error) => {
+            toast({
+                title: "Cannot complete task",
+                description: error.message,
+                variant: "destructive"
+            });
+        },
+    });
+
+    const handleCompleteTask = () => {
+        if (!whatWasDone.trim() || !whenDone || !whereContext.trim() || !evidenceType) {
+            toast({ title: "All fields are required", variant: "destructive" });
+            return;
+        }
+        if (evidenceType === "URL" && !evidenceUrl.trim()) {
+            toast({ title: "URL is required for URL evidence type", variant: "destructive" });
+            return;
+        }
+
+        // Use first user as submitter for now
+        const submittedById = users?.[0]?.id || "";
+
+        completeTaskMutation.mutate({
+            taskId: completingTaskId,
+            whatWasDone,
+            whenDone,
+            whereContext,
+            evidenceType,
+            evidenceUrl: evidenceType === "URL" ? evidenceUrl : undefined,
+            submittedById,
+        });
+    };
+
+    const openCompleteDialog = (task: Task) => {
+        setCompletingTaskId(task.id);
+        setCompletingTaskTitle(task.title);
+        setWhenDone(new Date().toISOString().slice(0, 16)); // Default to now
+        setIsCompleteDialogOpen(true);
+    };
 
     const createTaskMutation = useMutation({
         mutationFn: async (data: {
@@ -296,12 +375,7 @@ export function MyTasks() {
                             <Button
                                 size="sm"
                                 variant="default"
-                                onClick={() => {
-                                    toast({
-                                        title: "Completion Report Required",
-                                        description: "Submit evidence to mark as DONE",
-                                    });
-                                }}
+                                onClick={() => openCompleteDialog(task)}
                             >
                                 <Check className="h-3 w-3 mr-1" />
                                 Complete
@@ -524,6 +598,110 @@ export function MyTasks() {
                 </DialogContent>
             </Dialog>
 
+            {/* Completion Report Dialog */}
+            <Dialog open={isCompleteDialogOpen} onOpenChange={setIsCompleteDialogOpen}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>Teljesítés Jelentés</DialogTitle>
+                        <DialogDescription>
+                            {completingTaskTitle} - Submit evidence to complete this task
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        {/* What was done */}
+                        <div>
+                            <label className="text-sm font-medium">Mit csináltál? (What was done) *</label>
+                            <textarea
+                                value={whatWasDone}
+                                onChange={(e) => setWhatWasDone(e.target.value)}
+                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background min-h-[80px]"
+                                placeholder="Describe in detail what you did to complete this task..."
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">
+                                ⚠️ "Kész", "OK", "Ready" nem elfogadható!
+                            </p>
+                        </div>
+
+                        {/* When done */}
+                        <div>
+                            <label className="text-sm font-medium">Mikor? (When) *</label>
+                            <input
+                                type="datetime-local"
+                                value={whenDone}
+                                onChange={(e) => setWhenDone(e.target.value)}
+                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                            />
+                        </div>
+
+                        {/* Context */}
+                        <div>
+                            <label className="text-sm font-medium">Hol / Kontextus (Where/Context) *</label>
+                            <input
+                                type="text"
+                                value={whereContext}
+                                onChange={(e) => setWhereContext(e.target.value)}
+                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                placeholder="Location, meeting name, system used, etc."
+                            />
+                        </div>
+
+                        {/* Evidence type */}
+                        <div>
+                            <label className="text-sm font-medium">Bizonyíték típusa (Evidence Type) *</label>
+                            <select
+                                value={evidenceType}
+                                onChange={(e) => setEvidenceType(e.target.value)}
+                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                            >
+                                <option value="">Select type...</option>
+                                <option value="URL">🔗 URL / Link</option>
+                                <option value="SIGNED_NOTE">✍️ Aláírt feljegyzés</option>
+                                <option value="RECEIPT">🧾 Nyugta / Számla</option>
+                                <option value="DOCUMENT">📄 Dokumentum</option>
+                                <option value="IMAGE">🖼️ Kép / Fénykép</option>
+                            </select>
+                        </div>
+
+                        {/* Evidence URL (only shown for URL type) */}
+                        {evidenceType === "URL" && (
+                            <div>
+                                <label className="text-sm font-medium">Evidence URL *</label>
+                                <input
+                                    type="url"
+                                    value={evidenceUrl}
+                                    onChange={(e) => setEvidenceUrl(e.target.value)}
+                                    className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                    placeholder="https://..."
+                                />
+                            </div>
+                        )}
+
+                        {/* Note for file-based evidence */}
+                        {["IMAGE", "DOCUMENT", "RECEIPT", "SIGNED_NOTE"].includes(evidenceType) && (
+                            <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-md text-sm text-amber-700 dark:text-amber-400">
+                                📎 File upload coming soon. For now, please upload to a service and paste the URL.
+                            </div>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsCompleteDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleCompleteTask}
+                            disabled={
+                                !whatWasDone.trim() ||
+                                !whenDone ||
+                                !whereContext.trim() ||
+                                !evidenceType ||
+                                (evidenceType === "URL" && !evidenceUrl.trim())
+                            }
+                        >
+                            ✓ Complete Task
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
             {/* Filters */}
             <div className="flex gap-2">
                 {["ALL", "TODO", "DOING", "DONE"].map((status) => (
