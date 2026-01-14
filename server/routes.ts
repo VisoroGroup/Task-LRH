@@ -48,7 +48,7 @@ export function registerRoutes(app: Express) {
                         },
                     },
                 },
-                orderBy: [departments.name],
+                orderBy: [departments.sortOrder],
             });
             res.json(depts);
         } catch (error) {
@@ -269,6 +269,83 @@ export function registerRoutes(app: Express) {
     });
 
     // ============================================================================
+    // MAIN GOALS (Company-wide - for Settings page)
+    // ============================================================================
+
+    // Get all main goals (for Settings page)
+    app.get("/api/main-goals", async (req: Request, res: Response) => {
+        try {
+            const goals = await db.query.mainGoals.findMany({
+                where: eq(mainGoals.isActive, true),
+                with: {
+                    department: true,
+                },
+                orderBy: [mainGoals.createdAt],
+            });
+            res.json(goals);
+        } catch (error) {
+            console.error("Error fetching main goals:", error);
+            res.status(500).json({ error: "Failed to fetch main goals" });
+        }
+    });
+
+    // Create main goal (for Settings page - company-wide)
+    app.post("/api/main-goals", async (req: Request, res: Response) => {
+        try {
+            const { title, description } = req.body;
+
+            if (!title) {
+                return res.status(400).json({ error: "Title is required" });
+            }
+
+            // For company-wide main goal, we need a default department
+            // First, get the first active department as fallback
+            const defaultDept = await db.query.departments.findFirst({
+                where: eq(departments.isActive, true),
+                orderBy: [departments.sortOrder],
+            });
+
+            if (!defaultDept) {
+                return res.status(400).json({ error: "No active departments found" });
+            }
+
+            const [goal] = await db.insert(mainGoals).values({
+                title,
+                description,
+                departmentId: defaultDept.id,
+            }).returning();
+
+            res.status(201).json(goal);
+        } catch (error) {
+            console.error("Error creating main goal:", error);
+            res.status(500).json({ error: "Failed to create main goal" });
+        }
+    });
+
+    // Update main goal
+    app.put("/api/main-goals/:id", async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+            const { title, description } = req.body;
+
+            const [updated] = await db
+                .update(mainGoals)
+                .set({ title, description, updatedAt: new Date() })
+                .where(eq(mainGoals.id, id))
+                .returning();
+
+            if (!updated) {
+                return res.status(404).json({ error: "Main goal not found" });
+            }
+
+            res.json(updated);
+        } catch (error) {
+            console.error("Error updating main goal:", error);
+            res.status(500).json({ error: "Failed to update main goal" });
+        }
+    });
+
+    // ============================================================================
     // IDEAL SCENE HIERARCHY
     // ============================================================================
 
@@ -314,7 +391,7 @@ export function registerRoutes(app: Express) {
         }
     });
 
-    // Create Main Goal
+    // Create Main Goal (for Ideal Scene - requires departmentId)
     app.post("/api/ideal-scene/main-goals", async (req: Request, res: Response) => {
         try {
             const { title, description, departmentId } = req.body;

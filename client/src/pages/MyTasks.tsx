@@ -18,6 +18,9 @@ import {
     Clock,
     AlertCircle,
     Calendar,
+    Building2,
+    User,
+    FolderTree,
 } from "lucide-react";
 
 interface Task {
@@ -32,6 +35,25 @@ interface Task {
     completionReport: any;
 }
 
+interface Department {
+    id: string;
+    name: string;
+}
+
+interface UserType {
+    id: string;
+    name: string;
+    email: string;
+}
+
+// Flattened hierarchy item for parent selection
+interface HierarchyItem {
+    id: string;
+    title: string;
+    level: "SUBGOAL" | "PROGRAM" | "PROJECT" | "INSTRUCTION";
+    departmentId: string;
+}
+
 export function MyTasks() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
@@ -40,6 +62,65 @@ export function MyTasks() {
     const [newTaskTitle, setNewTaskTitle] = useState("");
     const [newTaskDate, setNewTaskDate] = useState("");
     const [newTaskTime, setNewTaskTime] = useState("");
+
+    // New required fields
+    const [newTaskDepartmentId, setNewTaskDepartmentId] = useState("");
+    const [newTaskResponsibleUserId, setNewTaskResponsibleUserId] = useState("");
+    const [newTaskHierarchyLevel, setNewTaskHierarchyLevel] = useState<string>("");
+    const [newTaskParentItemId, setNewTaskParentItemId] = useState("");
+
+    // Fetch departments
+    const { data: departments } = useQuery({
+        queryKey: ["departments"],
+        queryFn: () => apiRequest<Department[]>("/api/departments"),
+    });
+
+    // Fetch users
+    const { data: users } = useQuery({
+        queryKey: ["users"],
+        queryFn: () => apiRequest<UserType[]>("/api/users"),
+    });
+
+    // Fetch ideal scene hierarchy
+    const { data: idealScene } = useQuery({
+        queryKey: ["ideal-scene"],
+        queryFn: () => apiRequest<any[]>("/api/ideal-scene"),
+    });
+
+    // Build flattened hierarchy items based on selected department
+    const getHierarchyItems = (): HierarchyItem[] => {
+        if (!idealScene || !newTaskDepartmentId) return [];
+
+        const items: HierarchyItem[] = [];
+
+        idealScene.forEach((mainGoal: any) => {
+            if (mainGoal.departmentId !== newTaskDepartmentId) return;
+
+            mainGoal.subgoals?.forEach((subgoal: any) => {
+                items.push({ id: subgoal.id, title: `Alcél: ${subgoal.title}`, level: "SUBGOAL", departmentId: subgoal.departmentId });
+
+                subgoal.programs?.forEach((program: any) => {
+                    items.push({ id: program.id, title: `  Program: ${program.title}`, level: "PROGRAM", departmentId: program.departmentId });
+
+                    program.projects?.forEach((project: any) => {
+                        items.push({ id: project.id, title: `    Projekt: ${project.title}`, level: "PROJECT", departmentId: project.departmentId });
+
+                        project.instructions?.forEach((instruction: any) => {
+                            items.push({ id: instruction.id, title: `      Utasítás: ${instruction.title}`, level: "INSTRUCTION", departmentId: instruction.departmentId });
+                        });
+                    });
+                });
+            });
+        });
+
+        return items;
+    };
+
+    // Filter hierarchy items by selected level
+    const getFilteredHierarchyItems = (): HierarchyItem[] => {
+        if (!newTaskHierarchyLevel) return [];
+        return getHierarchyItems().filter(item => item.level === newTaskHierarchyLevel);
+    };
 
     // For now, we'll show all tasks (in production, filter by current user)
     const { data: tasks, isLoading } = useQuery({
@@ -73,7 +154,15 @@ export function MyTasks() {
     });
 
     const createTaskMutation = useMutation({
-        mutationFn: async (data: { title: string; dueDate: string }) => {
+        mutationFn: async (data: {
+            title: string;
+            dueDate: string;
+            departmentId: string;
+            responsibleUserId: string;
+            hierarchyLevel: string;
+            parentItemId: string;
+            creatorId: string;
+        }) => {
             return apiRequest("/api/tasks", {
                 method: "POST",
                 body: JSON.stringify(data),
@@ -83,9 +172,14 @@ export function MyTasks() {
             queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
             toast({ title: "Task created", variant: "success" as any });
             setIsNewTaskOpen(false);
+            // Reset all fields
             setNewTaskTitle("");
             setNewTaskDate("");
             setNewTaskTime("");
+            setNewTaskDepartmentId("");
+            setNewTaskResponsibleUserId("");
+            setNewTaskHierarchyLevel("");
+            setNewTaskParentItemId("");
         },
         onError: (error: Error) => {
             toast({
@@ -97,18 +191,48 @@ export function MyTasks() {
     });
 
     const handleCreateTask = () => {
-        if (!newTaskTitle.trim() || !newTaskDate) {
-            toast({
-                title: "Date is required",
-                description: "Please select a due date for the task",
-                variant: "destructive"
-            });
+        // Validate all required fields
+        if (!newTaskTitle.trim()) {
+            toast({ title: "Title is required", variant: "destructive" });
             return;
         }
+        if (!newTaskDate) {
+            toast({ title: "Due date is required", variant: "destructive" });
+            return;
+        }
+        if (!newTaskDepartmentId) {
+            toast({ title: "Department is required", variant: "destructive" });
+            return;
+        }
+        if (!newTaskResponsibleUserId) {
+            toast({ title: "Responsible person is required", variant: "destructive" });
+            return;
+        }
+        if (!newTaskHierarchyLevel) {
+            toast({ title: "Hierarchy level is required", variant: "destructive" });
+            return;
+        }
+        if (!newTaskParentItemId) {
+            toast({ title: "Parent item is required", variant: "destructive" });
+            return;
+        }
+
         const dueDate = newTaskTime
             ? `${newTaskDate}T${newTaskTime}:00`
             : `${newTaskDate}T23:59:59`;
-        createTaskMutation.mutate({ title: newTaskTitle, dueDate });
+
+        // Use first user as creatorId for now (in production, use logged-in user)
+        const creatorId = users?.[0]?.id || "";
+
+        createTaskMutation.mutate({
+            title: newTaskTitle,
+            dueDate,
+            departmentId: newTaskDepartmentId,
+            responsibleUserId: newTaskResponsibleUserId,
+            hierarchyLevel: newTaskHierarchyLevel,
+            parentItemId: newTaskParentItemId,
+            creatorId,
+        });
     };
 
     const filteredTasks = tasks || [];
@@ -244,14 +368,15 @@ export function MyTasks() {
 
             {/* New Task Dialog */}
             <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
-                <DialogContent>
+                <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Create New Task</DialogTitle>
                         <DialogDescription>
-                            Add a new task with a due date
+                            Add a new task with all required information
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
+                        {/* Task Title */}
                         <div>
                             <label className="text-sm font-medium">Task Title *</label>
                             <input
@@ -262,6 +387,92 @@ export function MyTasks() {
                                 placeholder="What needs to be done?"
                             />
                         </div>
+
+                        {/* Department Selection */}
+                        <div>
+                            <label className="text-sm font-medium flex items-center gap-2">
+                                <Building2 className="h-4 w-4" />
+                                Department *
+                            </label>
+                            <select
+                                value={newTaskDepartmentId}
+                                onChange={(e) => {
+                                    setNewTaskDepartmentId(e.target.value);
+                                    setNewTaskHierarchyLevel("");
+                                    setNewTaskParentItemId("");
+                                }}
+                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                            >
+                                <option value="">Select department...</option>
+                                {departments?.map(dept => (
+                                    <option key={dept.id} value={dept.id}>{dept.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Responsible Person */}
+                        <div>
+                            <label className="text-sm font-medium flex items-center gap-2">
+                                <User className="h-4 w-4" />
+                                Responsible Person *
+                            </label>
+                            <select
+                                value={newTaskResponsibleUserId}
+                                onChange={(e) => setNewTaskResponsibleUserId(e.target.value)}
+                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                            >
+                                <option value="">Select person...</option>
+                                {users?.map(user => (
+                                    <option key={user.id} value={user.id}>{user.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Hierarchy Level */}
+                        <div>
+                            <label className="text-sm font-medium flex items-center gap-2">
+                                <FolderTree className="h-4 w-4" />
+                                Hierarchy Level *
+                            </label>
+                            <select
+                                value={newTaskHierarchyLevel}
+                                onChange={(e) => {
+                                    setNewTaskHierarchyLevel(e.target.value);
+                                    setNewTaskParentItemId("");
+                                }}
+                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                disabled={!newTaskDepartmentId}
+                            >
+                                <option value="">Select level...</option>
+                                <option value="SUBGOAL">Alcél (Subgoal)</option>
+                                <option value="PROGRAM">Program</option>
+                                <option value="PROJECT">Projekt (Project)</option>
+                                <option value="INSTRUCTION">Utasítás (Instruction)</option>
+                            </select>
+                        </div>
+
+                        {/* Parent Item */}
+                        <div>
+                            <label className="text-sm font-medium">Parent Item *</label>
+                            <select
+                                value={newTaskParentItemId}
+                                onChange={(e) => setNewTaskParentItemId(e.target.value)}
+                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                disabled={!newTaskHierarchyLevel}
+                            >
+                                <option value="">Select parent item...</option>
+                                {getFilteredHierarchyItems().map(item => (
+                                    <option key={item.id} value={item.id}>{item.title}</option>
+                                ))}
+                            </select>
+                            {newTaskHierarchyLevel && getFilteredHierarchyItems().length === 0 && (
+                                <p className="text-xs text-amber-600 mt-1">
+                                    No {hierarchyLabels[newTaskHierarchyLevel] || newTaskHierarchyLevel} items found. Create one in Ideal Scene first.
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Due Date */}
                         <div>
                             <label className="text-sm font-medium flex items-center gap-2">
                                 <Calendar className="h-4 w-4" />
@@ -275,6 +486,8 @@ export function MyTasks() {
                                 required
                             />
                         </div>
+
+                        {/* Time (optional) */}
                         <div>
                             <label className="text-sm font-medium">Time (optional)</label>
                             <input
@@ -289,7 +502,17 @@ export function MyTasks() {
                         <Button variant="outline" onClick={() => setIsNewTaskOpen(false)}>
                             Cancel
                         </Button>
-                        <Button onClick={handleCreateTask} disabled={!newTaskTitle.trim() || !newTaskDate}>
+                        <Button
+                            onClick={handleCreateTask}
+                            disabled={
+                                !newTaskTitle.trim() ||
+                                !newTaskDate ||
+                                !newTaskDepartmentId ||
+                                !newTaskResponsibleUserId ||
+                                !newTaskHierarchyLevel ||
+                                !newTaskParentItemId
+                            }
+                        >
                             Create Task
                         </Button>
                     </DialogFooter>

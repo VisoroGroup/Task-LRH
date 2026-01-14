@@ -75,11 +75,16 @@ export async function seedDatabase() {
                     id: dept.id,
                     name: dept.name,
                     description: dept.description,
+                    sortOrder: dept.sortOrder,
                     isActive: true,
                 });
                 console.log(`  ✓ Created department: ${dept.name}`);
             } else {
-                console.log(`  - Department exists: ${dept.name}`);
+                // Update sortOrder for existing departments
+                await db.update(departments)
+                    .set({ sortOrder: dept.sortOrder })
+                    .where(eq(departments.id, dept.id));
+                console.log(`  - Department exists: ${dept.name} (updated sortOrder)`);
             }
         }
 

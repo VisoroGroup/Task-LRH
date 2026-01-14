@@ -86,6 +86,8 @@ export const departments = pgTable("departments", {
     id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
     name: varchar("name").notNull(),
     description: text("description"),
+    // Sort order for correct LRH department sequence
+    sortOrder: integer("sort_order").default(0).notNull(),
     // Department head - who is responsible for this department
     departmentHeadId: varchar("department_head_id").references(() => users.id),
     isActive: boolean("is_active").default(true).notNull(),
