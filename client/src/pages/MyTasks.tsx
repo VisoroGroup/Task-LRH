@@ -74,6 +74,16 @@ export function MyTasks() {
     const [selectedProjectId, setSelectedProjectId] = useState("");
     const [selectedInstructionId, setSelectedInstructionId] = useState("");
 
+    // Inline creation mode and form values for each level
+    const [creatingSubgoal, setCreatingSubgoal] = useState(false);
+    const [newSubgoalTitle, setNewSubgoalTitle] = useState("");
+    const [creatingPlan, setCreatingPlan] = useState(false);
+    const [newPlanTitle, setNewPlanTitle] = useState("");
+    const [creatingProgram, setCreatingProgram] = useState(false);
+    const [newProgramTitle, setNewProgramTitle] = useState("");
+    const [creatingProject, setCreatingProject] = useState(false);
+    const [newProjectTitle, setNewProjectTitle] = useState("");
+
     // Completion report dialog state
     const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
     const [completingTaskId, setCompletingTaskId] = useState<string>("");
@@ -255,6 +265,89 @@ export function MyTasks() {
         setCompletingTaskTitle(task.title);
         setWhenDone(new Date().toISOString().slice(0, 16)); // Default to now
         setIsCompleteDialogOpen(true);
+    };
+
+    // Mutations for creating hierarchy items inline
+    const createSubgoalMutation = useMutation({
+        mutationFn: async (data: { title: string; mainGoalId: string; departmentId: string }) => {
+            return apiRequest("/api/ideal-scene/subgoals", {
+                method: "POST",
+                body: JSON.stringify(data),
+            });
+        },
+        onSuccess: (result: any) => {
+            queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
+            setCreatingSubgoal(false);
+            setNewSubgoalTitle("");
+            setSelectedSubgoalId(result.id);
+            toast({ title: "Alcél létrehozva!", variant: "success" as any });
+        },
+        onError: (error: Error) => {
+            toast({ title: "Hiba történt", description: error.message, variant: "destructive" });
+        },
+    });
+
+    const createPlanMutation = useMutation({
+        mutationFn: async (data: { title: string; subgoalId: string; departmentId: string }) => {
+            return apiRequest("/api/ideal-scene/plans", {
+                method: "POST",
+                body: JSON.stringify(data),
+            });
+        },
+        onSuccess: (result: any) => {
+            queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
+            setCreatingPlan(false);
+            setNewPlanTitle("");
+            setSelectedPlanId(result.id);
+            toast({ title: "Terv létrehozva!", variant: "success" as any });
+        },
+        onError: (error: Error) => {
+            toast({ title: "Hiba történt", description: error.message, variant: "destructive" });
+        },
+    });
+
+    const createProgramMutation = useMutation({
+        mutationFn: async (data: { title: string; planId: string; departmentId: string }) => {
+            return apiRequest("/api/ideal-scene/programs", {
+                method: "POST",
+                body: JSON.stringify(data),
+            });
+        },
+        onSuccess: (result: any) => {
+            queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
+            setCreatingProgram(false);
+            setNewProgramTitle("");
+            setSelectedProgramId(result.id);
+            toast({ title: "Program létrehozva!", variant: "success" as any });
+        },
+        onError: (error: Error) => {
+            toast({ title: "Hiba történt", description: error.message, variant: "destructive" });
+        },
+    });
+
+    const createProjectMutation = useMutation({
+        mutationFn: async (data: { title: string; programId: string; departmentId: string }) => {
+            return apiRequest("/api/ideal-scene/projects", {
+                method: "POST",
+                body: JSON.stringify(data),
+            });
+        },
+        onSuccess: (result: any) => {
+            queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
+            setCreatingProject(false);
+            setNewProjectTitle("");
+            setSelectedProjectId(result.id);
+            toast({ title: "Projekt létrehozva!", variant: "success" as any });
+        },
+        onError: (error: Error) => {
+            toast({ title: "Hiba történt", description: error.message, variant: "destructive" });
+        },
+    });
+
+    // Get the main goal for the selected department (needed for creating subgoals)
+    const getMainGoal = () => {
+        if (!idealScene || !newTaskDepartmentId) return null;
+        return idealScene.find((goal: any) => goal.departmentId === newTaskDepartmentId);
     };
 
     const createTaskMutation = useMutation({
@@ -534,7 +627,7 @@ export function MyTasks() {
                         </div>
 
                         {/* ═══════════════════════════════════════════════════════════════ */}
-                        {/* CASCADING HIERARCHY CHAIN                                        */}
+                        {/* CASCADING HIERARCHY CHAIN WITH INLINE CREATION                   */}
                         {/* ═══════════════════════════════════════════════════════════════ */}
                         <div className="border-t pt-4 mt-2">
                             <div className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
@@ -542,30 +635,71 @@ export function MyTasks() {
                                 Hierarchy Chain (Válaszd ki a szintet ahol a task tartozik)
                             </div>
 
-                            {/* 1. Alcél (Subgoal) - Always shown if department selected */}
+                            {/* 1. Alcél (Subgoal) */}
                             {newTaskDepartmentId && (
                                 <div className="mb-3">
-                                    <label className="text-sm font-medium">1. Alcél (Subgoal) *</label>
-                                    <select
-                                        value={selectedSubgoalId}
-                                        onChange={(e) => {
-                                            setSelectedSubgoalId(e.target.value);
-                                            setSelectedPlanId("");
-                                            setSelectedProgramId("");
-                                            setSelectedProjectId("");
-                                            setSelectedInstructionId("");
-                                        }}
-                                        className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
-                                    >
-                                        <option value="">Select Alcél...</option>
-                                        {getSubgoals().map((subgoal: any) => (
-                                            <option key={subgoal.id} value={subgoal.id}>{subgoal.title}</option>
-                                        ))}
-                                    </select>
-                                    {getSubgoals().length === 0 && (
-                                        <p className="text-xs text-amber-600 mt-1">
-                                            ⚠️ No Alcél found. Create one in Ideal Scene first.
-                                        </p>
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-medium">1. Alcél (Subgoal) *</label>
+                                        {!creatingSubgoal && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setCreatingSubgoal(true)}
+                                                className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                            >
+                                                + Új Alcél
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {creatingSubgoal ? (
+                                        <div className="mt-2 p-2 border rounded-md bg-blue-50 dark:bg-blue-900/20">
+                                            <input
+                                                type="text"
+                                                value={newSubgoalTitle}
+                                                onChange={(e) => setNewSubgoalTitle(e.target.value)}
+                                                className="w-full px-2 py-1 border rounded text-sm bg-background"
+                                                placeholder="Alcél neve..."
+                                                autoFocus
+                                            />
+                                            <div className="flex gap-2 mt-2">
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        const mainGoal = getMainGoal();
+                                                        if (mainGoal && newSubgoalTitle.trim()) {
+                                                            createSubgoalMutation.mutate({
+                                                                title: newSubgoalTitle.trim(),
+                                                                mainGoalId: mainGoal.id,
+                                                                departmentId: newTaskDepartmentId,
+                                                            });
+                                                        }
+                                                    }}
+                                                    disabled={!newSubgoalTitle.trim() || createSubgoalMutation.isPending}
+                                                >
+                                                    Létrehozás
+                                                </Button>
+                                                <Button size="sm" variant="ghost" onClick={() => { setCreatingSubgoal(false); setNewSubgoalTitle(""); }}>
+                                                    Mégse
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <select
+                                            value={selectedSubgoalId}
+                                            onChange={(e) => {
+                                                setSelectedSubgoalId(e.target.value);
+                                                setSelectedPlanId("");
+                                                setSelectedProgramId("");
+                                                setSelectedProjectId("");
+                                                setSelectedInstructionId("");
+                                            }}
+                                            className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                        >
+                                            <option value="">Válassz Alcélt...</option>
+                                            {getSubgoals().map((subgoal: any) => (
+                                                <option key={subgoal.id} value={subgoal.id}>{subgoal.title}</option>
+                                            ))}
+                                        </select>
                                     )}
                                 </div>
                             )}
@@ -573,70 +707,205 @@ export function MyTasks() {
                             {/* 2. Terv (Plan) */}
                             {selectedSubgoalId && (
                                 <div className="mb-3 ml-4 border-l-2 border-blue-200 pl-3">
-                                    <label className="text-sm font-medium">2. Terv (Plan)</label>
-                                    <select
-                                        value={selectedPlanId}
-                                        onChange={(e) => {
-                                            setSelectedPlanId(e.target.value);
-                                            setSelectedProgramId("");
-                                            setSelectedProjectId("");
-                                            setSelectedInstructionId("");
-                                        }}
-                                        className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
-                                    >
-                                        <option value="">Nincs terv kiválasztva</option>
-                                        {getPlans().map((plan: any) => (
-                                            <option key={plan.id} value={plan.id}>{plan.title}</option>
-                                        ))}
-                                    </select>
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-medium">2. Terv (Plan)</label>
+                                        {!creatingPlan && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setCreatingPlan(true)}
+                                                className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                            >
+                                                + Új Terv
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {creatingPlan ? (
+                                        <div className="mt-2 p-2 border rounded-md bg-blue-50 dark:bg-blue-900/20">
+                                            <input
+                                                type="text"
+                                                value={newPlanTitle}
+                                                onChange={(e) => setNewPlanTitle(e.target.value)}
+                                                className="w-full px-2 py-1 border rounded text-sm bg-background"
+                                                placeholder="Terv neve..."
+                                                autoFocus
+                                            />
+                                            <div className="flex gap-2 mt-2">
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        if (newPlanTitle.trim()) {
+                                                            createPlanMutation.mutate({
+                                                                title: newPlanTitle.trim(),
+                                                                subgoalId: selectedSubgoalId,
+                                                                departmentId: newTaskDepartmentId,
+                                                            });
+                                                        }
+                                                    }}
+                                                    disabled={!newPlanTitle.trim() || createPlanMutation.isPending}
+                                                >
+                                                    Létrehozás
+                                                </Button>
+                                                <Button size="sm" variant="ghost" onClick={() => { setCreatingPlan(false); setNewPlanTitle(""); }}>
+                                                    Mégse
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <select
+                                            value={selectedPlanId}
+                                            onChange={(e) => {
+                                                setSelectedPlanId(e.target.value);
+                                                setSelectedProgramId("");
+                                                setSelectedProjectId("");
+                                                setSelectedInstructionId("");
+                                            }}
+                                            className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                        >
+                                            <option value="">Nincs terv kiválasztva</option>
+                                            {getPlans().map((plan: any) => (
+                                                <option key={plan.id} value={plan.id}>{plan.title}</option>
+                                            ))}
+                                        </select>
+                                    )}
                                 </div>
                             )}
 
                             {/* 3. Program */}
                             {selectedPlanId && (
                                 <div className="mb-3 ml-8 border-l-2 border-green-200 pl-3">
-                                    <label className="text-sm font-medium">3. Program</label>
-                                    <select
-                                        value={selectedProgramId}
-                                        onChange={(e) => {
-                                            setSelectedProgramId(e.target.value);
-                                            setSelectedProjectId("");
-                                            setSelectedInstructionId("");
-                                        }}
-                                        className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
-                                    >
-                                        <option value="">Nincs program kiválasztva</option>
-                                        {getPrograms().map((program: any) => (
-                                            <option key={program.id} value={program.id}>{program.title}</option>
-                                        ))}
-                                    </select>
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-medium">3. Program</label>
+                                        {!creatingProgram && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setCreatingProgram(true)}
+                                                className="text-xs text-green-600 hover:text-green-800 flex items-center gap-1"
+                                            >
+                                                + Új Program
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {creatingProgram ? (
+                                        <div className="mt-2 p-2 border rounded-md bg-green-50 dark:bg-green-900/20">
+                                            <input
+                                                type="text"
+                                                value={newProgramTitle}
+                                                onChange={(e) => setNewProgramTitle(e.target.value)}
+                                                className="w-full px-2 py-1 border rounded text-sm bg-background"
+                                                placeholder="Program neve..."
+                                                autoFocus
+                                            />
+                                            <div className="flex gap-2 mt-2">
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        if (newProgramTitle.trim()) {
+                                                            createProgramMutation.mutate({
+                                                                title: newProgramTitle.trim(),
+                                                                planId: selectedPlanId,
+                                                                departmentId: newTaskDepartmentId,
+                                                            });
+                                                        }
+                                                    }}
+                                                    disabled={!newProgramTitle.trim() || createProgramMutation.isPending}
+                                                >
+                                                    Létrehozás
+                                                </Button>
+                                                <Button size="sm" variant="ghost" onClick={() => { setCreatingProgram(false); setNewProgramTitle(""); }}>
+                                                    Mégse
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <select
+                                            value={selectedProgramId}
+                                            onChange={(e) => {
+                                                setSelectedProgramId(e.target.value);
+                                                setSelectedProjectId("");
+                                                setSelectedInstructionId("");
+                                            }}
+                                            className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                        >
+                                            <option value="">Nincs program kiválasztva</option>
+                                            {getPrograms().map((program: any) => (
+                                                <option key={program.id} value={program.id}>{program.title}</option>
+                                            ))}
+                                        </select>
+                                    )}
                                 </div>
                             )}
 
                             {/* 4. Projekt (Project) */}
                             {selectedProgramId && (
                                 <div className="mb-3 ml-12 border-l-2 border-yellow-200 pl-3">
-                                    <label className="text-sm font-medium">4. Projekt</label>
-                                    <select
-                                        value={selectedProjectId}
-                                        onChange={(e) => {
-                                            setSelectedProjectId(e.target.value);
-                                            setSelectedInstructionId("");
-                                        }}
-                                        className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
-                                    >
-                                        <option value="">Nincs projekt kiválasztva</option>
-                                        {getProjects().map((project: any) => (
-                                            <option key={project.id} value={project.id}>{project.title}</option>
-                                        ))}
-                                    </select>
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-medium">4. Projekt</label>
+                                        {!creatingProject && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setCreatingProject(true)}
+                                                className="text-xs text-yellow-600 hover:text-yellow-800 flex items-center gap-1"
+                                            >
+                                                + Új Projekt
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {creatingProject ? (
+                                        <div className="mt-2 p-2 border rounded-md bg-yellow-50 dark:bg-yellow-900/20">
+                                            <input
+                                                type="text"
+                                                value={newProjectTitle}
+                                                onChange={(e) => setNewProjectTitle(e.target.value)}
+                                                className="w-full px-2 py-1 border rounded text-sm bg-background"
+                                                placeholder="Projekt neve..."
+                                                autoFocus
+                                            />
+                                            <div className="flex gap-2 mt-2">
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        if (newProjectTitle.trim()) {
+                                                            createProjectMutation.mutate({
+                                                                title: newProjectTitle.trim(),
+                                                                programId: selectedProgramId,
+                                                                departmentId: newTaskDepartmentId,
+                                                            });
+                                                        }
+                                                    }}
+                                                    disabled={!newProjectTitle.trim() || createProjectMutation.isPending}
+                                                >
+                                                    Létrehozás
+                                                </Button>
+                                                <Button size="sm" variant="ghost" onClick={() => { setCreatingProject(false); setNewProjectTitle(""); }}>
+                                                    Mégse
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <select
+                                            value={selectedProjectId}
+                                            onChange={(e) => {
+                                                setSelectedProjectId(e.target.value);
+                                                setSelectedInstructionId("");
+                                            }}
+                                            className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                        >
+                                            <option value="">Nincs projekt kiválasztva</option>
+                                            {getProjects().map((project: any) => (
+                                                <option key={project.id} value={project.id}>{project.title}</option>
+                                            ))}
+                                        </select>
+                                    )}
                                 </div>
                             )}
 
                             {/* Current Selection Summary */}
                             {selectedSubgoalId && (
                                 <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs">
-                                    <strong>Task will be created at:</strong> {getParentInfo().level || "Not selected"}
+                                    <strong>Task szintje:</strong> {getParentInfo().level || "Nincs kiválasztva"}
                                 </div>
                             )}
                         </div>
