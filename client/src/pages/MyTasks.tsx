@@ -112,17 +112,16 @@ export function MyTasks() {
         queryFn: () => apiRequest<any[]>("/api/ideal-scene"),
     });
 
-    // Get subgoals for selected department
+    // Get subgoals for selected department (from the single company-wide main goal)
     const getSubgoals = () => {
-        if (!idealScene || !newTaskDepartmentId) return [];
-        const subgoalsList: any[] = [];
-        idealScene.forEach((mainGoal: any) => {
-            if (mainGoal.departmentId !== newTaskDepartmentId) return;
-            mainGoal.subgoals?.forEach((subgoal: any) => {
-                subgoalsList.push(subgoal);
-            });
-        });
-        return subgoalsList;
+        if (!idealScene || idealScene.length === 0 || !newTaskDepartmentId) return [];
+        const mainGoal = idealScene[0]; // Single company-wide main goal
+        if (!mainGoal?.subgoals) return [];
+
+        // Filter subgoals by their own departmentId
+        return mainGoal.subgoals.filter((subgoal: any) =>
+            subgoal.departmentId === newTaskDepartmentId
+        );
     };
 
     // Get plans for selected subgoal
