@@ -24,6 +24,7 @@ export const taskStatusEnum = pgEnum("task_status", ["TODO", "DOING", "DONE"]);
 // Hierarchy level - what type of Ideal Scene element a task belongs to
 export const hierarchyLevelEnum = pgEnum("hierarchy_level", [
     "SUBGOAL",
+    "PLAN",
     "PROGRAM",
     "PROJECT",
     "INSTRUCTION"
@@ -204,16 +205,16 @@ export const subgoalsRelations = relations(subgoals, ({ one, many }) => ({
         fields: [subgoals.departmentId],
         references: [departments.id],
     }),
-    programs: many(programs),
+    plans: many(plans),
     tasks: many(tasks, { relationName: "subgoalTasks" }),
 }));
 
 // ============================================================================
-// Level 3: Program
+// Level 3: Plan (Terv) - Strategic plans for achieving subgoals
 // ============================================================================
 
-export const programs = pgTable(
-    "programs",
+export const plans = pgTable(
+    "plans",
     {
         id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
         title: varchar("title").notNull(),
@@ -225,15 +226,50 @@ export const programs = pgTable(
         updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
     },
     (table) => [
-        index("idx_programs_subgoal").on(table.subgoalId),
+        index("idx_plans_subgoal").on(table.subgoalId),
+        index("idx_plans_department").on(table.departmentId),
+    ]
+);
+
+export const plansRelations = relations(plans, ({ one, many }) => ({
+    subgoal: one(subgoals, {
+        fields: [plans.subgoalId],
+        references: [subgoals.id],
+    }),
+    department: one(departments, {
+        fields: [plans.departmentId],
+        references: [departments.id],
+    }),
+    programs: many(programs),
+    tasks: many(tasks, { relationName: "planTasks" }),
+}));
+
+// ============================================================================
+// Level 4: Program
+// ============================================================================
+
+export const programs = pgTable(
+    "programs",
+    {
+        id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+        title: varchar("title").notNull(),
+        description: text("description"),
+        planId: varchar("plan_id").references(() => plans.id).notNull(),
+        departmentId: varchar("department_id").references(() => departments.id).notNull(),
+        isActive: boolean("is_active").default(true).notNull(),
+        createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    },
+    (table) => [
+        index("idx_programs_plan").on(table.planId),
         index("idx_programs_department").on(table.departmentId),
     ]
 );
 
 export const programsRelations = relations(programs, ({ one, many }) => ({
-    subgoal: one(subgoals, {
-        fields: [programs.subgoalId],
-        references: [subgoals.id],
+    plan: one(plans, {
+        fields: [programs.planId],
+        references: [plans.id],
     }),
     department: one(departments, {
         fields: [programs.departmentId],
@@ -515,6 +551,9 @@ export type InsertPost = typeof posts.$inferInsert;
 export type Subgoal = typeof subgoals.$inferSelect;
 export type InsertSubgoal = typeof subgoals.$inferInsert;
 
+export type Plan = typeof plans.$inferSelect;
+export type InsertPlan = typeof plans.$inferInsert;
+
 export type Program = typeof programs.$inferSelect;
 export type InsertProgram = typeof programs.$inferInsert;
 
@@ -534,6 +573,6 @@ export type Upload = typeof uploads.$inferSelect;
 export type InsertUpload = typeof uploads.$inferInsert;
 
 export type TaskStatus = "TODO" | "DOING" | "DONE";
-export type HierarchyLevel = "SUBGOAL" | "PROGRAM" | "PROJECT" | "INSTRUCTION";
+export type HierarchyLevel = "SUBGOAL" | "PLAN" | "PROGRAM" | "PROJECT" | "INSTRUCTION";
 export type UserRole = "CEO" | "EXECUTIVE" | "USER";
 export type EvidenceType = "FILE" | "IMAGE" | "URL" | "DOCUMENT" | "RECEIPT" | "SIGNED_NOTE";

@@ -50,7 +50,7 @@ interface UserType {
 interface HierarchyItem {
     id: string;
     title: string;
-    level: "SUBGOAL" | "PROGRAM" | "PROJECT" | "INSTRUCTION";
+    level: "SUBGOAL" | "PLAN" | "PROGRAM" | "PROJECT" | "INSTRUCTION";
     departmentId: string;
 }
 
@@ -99,14 +99,18 @@ export function MyTasks() {
             mainGoal.subgoals?.forEach((subgoal: any) => {
                 items.push({ id: subgoal.id, title: `Alcél: ${subgoal.title}`, level: "SUBGOAL", departmentId: subgoal.departmentId });
 
-                subgoal.programs?.forEach((program: any) => {
-                    items.push({ id: program.id, title: `  Program: ${program.title}`, level: "PROGRAM", departmentId: program.departmentId });
+                subgoal.plans?.forEach((plan: any) => {
+                    items.push({ id: plan.id, title: `  Terv: ${plan.title}`, level: "PLAN", departmentId: plan.departmentId });
 
-                    program.projects?.forEach((project: any) => {
-                        items.push({ id: project.id, title: `    Projekt: ${project.title}`, level: "PROJECT", departmentId: project.departmentId });
+                    plan.programs?.forEach((program: any) => {
+                        items.push({ id: program.id, title: `    Program: ${program.title}`, level: "PROGRAM", departmentId: program.departmentId });
 
-                        project.instructions?.forEach((instruction: any) => {
-                            items.push({ id: instruction.id, title: `      Utasítás: ${instruction.title}`, level: "INSTRUCTION", departmentId: instruction.departmentId });
+                        program.projects?.forEach((project: any) => {
+                            items.push({ id: project.id, title: `      Projekt: ${project.title}`, level: "PROJECT", departmentId: project.departmentId });
+
+                            project.instructions?.forEach((instruction: any) => {
+                                items.push({ id: instruction.id, title: `        Utasítás: ${instruction.title}`, level: "INSTRUCTION", departmentId: instruction.departmentId });
+                            });
                         });
                     });
                 });
@@ -445,6 +449,7 @@ export function MyTasks() {
                             >
                                 <option value="">Select level...</option>
                                 <option value="SUBGOAL">Alcél (Subgoal)</option>
+                                <option value="PLAN">Terv (Plan)</option>
                                 <option value="PROGRAM">Program</option>
                                 <option value="PROJECT">Projekt (Project)</option>
                                 <option value="INSTRUCTION">Utasítás (Instruction)</option>

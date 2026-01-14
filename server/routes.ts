@@ -7,6 +7,7 @@ import {
     posts,
     mainGoals,
     subgoals,
+    plans,
     programs,
     projects,
     instructions,
@@ -365,14 +366,19 @@ export function registerRoutes(app: Express) {
                     subgoals: {
                         where: eq(subgoals.isActive, true),
                         with: {
-                            programs: {
-                                where: eq(programs.isActive, true),
+                            plans: {
+                                where: eq(plans.isActive, true),
                                 with: {
-                                    projects: {
-                                        where: eq(projects.isActive, true),
+                                    programs: {
+                                        where: eq(programs.isActive, true),
                                         with: {
-                                            instructions: {
-                                                where: eq(instructions.isActive, true),
+                                            projects: {
+                                                where: eq(projects.isActive, true),
+                                                with: {
+                                                    instructions: {
+                                                        where: eq(instructions.isActive, true),
+                                                    },
+                                                },
                                             },
                                         },
                                     },
@@ -436,8 +442,8 @@ export function registerRoutes(app: Express) {
         }
     });
 
-    // Create Program
-    app.post("/api/ideal-scene/programs", async (req: Request, res: Response) => {
+    // Create Plan (Terv)
+    app.post("/api/ideal-scene/plans", async (req: Request, res: Response) => {
         try {
             const { title, description, subgoalId, departmentId } = req.body;
 
@@ -445,10 +451,56 @@ export function registerRoutes(app: Express) {
                 return res.status(400).json({ error: "Title, subgoalId, and departmentId are required" });
             }
 
-            const [program] = await db.insert(programs).values({
+            const [plan] = await db.insert(plans).values({
                 title,
                 description,
                 subgoalId,
+                departmentId,
+            }).returning();
+
+            res.status(201).json(plan);
+        } catch (error) {
+            console.error("Error creating plan:", error);
+            res.status(500).json({ error: "Failed to create plan" });
+        }
+    });
+
+    // Get plans by subgoalId
+    app.get("/api/plans", async (req: Request, res: Response) => {
+        try {
+            const subgoalId = req.query.subgoalId as string | undefined;
+
+            const planList = await db.query.plans.findMany({
+                where: subgoalId
+                    ? and(eq(plans.subgoalId, subgoalId), eq(plans.isActive, true))
+                    : eq(plans.isActive, true),
+                with: {
+                    subgoal: true,
+                    department: true,
+                },
+                orderBy: [plans.createdAt],
+            });
+
+            res.json(planList);
+        } catch (error) {
+            console.error("Error fetching plans:", error);
+            res.status(500).json({ error: "Failed to fetch plans" });
+        }
+    });
+
+    // Create Program (now references planId instead of subgoalId)
+    app.post("/api/ideal-scene/programs", async (req: Request, res: Response) => {
+        try {
+            const { title, description, planId, departmentId } = req.body;
+
+            if (!title || !planId || !departmentId) {
+                return res.status(400).json({ error: "Title, planId, and departmentId are required" });
+            }
+
+            const [program] = await db.insert(programs).values({
+                title,
+                description,
+                planId,
                 departmentId,
             }).returning();
 
