@@ -2,22 +2,17 @@ import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import helmet from "helmet";
 import { createServer } from "http";
-import path from "path";
-import { fileURLToPath } from "url";
 
-import { db } from "./db";
 import { seedDatabase } from "./seed";
 import { registerRoutes } from "./routes";
 import { registerAuthRoutes } from "./auth";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 
 // Security middleware
 app.use(helmet({
-    contentSecurityPolicy: false, // Disable for development
+    contentSecurityPolicy: false,
 }));
 
 // Parse JSON and URL-encoded bodies
@@ -34,7 +29,7 @@ app.use(session({
     cookie: {
         secure: process.env.NODE_ENV === "production",
         httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        maxAge: 24 * 60 * 60 * 1000,
     },
 }));
 
@@ -43,18 +38,6 @@ registerAuthRoutes(app);
 
 // Register API routes
 registerRoutes(app);
-
-// Serve static files in production
-if (process.env.NODE_ENV === "production") {
-    app.use(express.static(path.join(__dirname, "public")));
-
-    // SPA fallback
-    app.get("*", (req, res) => {
-        if (!req.path.startsWith("/api")) {
-            res.sendFile(path.join(__dirname, "public", "index.html"));
-        }
-    });
-}
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
@@ -74,9 +57,16 @@ async function start() {
 
         const server = createServer(app);
 
+        // Setup Vite in development or serve static files in production
+        if (process.env.NODE_ENV === "production") {
+            serveStatic(app);
+        } else {
+            await setupVite(app, server);
+        }
+
         server.listen(PORT, "0.0.0.0", () => {
-            console.log(`🚀 Server running on port ${PORT}`);
-            console.log(`   Environment: ${process.env.NODE_ENV || "development"}`);
+            log(`Server running on port ${PORT}`);
+            log(`Environment: ${process.env.NODE_ENV || "development"}`);
         });
     } catch (error) {
         console.error("Failed to start server:", error);

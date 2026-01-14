@@ -8,6 +8,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./client/src"),
       "@shared": path.resolve(__dirname, "./shared"),
+      "@assets": path.resolve(__dirname, "./attached_assets"),
     },
   },
   root: ".",
@@ -17,6 +18,7 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
+    allowedHosts: true,
     proxy: {
       "/api": {
         target: "http://localhost:5000",
