@@ -66,8 +66,13 @@ export function MyTasks() {
     // New required fields
     const [newTaskDepartmentId, setNewTaskDepartmentId] = useState("");
     const [newTaskResponsibleUserId, setNewTaskResponsibleUserId] = useState("");
-    const [newTaskHierarchyLevel, setNewTaskHierarchyLevel] = useState<string>("");
-    const [newTaskParentItemId, setNewTaskParentItemId] = useState("");
+
+    // Cascading hierarchy selection (full chain visibility)
+    const [selectedSubgoalId, setSelectedSubgoalId] = useState("");
+    const [selectedPlanId, setSelectedPlanId] = useState("");
+    const [selectedProgramId, setSelectedProgramId] = useState("");
+    const [selectedProjectId, setSelectedProjectId] = useState("");
+    const [selectedInstructionId, setSelectedInstructionId] = useState("");
 
     // Completion report dialog state
     const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
@@ -97,43 +102,59 @@ export function MyTasks() {
         queryFn: () => apiRequest<any[]>("/api/ideal-scene"),
     });
 
-    // Build flattened hierarchy items based on selected department
-    const getHierarchyItems = (): HierarchyItem[] => {
+    // Get subgoals for selected department
+    const getSubgoals = () => {
         if (!idealScene || !newTaskDepartmentId) return [];
-
-        const items: HierarchyItem[] = [];
-
+        const subgoalsList: any[] = [];
         idealScene.forEach((mainGoal: any) => {
             if (mainGoal.departmentId !== newTaskDepartmentId) return;
-
             mainGoal.subgoals?.forEach((subgoal: any) => {
-                items.push({ id: subgoal.id, title: `Alcél: ${subgoal.title}`, level: "SUBGOAL", departmentId: subgoal.departmentId });
-
-                subgoal.plans?.forEach((plan: any) => {
-                    items.push({ id: plan.id, title: `  Terv: ${plan.title}`, level: "PLAN", departmentId: plan.departmentId });
-
-                    plan.programs?.forEach((program: any) => {
-                        items.push({ id: program.id, title: `    Program: ${program.title}`, level: "PROGRAM", departmentId: program.departmentId });
-
-                        program.projects?.forEach((project: any) => {
-                            items.push({ id: project.id, title: `      Projekt: ${project.title}`, level: "PROJECT", departmentId: project.departmentId });
-
-                            project.instructions?.forEach((instruction: any) => {
-                                items.push({ id: instruction.id, title: `        Utasítás: ${instruction.title}`, level: "INSTRUCTION", departmentId: instruction.departmentId });
-                            });
-                        });
-                    });
-                });
+                subgoalsList.push(subgoal);
             });
         });
-
-        return items;
+        return subgoalsList;
     };
 
-    // Filter hierarchy items by selected level
-    const getFilteredHierarchyItems = (): HierarchyItem[] => {
-        if (!newTaskHierarchyLevel) return [];
-        return getHierarchyItems().filter(item => item.level === newTaskHierarchyLevel);
+    // Get plans for selected subgoal
+    const getPlans = () => {
+        if (!selectedSubgoalId) return [];
+        const subgoals = getSubgoals();
+        const subgoal = subgoals.find((s: any) => s.id === selectedSubgoalId);
+        return subgoal?.plans || [];
+    };
+
+    // Get programs for selected plan
+    const getPrograms = () => {
+        if (!selectedPlanId) return [];
+        const plans = getPlans();
+        const plan = plans.find((p: any) => p.id === selectedPlanId);
+        return plan?.programs || [];
+    };
+
+    // Get projects for selected program
+    const getProjects = () => {
+        if (!selectedProgramId) return [];
+        const programs = getPrograms();
+        const program = programs.find((p: any) => p.id === selectedProgramId);
+        return program?.projects || [];
+    };
+
+    // Get instructions for selected project
+    const getInstructions = () => {
+        if (!selectedProjectId) return [];
+        const projects = getProjects();
+        const project = projects.find((p: any) => p.id === selectedProjectId);
+        return project?.instructions || [];
+    };
+
+    // Determine the lowest selected level and its ID for task creation
+    const getParentInfo = () => {
+        if (selectedInstructionId) return { level: "INSTRUCTION", parentId: selectedInstructionId };
+        if (selectedProjectId) return { level: "PROJECT", parentId: selectedProjectId };
+        if (selectedProgramId) return { level: "PROGRAM", parentId: selectedProgramId };
+        if (selectedPlanId) return { level: "PLAN", parentId: selectedPlanId };
+        if (selectedSubgoalId) return { level: "SUBGOAL", parentId: selectedSubgoalId };
+        return { level: "", parentId: "" };
     };
 
     // For now, we'll show all tasks (in production, filter by current user)
@@ -261,8 +282,12 @@ export function MyTasks() {
             setNewTaskTime("");
             setNewTaskDepartmentId("");
             setNewTaskResponsibleUserId("");
-            setNewTaskHierarchyLevel("");
-            setNewTaskParentItemId("");
+            // Reset cascading hierarchy
+            setSelectedSubgoalId("");
+            setSelectedPlanId("");
+            setSelectedProgramId("");
+            setSelectedProjectId("");
+            setSelectedInstructionId("");
         },
         onError: (error: Error) => {
             toast({
@@ -291,12 +316,10 @@ export function MyTasks() {
             toast({ title: "Responsible person is required", variant: "destructive" });
             return;
         }
-        if (!newTaskHierarchyLevel) {
-            toast({ title: "Hierarchy level is required", variant: "destructive" });
-            return;
-        }
-        if (!newTaskParentItemId) {
-            toast({ title: "Parent item is required", variant: "destructive" });
+
+        const parentInfo = getParentInfo();
+        if (!parentInfo.parentId) {
+            toast({ title: "Please select at least an Alcél (Subgoal)", variant: "destructive" });
             return;
         }
 
@@ -312,8 +335,8 @@ export function MyTasks() {
             dueDate,
             departmentId: newTaskDepartmentId,
             responsibleUserId: newTaskResponsibleUserId,
-            hierarchyLevel: newTaskHierarchyLevel,
-            parentItemId: newTaskParentItemId,
+            hierarchyLevel: parentInfo.level,
+            parentItemId: parentInfo.parentId,
             creatorId,
         });
     };
@@ -476,8 +499,12 @@ export function MyTasks() {
                                 value={newTaskDepartmentId}
                                 onChange={(e) => {
                                     setNewTaskDepartmentId(e.target.value);
-                                    setNewTaskHierarchyLevel("");
-                                    setNewTaskParentItemId("");
+                                    // Reset all cascading selections
+                                    setSelectedSubgoalId("");
+                                    setSelectedPlanId("");
+                                    setSelectedProgramId("");
+                                    setSelectedProjectId("");
+                                    setSelectedInstructionId("");
                                 }}
                                 className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
                             >
@@ -506,48 +533,111 @@ export function MyTasks() {
                             </select>
                         </div>
 
-                        {/* Hierarchy Level */}
-                        <div>
-                            <label className="text-sm font-medium flex items-center gap-2">
+                        {/* ═══════════════════════════════════════════════════════════════ */}
+                        {/* CASCADING HIERARCHY CHAIN                                        */}
+                        {/* ═══════════════════════════════════════════════════════════════ */}
+                        <div className="border-t pt-4 mt-2">
+                            <div className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
                                 <FolderTree className="h-4 w-4" />
-                                Hierarchy Level *
-                            </label>
-                            <select
-                                value={newTaskHierarchyLevel}
-                                onChange={(e) => {
-                                    setNewTaskHierarchyLevel(e.target.value);
-                                    setNewTaskParentItemId("");
-                                }}
-                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
-                                disabled={!newTaskDepartmentId}
-                            >
-                                <option value="">Select level...</option>
-                                <option value="SUBGOAL">Alcél (Subgoal)</option>
-                                <option value="PLAN">Terv (Plan)</option>
-                                <option value="PROGRAM">Program</option>
-                                <option value="PROJECT">Projekt (Project)</option>
-                                <option value="INSTRUCTION">Utasítás (Instruction)</option>
-                            </select>
-                        </div>
+                                Hierarchy Chain (Válaszd ki a szintet ahol a task tartozik)
+                            </div>
 
-                        {/* Parent Item */}
-                        <div>
-                            <label className="text-sm font-medium">Parent Item *</label>
-                            <select
-                                value={newTaskParentItemId}
-                                onChange={(e) => setNewTaskParentItemId(e.target.value)}
-                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
-                                disabled={!newTaskHierarchyLevel}
-                            >
-                                <option value="">Select parent item...</option>
-                                {getFilteredHierarchyItems().map(item => (
-                                    <option key={item.id} value={item.id}>{item.title}</option>
-                                ))}
-                            </select>
-                            {newTaskHierarchyLevel && getFilteredHierarchyItems().length === 0 && (
-                                <p className="text-xs text-amber-600 mt-1">
-                                    No {hierarchyLabels[newTaskHierarchyLevel] || newTaskHierarchyLevel} items found. Create one in Ideal Scene first.
-                                </p>
+                            {/* 1. Alcél (Subgoal) - Always shown if department selected */}
+                            {newTaskDepartmentId && (
+                                <div className="mb-3">
+                                    <label className="text-sm font-medium">1. Alcél (Subgoal) *</label>
+                                    <select
+                                        value={selectedSubgoalId}
+                                        onChange={(e) => {
+                                            setSelectedSubgoalId(e.target.value);
+                                            setSelectedPlanId("");
+                                            setSelectedProgramId("");
+                                            setSelectedProjectId("");
+                                            setSelectedInstructionId("");
+                                        }}
+                                        className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                    >
+                                        <option value="">Select Alcél...</option>
+                                        {getSubgoals().map((subgoal: any) => (
+                                            <option key={subgoal.id} value={subgoal.id}>{subgoal.title}</option>
+                                        ))}
+                                    </select>
+                                    {getSubgoals().length === 0 && (
+                                        <p className="text-xs text-amber-600 mt-1">
+                                            ⚠️ No Alcél found. Create one in Ideal Scene first.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* 2. Terv (Plan) */}
+                            {selectedSubgoalId && (
+                                <div className="mb-3 ml-4 border-l-2 border-blue-200 pl-3">
+                                    <label className="text-sm font-medium">2. Terv (Plan)</label>
+                                    <select
+                                        value={selectedPlanId}
+                                        onChange={(e) => {
+                                            setSelectedPlanId(e.target.value);
+                                            setSelectedProgramId("");
+                                            setSelectedProjectId("");
+                                            setSelectedInstructionId("");
+                                        }}
+                                        className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                    >
+                                        <option value="">Nincs terv kiválasztva</option>
+                                        {getPlans().map((plan: any) => (
+                                            <option key={plan.id} value={plan.id}>{plan.title}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            {/* 3. Program */}
+                            {selectedPlanId && (
+                                <div className="mb-3 ml-8 border-l-2 border-green-200 pl-3">
+                                    <label className="text-sm font-medium">3. Program</label>
+                                    <select
+                                        value={selectedProgramId}
+                                        onChange={(e) => {
+                                            setSelectedProgramId(e.target.value);
+                                            setSelectedProjectId("");
+                                            setSelectedInstructionId("");
+                                        }}
+                                        className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                    >
+                                        <option value="">Nincs program kiválasztva</option>
+                                        {getPrograms().map((program: any) => (
+                                            <option key={program.id} value={program.id}>{program.title}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            {/* 4. Projekt (Project) */}
+                            {selectedProgramId && (
+                                <div className="mb-3 ml-12 border-l-2 border-yellow-200 pl-3">
+                                    <label className="text-sm font-medium">4. Projekt</label>
+                                    <select
+                                        value={selectedProjectId}
+                                        onChange={(e) => {
+                                            setSelectedProjectId(e.target.value);
+                                            setSelectedInstructionId("");
+                                        }}
+                                        className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                    >
+                                        <option value="">Nincs projekt kiválasztva</option>
+                                        {getProjects().map((project: any) => (
+                                            <option key={project.id} value={project.id}>{project.title}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            {/* Current Selection Summary */}
+                            {selectedSubgoalId && (
+                                <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs">
+                                    <strong>Task will be created at:</strong> {getParentInfo().level || "Not selected"}
+                                </div>
                             )}
                         </div>
 
@@ -588,8 +678,7 @@ export function MyTasks() {
                                 !newTaskDate ||
                                 !newTaskDepartmentId ||
                                 !newTaskResponsibleUserId ||
-                                !newTaskHierarchyLevel ||
-                                !newTaskParentItemId
+                                !selectedSubgoalId
                             }
                         >
                             Create Task
