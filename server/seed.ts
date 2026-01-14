@@ -105,7 +105,7 @@ export async function seedDatabase() {
 
         // Create a default CEO user for testing (if not exists)
         const existingCeo = await db.query.users.findFirst({
-            where: eq(users.email, "ceo@example.com"),
+            where: eq(users.id, "user-ceo"),
         });
 
         if (!existingCeo) {
@@ -117,6 +117,8 @@ export async function seedDatabase() {
                 isActive: true,
             });
             console.log("  ✓ Created default CEO user");
+        } else {
+            console.log("  - CEO user already exists");
         }
 
         console.log("✅ Database seeding complete!");
