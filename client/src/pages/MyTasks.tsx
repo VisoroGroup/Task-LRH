@@ -664,8 +664,27 @@ export function MyTasks() {
                                             <div className="flex gap-2 mt-2">
                                                 <Button
                                                     size="sm"
-                                                    onClick={() => {
-                                                        const mainGoal = getMainGoal();
+                                                    onClick={async () => {
+                                                        let mainGoal = getMainGoal();
+
+                                                        // If no main goal exists for this department, create one automatically
+                                                        if (!mainGoal) {
+                                                            try {
+                                                                const newMainGoal = await apiRequest("/api/ideal-scene/main-goals", {
+                                                                    method: "POST",
+                                                                    body: JSON.stringify({
+                                                                        title: "Főcél - " + (departments?.find(d => d.id === newTaskDepartmentId)?.name || "Általános"),
+                                                                        departmentId: newTaskDepartmentId,
+                                                                    }),
+                                                                });
+                                                                mainGoal = newMainGoal as any;
+                                                                await queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
+                                                            } catch (error) {
+                                                                toast({ title: "Hiba a Főcél létrehozásánál", variant: "destructive" });
+                                                                return;
+                                                            }
+                                                        }
+
                                                         if (mainGoal && newSubgoalTitle.trim()) {
                                                             createSubgoalMutation.mutate({
                                                                 title: newSubgoalTitle.trim(),
