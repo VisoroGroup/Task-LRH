@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiRequest, cn, formatDate, statusLabels } from "@/lib/utils";
@@ -47,30 +47,40 @@ interface Subgoal {
     id: string;
     title: string;
     departmentId: string;
+    assignedUserId?: string | null;
+    assignedUser?: { id: string; name: string };
     plans?: Plan[];
 }
 
 interface Plan {
     id: string;
     title: string;
+    assignedUserId?: string | null;
+    assignedUser?: { id: string; name: string };
     programs?: Program[];
 }
 
 interface Program {
     id: string;
     title: string;
+    assignedUserId?: string | null;
+    assignedUser?: { id: string; name: string };
     projects?: Project[];
 }
 
 interface Project {
     id: string;
     title: string;
+    assignedUserId?: string | null;
+    assignedUser?: { id: string; name: string };
     instructions?: Instruction[];
 }
 
 interface Instruction {
     id: string;
     title: string;
+    assignedUserId?: string | null;
+    assignedUser?: { id: string; name: string };
 }
 
 interface Department {
@@ -152,12 +162,22 @@ function HierarchyNode({
     children,
     tasks,
     defaultExpanded = false,
+    assignedUser,
+    itemId,
+    itemType,
+    users,
+    onOwnerChange,
 }: {
     title: string;
     level: "mainGoal" | "subgoal" | "plan" | "program" | "project" | "instruction";
     children?: React.ReactNode;
     tasks?: Task[];
     defaultExpanded?: boolean;
+    assignedUser?: { id: string; name: string } | null;
+    itemId?: string;
+    itemType?: string;
+    users?: TeamMember[];
+    onOwnerChange?: (itemType: string, itemId: string, userId: string | null) => void;
 }) {
     const [isExpanded, setIsExpanded] = useState(defaultExpanded);
     const config = LEVEL_CONFIG[level];
@@ -182,7 +202,7 @@ function HierarchyNode({
 
             <div
                 className={cn(
-                    "flex items-center gap-3 py-2 px-3 rounded-lg cursor-pointer",
+                    "flex items-center gap-3 py-2 px-3 rounded-lg cursor-pointer group",
                     "hover:bg-white/5 transition-colors",
                     level === "mainGoal" && `bg-gradient-to-r ${config.gradient} text-white`
                 )}
@@ -212,6 +232,40 @@ function HierarchyNode({
                         {levelLabels[level]}
                     </div>
                 </div>
+
+                {/* Owner display/selector */}
+                {level !== "mainGoal" && itemId && itemType && users && onOwnerChange && (
+                    <div
+                        className="flex items-center gap-2"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <select
+                            value={assignedUser?.id || ""}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onOwnerChange(itemType, itemId, e.target.value || null)}
+                            className={cn(
+                                "px-2 py-1 rounded text-xs font-medium border bg-background",
+                                "opacity-0 group-hover:opacity-100 transition-opacity",
+                                assignedUser ? "border-primary/30 text-foreground" : "border-border text-muted-foreground"
+                            )}
+                        >
+                            <option value="">— Fără responsabil —</option>
+                            {users.map(u => (
+                                <option key={u.id} value={u.id}>{u.name}</option>
+                            ))}
+                        </select>
+                        {assignedUser && (
+                            <div
+                                className="flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-xs"
+                                title={assignedUser.name}
+                            >
+                                <div className="w-4 h-4 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white text-[8px] font-bold">
+                                    {assignedUser.name.charAt(0)}
+                                </div>
+                                <span className="max-w-[60px] truncate">{assignedUser.name}</span>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {tasks && tasks.length > 0 && (
                     <span className={cn(
@@ -262,6 +316,25 @@ export function TeamTasks() {
         queryKey: ["departments"],
         queryFn: () => apiRequest("/api/departments"),
     });
+
+    const queryClient = useQueryClient();
+
+    // Mutation to update hierarchy item owner
+    const updateOwnerMutation = useMutation({
+        mutationFn: async ({ type, id, userId }: { type: string; id: string; userId: string | null }) => {
+            return apiRequest(`/api/ideal-scene/${type}/${id}/owner`, {
+                method: "PUT",
+                body: JSON.stringify({ assignedUserId: userId }),
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
+        },
+    });
+
+    const handleOwnerChange = (itemType: string, itemId: string, userId: string | null) => {
+        updateOwnerMutation.mutate({ type: itemType, id: itemId, userId });
+    };
 
     // Filter tasks
     const filteredTasks = tasks.filter(task => {
@@ -388,6 +461,11 @@ export function TeamTasks() {
                                             level="subgoal"
                                             tasks={getTasksForItem("SUBGOAL", subgoal.id)}
                                             defaultExpanded={true}
+                                            itemId={subgoal.id}
+                                            itemType="subgoals"
+                                            users={users}
+                                            onOwnerChange={handleOwnerChange}
+                                            assignedUser={subgoal.assignedUser}
                                         >
                                             {subgoal.plans?.map((plan) => (
                                                 <HierarchyNode
@@ -395,6 +473,11 @@ export function TeamTasks() {
                                                     title={plan.title}
                                                     level="plan"
                                                     tasks={getTasksForItem("PLAN", plan.id)}
+                                                    itemId={plan.id}
+                                                    itemType="plans"
+                                                    users={users}
+                                                    onOwnerChange={handleOwnerChange}
+                                                    assignedUser={plan.assignedUser}
                                                 >
                                                     {plan.programs?.map((program) => (
                                                         <HierarchyNode
@@ -402,6 +485,11 @@ export function TeamTasks() {
                                                             title={program.title}
                                                             level="program"
                                                             tasks={getTasksForItem("PROGRAM", program.id)}
+                                                            itemId={program.id}
+                                                            itemType="programs"
+                                                            users={users}
+                                                            onOwnerChange={handleOwnerChange}
+                                                            assignedUser={program.assignedUser}
                                                         >
                                                             {program.projects?.map((project) => (
                                                                 <HierarchyNode
@@ -409,6 +497,11 @@ export function TeamTasks() {
                                                                     title={project.title}
                                                                     level="project"
                                                                     tasks={getTasksForItem("PROJECT", project.id)}
+                                                                    itemId={project.id}
+                                                                    itemType="projects"
+                                                                    users={users}
+                                                                    onOwnerChange={handleOwnerChange}
+                                                                    assignedUser={project.assignedUser}
                                                                 >
                                                                     {project.instructions?.map((instruction) => (
                                                                         <HierarchyNode
@@ -416,6 +509,11 @@ export function TeamTasks() {
                                                                             title={instruction.title}
                                                                             level="instruction"
                                                                             tasks={getTasksForItem("INSTRUCTION", instruction.id)}
+                                                                            itemId={instruction.id}
+                                                                            itemType="instructions"
+                                                                            users={users}
+                                                                            onOwnerChange={handleOwnerChange}
+                                                                            assignedUser={instruction.assignedUser}
                                                                         />
                                                                     ))}
                                                                 </HierarchyNode>
