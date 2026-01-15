@@ -68,6 +68,7 @@ export function MyTasks() {
         planId: "",
         programId: "",
         projectId: "",
+        instructionId: "",
     });
 
     // Completion report dialog state
@@ -217,7 +218,7 @@ export function MyTasks() {
         },
         onSuccess: (result: any) => {
             queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
-            setHierarchyPath(prev => ({ ...prev, subgoalId: result.id, planId: "", programId: "", projectId: "" }));
+            setHierarchyPath(prev => ({ ...prev, subgoalId: result.id, planId: "", programId: "", projectId: "", instructionId: "" }));
             toast({ title: "Alcél létrehozva!", variant: "success" as any });
         },
         onError: (error: Error) => {
@@ -234,7 +235,7 @@ export function MyTasks() {
         },
         onSuccess: (result: any) => {
             queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
-            setHierarchyPath(prev => ({ ...prev, planId: result.id, programId: "", projectId: "" }));
+            setHierarchyPath(prev => ({ ...prev, planId: result.id, programId: "", projectId: "", instructionId: "" }));
             toast({ title: "Terv létrehozva!", variant: "success" as any });
         },
         onError: (error: Error) => {
@@ -251,7 +252,7 @@ export function MyTasks() {
         },
         onSuccess: (result: any) => {
             queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
-            setHierarchyPath(prev => ({ ...prev, programId: result.id, projectId: "" }));
+            setHierarchyPath(prev => ({ ...prev, programId: result.id, projectId: "", instructionId: "" }));
             toast({ title: "Program létrehozva!", variant: "success" as any });
         },
         onError: (error: Error) => {
@@ -268,8 +269,25 @@ export function MyTasks() {
         },
         onSuccess: (result: any) => {
             queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
-            setHierarchyPath(prev => ({ ...prev, projectId: result.id }));
+            setHierarchyPath(prev => ({ ...prev, projectId: result.id, instructionId: "" }));
             toast({ title: "Projekt létrehozva!", variant: "success" as any });
+        },
+        onError: (error: Error) => {
+            toast({ title: "Hiba történt", description: error.message, variant: "destructive" });
+        },
+    });
+
+    const createInstructionMutation = useMutation({
+        mutationFn: async (data: { title: string; projectId: string; departmentId: string }) => {
+            return apiRequest("/api/ideal-scene/instructions", {
+                method: "POST",
+                body: JSON.stringify(data),
+            });
+        },
+        onSuccess: (result: any) => {
+            queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
+            setHierarchyPath(prev => ({ ...prev, instructionId: result.id }));
+            toast({ title: "Utasítás létrehozva!", variant: "success" as any });
         },
         onError: (error: Error) => {
             toast({ title: "Hiba történt", description: error.message, variant: "destructive" });
@@ -308,7 +326,7 @@ export function MyTasks() {
             setNewTaskDepartmentId("");
             setNewTaskResponsibleUserId("");
             // Reset hierarchy path
-            setHierarchyPath({ subgoalId: "", planId: "", programId: "", projectId: "" });
+            setHierarchyPath({ subgoalId: "", planId: "", programId: "", projectId: "", instructionId: "" });
         },
         onError: (error: Error) => {
             toast({
@@ -537,7 +555,7 @@ export function MyTasks() {
                                     onChange={(e) => {
                                         setNewTaskDepartmentId(e.target.value);
                                         // Reset hierarchy selection
-                                        setHierarchyPath({ subgoalId: "", planId: "", programId: "", projectId: "" });
+                                        setHierarchyPath({ subgoalId: "", planId: "", programId: "", projectId: "", instructionId: "" });
                                     }}
                                     className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
                                 >
@@ -634,6 +652,13 @@ export function MyTasks() {
                                     createProjectMutation.mutate({
                                         title,
                                         programId,
+                                        departmentId: newTaskDepartmentId,
+                                    });
+                                }}
+                                onCreateInstruction={(title, projectId) => {
+                                    createInstructionMutation.mutate({
+                                        title,
+                                        projectId,
                                         departmentId: newTaskDepartmentId,
                                     });
                                 }}
