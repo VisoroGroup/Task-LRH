@@ -423,7 +423,7 @@ export function registerRoutes(app: Express) {
     // Create Subgoal
     app.post("/api/ideal-scene/subgoals", async (req: Request, res: Response) => {
         try {
-            const { title, description, mainGoalId, departmentId } = req.body;
+            const { title, description, mainGoalId, departmentId, assignedUserId } = req.body;
 
             if (!title || !mainGoalId || !departmentId) {
                 return res.status(400).json({ error: "Title, mainGoalId, and departmentId are required" });
@@ -434,6 +434,7 @@ export function registerRoutes(app: Express) {
                 description,
                 mainGoalId,
                 departmentId,
+                assignedUserId: assignedUserId || null,
             }).returning();
 
             res.status(201).json(subgoal);
@@ -446,7 +447,7 @@ export function registerRoutes(app: Express) {
     // Create Plan (Terv)
     app.post("/api/ideal-scene/plans", async (req: Request, res: Response) => {
         try {
-            const { title, description, subgoalId, departmentId } = req.body;
+            const { title, description, subgoalId, departmentId, assignedUserId } = req.body;
 
             if (!title || !subgoalId || !departmentId) {
                 return res.status(400).json({ error: "Title, subgoalId, and departmentId are required" });
@@ -457,6 +458,7 @@ export function registerRoutes(app: Express) {
                 description,
                 subgoalId,
                 departmentId,
+                assignedUserId: assignedUserId || null,
             }).returning();
 
             res.status(201).json(plan);
@@ -492,7 +494,7 @@ export function registerRoutes(app: Express) {
     // Create Program (now references planId instead of subgoalId)
     app.post("/api/ideal-scene/programs", async (req: Request, res: Response) => {
         try {
-            const { title, description, planId, departmentId } = req.body;
+            const { title, description, planId, departmentId, assignedUserId } = req.body;
 
             if (!title || !planId || !departmentId) {
                 return res.status(400).json({ error: "Title, planId, and departmentId are required" });
@@ -503,6 +505,7 @@ export function registerRoutes(app: Express) {
                 description,
                 planId,
                 departmentId,
+                assignedUserId: assignedUserId || null,
             }).returning();
 
             res.status(201).json(program);
@@ -515,7 +518,7 @@ export function registerRoutes(app: Express) {
     // Create Project
     app.post("/api/ideal-scene/projects", async (req: Request, res: Response) => {
         try {
-            const { title, description, programId, departmentId } = req.body;
+            const { title, description, programId, departmentId, assignedUserId } = req.body;
 
             if (!title || !programId || !departmentId) {
                 return res.status(400).json({ error: "Title, programId, and departmentId are required" });
@@ -526,6 +529,7 @@ export function registerRoutes(app: Express) {
                 description,
                 programId,
                 departmentId,
+                assignedUserId: assignedUserId || null,
             }).returning();
 
             res.status(201).json(project);
@@ -538,7 +542,7 @@ export function registerRoutes(app: Express) {
     // Create Instruction
     app.post("/api/ideal-scene/instructions", async (req: Request, res: Response) => {
         try {
-            const { title, description, projectId, departmentId } = req.body;
+            const { title, description, projectId, departmentId, assignedUserId } = req.body;
 
             if (!title || !projectId || !departmentId) {
                 return res.status(400).json({ error: "Title, projectId, and departmentId are required" });
@@ -549,12 +553,66 @@ export function registerRoutes(app: Express) {
                 description,
                 projectId,
                 departmentId,
+                assignedUserId: assignedUserId || null,
             }).returning();
 
             res.status(201).json(instruction);
         } catch (error) {
             console.error("Error creating instruction:", error);
             res.status(500).json({ error: "Failed to create instruction" });
+        }
+    });
+
+    // Update hierarchy item owner
+    app.put("/api/ideal-scene/:type/:id/owner", async (req: Request, res: Response) => {
+        try {
+            const { type, id } = req.params;
+            const { assignedUserId } = req.body;
+
+            let result;
+            switch (type) {
+                case "subgoals":
+                    [result] = await db.update(subgoals)
+                        .set({ assignedUserId: assignedUserId || null, updatedAt: new Date() })
+                        .where(eq(subgoals.id, id))
+                        .returning();
+                    break;
+                case "plans":
+                    [result] = await db.update(plans)
+                        .set({ assignedUserId: assignedUserId || null, updatedAt: new Date() })
+                        .where(eq(plans.id, id))
+                        .returning();
+                    break;
+                case "programs":
+                    [result] = await db.update(programs)
+                        .set({ assignedUserId: assignedUserId || null, updatedAt: new Date() })
+                        .where(eq(programs.id, id))
+                        .returning();
+                    break;
+                case "projects":
+                    [result] = await db.update(projects)
+                        .set({ assignedUserId: assignedUserId || null, updatedAt: new Date() })
+                        .where(eq(projects.id, id))
+                        .returning();
+                    break;
+                case "instructions":
+                    [result] = await db.update(instructions)
+                        .set({ assignedUserId: assignedUserId || null, updatedAt: new Date() })
+                        .where(eq(instructions.id, id))
+                        .returning();
+                    break;
+                default:
+                    return res.status(400).json({ error: "Invalid hierarchy type" });
+            }
+
+            if (!result) {
+                return res.status(404).json({ error: "Item not found" });
+            }
+
+            res.json(result);
+        } catch (error) {
+            console.error("Error updating hierarchy owner:", error);
+            res.status(500).json({ error: "Failed to update owner" });
         }
     });
 
