@@ -367,17 +367,24 @@ export function registerRoutes(app: Express) {
                     subgoals: {
                         where: eq(subgoals.isActive, true),
                         with: {
+                            assignedUser: true,
                             plans: {
                                 where: eq(plans.isActive, true),
                                 with: {
+                                    assignedUser: true,
                                     programs: {
                                         where: eq(programs.isActive, true),
                                         with: {
+                                            assignedUser: true,
                                             projects: {
                                                 where: eq(projects.isActive, true),
                                                 with: {
+                                                    assignedUser: true,
                                                     instructions: {
                                                         where: eq(instructions.isActive, true),
+                                                        with: {
+                                                            assignedUser: true,
+                                                        },
                                                     },
                                                 },
                                             },
