@@ -582,12 +582,44 @@ export function registerRoutes(app: Express) {
                 orderBy: [desc(tasks.createdAt)],
             });
 
-            // Resolve hierarchy path for each task
+            // Resolve hierarchy path and main goal for each task
             const tasksWithPath = await Promise.all(taskList.map(async (task) => {
                 let hierarchyPath: string[] = [];
+                let mainGoalTitle: string | null = null;
 
                 try {
-                    if (task.hierarchyLevel === "PROJECT") {
+                    if (task.hierarchyLevel === "INSTRUCTION") {
+                        const instruction = await db.query.instructions.findFirst({
+                            where: eq(instructions.id, task.parentItemId),
+                            with: {
+                                project: {
+                                    with: {
+                                        program: {
+                                            with: {
+                                                plan: {
+                                                    with: {
+                                                        subgoal: {
+                                                            with: {
+                                                                mainGoal: true,
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        });
+                        if (instruction) {
+                            mainGoalTitle = instruction.project?.program?.plan?.subgoal?.mainGoal?.title || null;
+                            if (instruction.project?.program?.plan?.subgoal?.title) hierarchyPath.push(instruction.project.program.plan.subgoal.title);
+                            if (instruction.project?.program?.plan?.title) hierarchyPath.push(instruction.project.program.plan.title);
+                            if (instruction.project?.program?.title) hierarchyPath.push(instruction.project.program.title);
+                            if (instruction.project?.title) hierarchyPath.push(instruction.project.title);
+                            hierarchyPath.push(instruction.title);
+                        }
+                    } else if (task.hierarchyLevel === "PROJECT") {
                         const project = await db.query.projects.findFirst({
                             where: eq(projects.id, task.parentItemId),
                             with: {
@@ -595,7 +627,11 @@ export function registerRoutes(app: Express) {
                                     with: {
                                         plan: {
                                             with: {
-                                                subgoal: true,
+                                                subgoal: {
+                                                    with: {
+                                                        mainGoal: true,
+                                                    },
+                                                },
                                             },
                                         },
                                     },
@@ -603,6 +639,7 @@ export function registerRoutes(app: Express) {
                             },
                         });
                         if (project) {
+                            mainGoalTitle = project.program?.plan?.subgoal?.mainGoal?.title || null;
                             if (project.program?.plan?.subgoal?.title) hierarchyPath.push(project.program.plan.subgoal.title);
                             if (project.program?.plan?.title) hierarchyPath.push(project.program.plan.title);
                             if (project.program?.title) hierarchyPath.push(project.program.title);
@@ -614,12 +651,17 @@ export function registerRoutes(app: Express) {
                             with: {
                                 plan: {
                                     with: {
-                                        subgoal: true,
+                                        subgoal: {
+                                            with: {
+                                                mainGoal: true,
+                                            },
+                                        },
                                     },
                                 },
                             },
                         });
                         if (program) {
+                            mainGoalTitle = program.plan?.subgoal?.mainGoal?.title || null;
                             if (program.plan?.subgoal?.title) hierarchyPath.push(program.plan.subgoal.title);
                             if (program.plan?.title) hierarchyPath.push(program.plan.title);
                             hierarchyPath.push(program.title);
@@ -628,18 +670,27 @@ export function registerRoutes(app: Express) {
                         const plan = await db.query.plans.findFirst({
                             where: eq(plans.id, task.parentItemId),
                             with: {
-                                subgoal: true,
+                                subgoal: {
+                                    with: {
+                                        mainGoal: true,
+                                    },
+                                },
                             },
                         });
                         if (plan) {
+                            mainGoalTitle = plan.subgoal?.mainGoal?.title || null;
                             if (plan.subgoal?.title) hierarchyPath.push(plan.subgoal.title);
                             hierarchyPath.push(plan.title);
                         }
                     } else if (task.hierarchyLevel === "SUBGOAL") {
                         const subgoal = await db.query.subgoals.findFirst({
                             where: eq(subgoals.id, task.parentItemId),
+                            with: {
+                                mainGoal: true,
+                            },
                         });
                         if (subgoal) {
+                            mainGoalTitle = subgoal.mainGoal?.title || null;
                             hierarchyPath.push(subgoal.title);
                         }
                     }
@@ -647,7 +698,7 @@ export function registerRoutes(app: Express) {
                     console.error("Error resolving hierarchy for task", task.id, e);
                 }
 
-                return { ...task, hierarchyPath };
+                return { ...task, hierarchyPath, mainGoalTitle };
             }));
 
             res.json(tasksWithPath);

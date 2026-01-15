@@ -36,6 +36,8 @@ interface Task {
     department: { id: string; name: string };
     completionReport: any;
     hierarchyPath?: string[];
+    mainGoalTitle?: string | null;
+    responsibleUser?: { id: string; name: string; email: string };
 }
 
 interface Department {
@@ -404,10 +406,17 @@ export function MyTasks() {
                     {isOverdue && (
                         <span className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
                             <AlertCircle className="h-3 w-3" />
-                            Overdue
+                            Întirziat
                         </span>
                     )}
                 </div>
+
+                {/* Main Goal Display */}
+                {task.mainGoalTitle && (
+                    <div className="text-xs text-violet-500 dark:text-violet-400 font-medium mb-1">
+                        🎯 Obiectiv Principal: {task.mainGoalTitle}
+                    </div>
+                )}
 
                 <h4 className="font-medium mb-1">{task.title}</h4>
 
@@ -426,11 +435,17 @@ export function MyTasks() {
                 )}
 
                 <div className="text-xs text-muted-foreground space-y-1">
-                    <div>Department: {task.department?.name}</div>
+                    {task.responsibleUser && (
+                        <div className="flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            Responsabil: {task.responsibleUser.name}
+                        </div>
+                    )}
+                    <div>Departament: {task.department?.name}</div>
                     {task.dueDate && (
                         <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            Due: {formatDate(task.dueDate)}
+                            Termen: {formatDate(task.dueDate)}
                         </div>
                     )}
                 </div>
@@ -444,7 +459,7 @@ export function MyTasks() {
                                 variant="outline"
                                 onClick={() => updateStatusMutation.mutate({ taskId: task.id, status: "DOING" })}
                             >
-                                Start Working
+                                Începe Lucru
                             </Button>
                         )}
                         {task.status === "DOING" && (
@@ -454,7 +469,7 @@ export function MyTasks() {
                                 onClick={() => openCompleteDialog(task)}
                             >
                                 <Check className="h-3 w-3 mr-1" />
-                                Complete
+                                Finalizează
                             </Button>
                         )}
                     </div>
@@ -463,7 +478,7 @@ export function MyTasks() {
                 {task.status === "DONE" && task.completionReport && (
                     <div className="mt-3 p-2 bg-green-50 dark:bg-green-900/20 rounded text-xs">
                         <div className="font-medium text-green-700 dark:text-green-400">
-                            ✓ Completed with report
+                            ✓ Finalizat cu raport
                         </div>
                     </div>
                 )}
