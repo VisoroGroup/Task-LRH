@@ -4,6 +4,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { AuthProvider, RequireAuth } from "@/components/AuthProvider";
 import { CEODashboard } from "@/pages/CEODashboard";
 import { MyTasks } from "@/pages/MyTasks";
+import { TeamTasks } from "@/pages/TeamTasks";
 import { IdealScene } from "@/pages/IdealScene";
 import { Departments } from "@/pages/Departments";
 import { Calendar } from "@/pages/Calendar";
@@ -31,6 +32,11 @@ function AppRoutes() {
 
           {/* All authenticated users */}
           <Route path="/my-tasks" component={MyTasks} />
+          <Route path="/team-tasks">
+            <RequireAuth roles={["CEO", "EXECUTIVE"]}>
+              <TeamTasks />
+            </RequireAuth>
+          </Route>
           <Route path="/calendar" component={Calendar} />
 
           {/* CEO & EXECUTIVE routes */}
