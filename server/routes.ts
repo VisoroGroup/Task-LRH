@@ -14,6 +14,7 @@ import {
     tasks,
     completionReports,
     settings,
+    invitations,
     insertDepartmentSchema,
     insertTaskSchema,
     insertCompletionReportSchema,
@@ -1237,6 +1238,179 @@ export function registerRoutes(app: Express) {
         } catch (error) {
             console.error("Error updating setting:", error);
             res.status(500).json({ error: "Failed to update setting" });
+        }
+    });
+
+    // ============================================================================
+    // INVITATIONS (Team member email invitations)
+    // ============================================================================
+
+    // Get all invitations (CEO/EXECUTIVE only)
+    app.get("/api/invitations", async (req: Request, res: Response) => {
+        try {
+            const invitationList = await db.query.invitations.findMany({
+                with: {
+                    invitedBy: true,
+                },
+                orderBy: [desc(invitations.createdAt)],
+            });
+            res.json(invitationList);
+        } catch (error) {
+            console.error("Error fetching invitations:", error);
+            res.status(500).json({ error: "Failed to fetch invitations" });
+        }
+    });
+
+    // Create invitation (CEO/EXECUTIVE only)
+    app.post("/api/invitations", async (req: Request, res: Response) => {
+        try {
+            const { email, role } = req.body;
+            const invitedById = req.session?.userId;
+
+            if (!email) {
+                return res.status(400).json({ error: "Email is required" });
+            }
+
+            // Check if user already exists
+            const existingUser = await db.query.users.findFirst({
+                where: eq(users.email, email),
+            });
+
+            if (existingUser) {
+                return res.status(400).json({ error: "User with this email already exists" });
+            }
+
+            // Check if invitation already exists and is pending
+            const existingInvitation = await db.query.invitations.findFirst({
+                where: and(
+                    eq(invitations.email, email),
+                    isNull(invitations.acceptedAt)
+                ),
+            });
+
+            if (existingInvitation) {
+                return res.status(400).json({ error: "Invitation already sent to this email" });
+            }
+
+            // Generate unique token
+            const token = crypto.randomUUID();
+            const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+            const [invitation] = await db.insert(invitations).values({
+                email,
+                role: role || "USER",
+                token,
+                invitedById,
+                expiresAt,
+            }).returning();
+
+            // TODO: Send email with invitation link
+            // For now, return the token for manual sharing
+            res.json({
+                ...invitation,
+                inviteUrl: `/invite/${token}`,
+                message: "Invitation created. Share the invite URL with the team member.",
+            });
+        } catch (error) {
+            console.error("Error creating invitation:", error);
+            res.status(500).json({ error: "Failed to create invitation" });
+        }
+    });
+
+    // Validate invitation token
+    app.get("/api/invitations/validate/:token", async (req: Request, res: Response) => {
+        try {
+            const { token } = req.params;
+
+            const invitation = await db.query.invitations.findFirst({
+                where: eq(invitations.token, token),
+                with: {
+                    invitedBy: true,
+                },
+            });
+
+            if (!invitation) {
+                return res.status(404).json({ error: "Invitation not found" });
+            }
+
+            if (invitation.acceptedAt) {
+                return res.status(400).json({ error: "Invitation already accepted" });
+            }
+
+            if (new Date(invitation.expiresAt) < new Date()) {
+                return res.status(400).json({ error: "Invitation expired" });
+            }
+
+            res.json({
+                email: invitation.email,
+                role: invitation.role,
+                invitedBy: invitation.invitedBy?.name || "Unknown",
+                valid: true,
+            });
+        } catch (error) {
+            console.error("Error validating invitation:", error);
+            res.status(500).json({ error: "Failed to validate invitation" });
+        }
+    });
+
+    // Accept invitation (creates user account)
+    app.post("/api/invitations/accept/:token", async (req: Request, res: Response) => {
+        try {
+            const { token } = req.params;
+            const { name } = req.body;
+
+            const invitation = await db.query.invitations.findFirst({
+                where: eq(invitations.token, token),
+            });
+
+            if (!invitation) {
+                return res.status(404).json({ error: "Invitation not found" });
+            }
+
+            if (invitation.acceptedAt) {
+                return res.status(400).json({ error: "Invitation already accepted" });
+            }
+
+            if (new Date(invitation.expiresAt) < new Date()) {
+                return res.status(400).json({ error: "Invitation expired" });
+            }
+
+            // Create user
+            const [newUser] = await db.insert(users).values({
+                email: invitation.email,
+                name: name || invitation.email.split("@")[0],
+                role: invitation.role,
+            }).returning();
+
+            // Mark invitation as accepted
+            await db.update(invitations)
+                .set({ acceptedAt: new Date() })
+                .where(eq(invitations.id, invitation.id));
+
+            // Set session
+            req.session.userId = newUser.id;
+            req.session.userRole = newUser.role;
+
+            res.json({
+                message: "Invitation accepted! You are now logged in.",
+                user: newUser,
+            });
+        } catch (error) {
+            console.error("Error accepting invitation:", error);
+            res.status(500).json({ error: "Failed to accept invitation" });
+        }
+    });
+
+    // Delete invitation
+    app.delete("/api/invitations/:id", async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+
+            await db.delete(invitations).where(eq(invitations.id, id));
+            res.json({ success: true });
+        } catch (error) {
+            console.error("Error deleting invitation:", error);
+            res.status(500).json({ error: "Failed to delete invitation" });
         }
     });
 

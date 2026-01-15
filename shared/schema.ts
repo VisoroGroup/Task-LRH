@@ -77,6 +77,36 @@ export const users = pgTable("users", {
 export const usersRelations = relations(users, ({ many }) => ({
     tasks: many(tasks),
     createdTasks: many(tasks, { relationName: "taskCreator" }),
+    sentInvitations: many(invitations),
+}));
+
+// ============================================================================
+// INVITATIONS (Team member email invitations)
+// ============================================================================
+
+export const invitations = pgTable(
+    "invitations",
+    {
+        id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+        email: varchar("email").notNull(),
+        role: userRoleEnum("role").default("USER").notNull(),
+        token: varchar("token").unique().notNull(),
+        invitedById: varchar("invited_by_id").references(() => users.id),
+        expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+        acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+        createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    },
+    (table) => [
+        index("idx_invitations_email").on(table.email),
+        index("idx_invitations_token").on(table.token),
+    ]
+);
+
+export const invitationsRelations = relations(invitations, ({ one }) => ({
+    invitedBy: one(users, {
+        fields: [invitations.invitedById],
+        references: [users.id],
+    }),
 }));
 
 // ============================================================================
@@ -186,6 +216,7 @@ export const subgoals = pgTable(
         description: text("description"),
         mainGoalId: varchar("main_goal_id").references(() => mainGoals.id).notNull(),
         departmentId: varchar("department_id").references(() => departments.id).notNull(),
+        assignedUserId: varchar("assigned_user_id").references(() => users.id),
         isActive: boolean("is_active").default(true).notNull(),
         createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -205,6 +236,10 @@ export const subgoalsRelations = relations(subgoals, ({ one, many }) => ({
         fields: [subgoals.departmentId],
         references: [departments.id],
     }),
+    assignedUser: one(users, {
+        fields: [subgoals.assignedUserId],
+        references: [users.id],
+    }),
     plans: many(plans),
     tasks: many(tasks, { relationName: "subgoalTasks" }),
 }));
@@ -221,6 +256,7 @@ export const plans = pgTable(
         description: text("description"),
         subgoalId: varchar("subgoal_id").references(() => subgoals.id).notNull(),
         departmentId: varchar("department_id").references(() => departments.id).notNull(),
+        assignedUserId: varchar("assigned_user_id").references(() => users.id),
         isActive: boolean("is_active").default(true).notNull(),
         createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -240,6 +276,10 @@ export const plansRelations = relations(plans, ({ one, many }) => ({
         fields: [plans.departmentId],
         references: [departments.id],
     }),
+    assignedUser: one(users, {
+        fields: [plans.assignedUserId],
+        references: [users.id],
+    }),
     programs: many(programs),
     tasks: many(tasks, { relationName: "planTasks" }),
 }));
@@ -256,6 +296,7 @@ export const programs = pgTable(
         description: text("description"),
         planId: varchar("plan_id").references(() => plans.id).notNull(),
         departmentId: varchar("department_id").references(() => departments.id).notNull(),
+        assignedUserId: varchar("assigned_user_id").references(() => users.id),
         isActive: boolean("is_active").default(true).notNull(),
         createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -275,6 +316,10 @@ export const programsRelations = relations(programs, ({ one, many }) => ({
         fields: [programs.departmentId],
         references: [departments.id],
     }),
+    assignedUser: one(users, {
+        fields: [programs.assignedUserId],
+        references: [users.id],
+    }),
     projects: many(projects),
     tasks: many(tasks, { relationName: "programTasks" }),
 }));
@@ -291,6 +336,7 @@ export const projects = pgTable(
         description: text("description"),
         programId: varchar("program_id").references(() => programs.id).notNull(),
         departmentId: varchar("department_id").references(() => departments.id).notNull(),
+        assignedUserId: varchar("assigned_user_id").references(() => users.id),
         isActive: boolean("is_active").default(true).notNull(),
         createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -310,6 +356,10 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
         fields: [projects.departmentId],
         references: [departments.id],
     }),
+    assignedUser: one(users, {
+        fields: [projects.assignedUserId],
+        references: [users.id],
+    }),
     instructions: many(instructions),
     tasks: many(tasks, { relationName: "projectTasks" }),
 }));
@@ -326,6 +376,7 @@ export const instructions = pgTable(
         description: text("description"),
         projectId: varchar("project_id").references(() => projects.id).notNull(),
         departmentId: varchar("department_id").references(() => departments.id).notNull(),
+        assignedUserId: varchar("assigned_user_id").references(() => users.id),
         isActive: boolean("is_active").default(true).notNull(),
         createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -344,6 +395,10 @@ export const instructionsRelations = relations(instructions, ({ one, many }) => 
     department: one(departments, {
         fields: [instructions.departmentId],
         references: [departments.id],
+    }),
+    assignedUser: one(users, {
+        fields: [instructions.assignedUserId],
+        references: [users.id],
     }),
     tasks: many(tasks, { relationName: "instructionTasks" }),
 }));
