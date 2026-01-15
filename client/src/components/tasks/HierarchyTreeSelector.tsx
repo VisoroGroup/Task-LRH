@@ -38,7 +38,7 @@ interface HierarchyTreeSelectorProps {
 // Level configuration with vibrant gradients and icons
 const LEVELS = [
     {
-        name: "Alcél",
+        name: "Subobiectiv",
         icon: Target,
         gradient: "from-violet-500 to-purple-600",
         bgGradient: "from-violet-500/20 to-purple-600/20",
@@ -48,7 +48,7 @@ const LEVELS = [
         badge: "bg-violet-500/20 text-violet-400",
     },
     {
-        name: "Terv",
+        name: "Plan",
         icon: FileText,
         gradient: "from-blue-500 to-cyan-500",
         bgGradient: "from-blue-500/20 to-cyan-500/20",
@@ -68,7 +68,7 @@ const LEVELS = [
         badge: "bg-emerald-500/20 text-emerald-400",
     },
     {
-        name: "Projekt",
+        name: "Proiect",
         icon: FolderKanban,
         gradient: "from-amber-500 to-orange-500",
         bgGradient: "from-amber-500/20 to-orange-500/20",
@@ -78,7 +78,7 @@ const LEVELS = [
         badge: "bg-amber-500/20 text-amber-400",
     },
     {
-        name: "Utasítás",
+        name: "Instrucțiune",
         icon: ListChecks,
         gradient: "from-rose-500 to-pink-500",
         bgGradient: "from-rose-500/20 to-pink-500/20",
@@ -89,7 +89,7 @@ const LEVELS = [
     },
 ];
 
-const CHILD_LABELS = ["Terv", "Program", "Projekt", "Utasítás"];
+const CHILD_LABELS = ["Plan", "Program", "Proiect", "Instrucțiune"];
 
 // Premium Tree Node Component
 function TreeNode({
@@ -273,7 +273,7 @@ function InlineCreateForm({
             <div className="flex items-center gap-2 mb-3">
                 <Sparkles className={cn("h-4 w-4", config.iconColor)} />
                 <span className={cn("text-sm font-semibold", config.iconColor)}>
-                    Új {config.name} létrehozása
+                    Creare {config.name} nou
                 </span>
             </div>
             <input
@@ -288,7 +288,7 @@ function InlineCreateForm({
                     config.ring,
                     "placeholder:text-muted-foreground/50"
                 )}
-                placeholder={`${config.name} neve...`}
+                placeholder={`Numele ${config.name}...`}
                 autoFocus
                 onKeyDown={(e) => {
                     if (e.key === "Enter" && title.trim()) {
@@ -310,14 +310,14 @@ function InlineCreateForm({
                     disabled={!title.trim()}
                 >
                     <Plus className="h-4 w-4 mr-2" />
-                    Létrehozás
+                    Creează
                 </Button>
                 <Button
                     variant="ghost"
                     className="h-10 px-4"
                     onClick={onCancel}
                 >
-                    Mégse
+                    Anulează
                 </Button>
             </div>
         </div>
@@ -409,8 +409,8 @@ export function HierarchyTreeSelector({
                         <Target className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                        <div className="font-semibold text-sm">Admin Scale Hierarchia</div>
-                        <div className="text-xs text-muted-foreground">Kattints a kiválasztáshoz</div>
+                        <div className="font-semibold text-sm">Ierarhie Admin Scale</div>
+                        <div className="text-xs text-muted-foreground">Click pentru a selecta</div>
                     </div>
                 </div>
                 <Button
@@ -419,7 +419,7 @@ export function HierarchyTreeSelector({
                     onClick={() => setCreatingAt({ level: "subgoal", parentId: "" })}
                 >
                     <Plus className="h-4 w-4 mr-2" />
-                    Új Alcél
+                    + Subobiectiv nou
                 </Button>
             </div>
 
@@ -442,10 +442,10 @@ export function HierarchyTreeSelector({
                         <Plus className="h-8 w-8 text-violet-500" />
                     </div>
                     <p className="text-lg font-medium text-muted-foreground mb-2">
-                        Nincs alcél ehhez az osztályhoz
+                        Nu există subobiective pentru acest departament
                     </p>
                     <p className="text-sm text-muted-foreground">
-                        Kattints az "Új Alcél" gombra egy új alcél létrehozásához
+                        Click pe "Subobiectiv nou" pentru a crea unul
                     </p>
                 </div>
             ) : (
@@ -583,7 +583,7 @@ export function HierarchyTreeSelector({
                 <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
                     <div className="flex items-center gap-2 mb-2">
                         <Check className="h-4 w-4 text-primary" />
-                        <span className="font-semibold text-sm">Kiválasztott szint</span>
+                        <span className="font-semibold text-sm">Nivel selectat</span>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                         {(() => {

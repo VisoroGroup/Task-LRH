@@ -486,7 +486,7 @@ export function MyTasks() {
             <CardContent className="space-y-3">
                 {tasks.length === 0 ? (
                     <div className="text-center py-4 text-sm text-muted-foreground">
-                        No {title.toLowerCase()} tasks
+                        Nicio sarcină {title.toLowerCase()}
                     </div>
                 ) : (
                     statusKey === "DONE"
@@ -495,7 +495,7 @@ export function MyTasks() {
                 )}
                 {statusKey === "DONE" && tasks.length > 5 && (
                     <div className="text-center text-sm text-muted-foreground">
-                        +{tasks.length - 5} more completed
+                        +{tasks.length - 5} sarcini finalizateîn plus
                     </div>
                 )}
             </CardContent>
@@ -503,7 +503,7 @@ export function MyTasks() {
     );
 
     if (isLoading) {
-        return <div className="text-center py-8 text-muted-foreground">Loading tasks...</div>;
+        return <div className="text-center py-8 text-muted-foreground">Se încarcă sarcinile...</div>;
     }
 
     return (
@@ -511,12 +511,12 @@ export function MyTasks() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold">My Tasks</h2>
-                    <p className="text-muted-foreground">Your assigned action steps</p>
+                    <h2 className="text-2xl font-bold">Sarcinile Mele</h2>
+                    <p className="text-muted-foreground">Pașii de acțiune atribuiți ție</p>
                 </div>
                 <Button onClick={() => setIsNewTaskOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
-                    New Task
+                    Sarcină Nouă
                 </Button>
             </div>
 
@@ -524,9 +524,9 @@ export function MyTasks() {
             <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
                 <DialogContent className="max-w-4xl w-[80vw] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>Create New Task</DialogTitle>
+                        <DialogTitle>Creează Sarcină Nouă</DialogTitle>
                         <DialogDescription>
-                            Add a new task with all required information
+                            Adaugă o sarcină nouă cu toate informațiile necesare
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
@@ -534,13 +534,13 @@ export function MyTasks() {
                         <div className="space-y-4">
                             {/* Task Title */}
                             <div>
-                                <label className="text-sm font-medium">Task Title *</label>
+                                <label className="text-sm font-medium">Titlul Sarcinii *</label>
                                 <input
                                     type="text"
                                     value={newTaskTitle}
                                     onChange={(e) => setNewTaskTitle(e.target.value)}
                                     className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
-                                    placeholder="What needs to be done?"
+                                    placeholder="Ce trebuie făcut?"
                                 />
                             </div>
 
@@ -548,7 +548,7 @@ export function MyTasks() {
                             <div>
                                 <label className="text-sm font-medium flex items-center gap-2">
                                     <Building2 className="h-4 w-4" />
-                                    Department *
+                                    Departament *
                                 </label>
                                 <select
                                     value={newTaskDepartmentId}
@@ -559,7 +559,7 @@ export function MyTasks() {
                                     }}
                                     className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
                                 >
-                                    <option value="">Select department...</option>
+                                    <option value="">Selectează departament...</option>
                                     {departments?.map(dept => (
                                         <option key={dept.id} value={dept.id}>{dept.name}</option>
                                     ))}
@@ -570,14 +570,14 @@ export function MyTasks() {
                             <div>
                                 <label className="text-sm font-medium flex items-center gap-2">
                                     <User className="h-4 w-4" />
-                                    Responsible Person *
+                                    Persoana Responsabilă *
                                 </label>
                                 <select
                                     value={newTaskResponsibleUserId}
                                     onChange={(e) => setNewTaskResponsibleUserId(e.target.value)}
                                     className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
                                 >
-                                    <option value="">Select person...</option>
+                                    <option value="">Selectează persoana...</option>
                                     {users?.map(user => (
                                         <option key={user.id} value={user.id}>{user.name}</option>
                                     ))}
@@ -588,7 +588,7 @@ export function MyTasks() {
                             <div>
                                 <label className="text-sm font-medium flex items-center gap-2">
                                     <Calendar className="h-4 w-4" />
-                                    Due Date *
+                                    Data Limită *
                                 </label>
                                 <input
                                     type="date"
@@ -601,7 +601,7 @@ export function MyTasks() {
 
                             {/* Time (optional) */}
                             <div>
-                                <label className="text-sm font-medium">Time (optional)</label>
+                                <label className="text-sm font-medium">Ora (opțional)</label>
                                 <input
                                     type="time"
                                     value={newTaskTime}
@@ -615,7 +615,7 @@ export function MyTasks() {
                         <div className="border-l pl-6">
                             <div className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
                                 <FolderTree className="h-4 w-4" />
-                                Hierarchy Chain *
+                                Ierarhie *
                             </div>
                             <HierarchyTreeSelector
                                 departmentId={newTaskDepartmentId}
@@ -631,7 +631,7 @@ export function MyTasks() {
                                             departmentId: newTaskDepartmentId,
                                         });
                                     } else {
-                                        toast({ title: "Hiba: Nincs Főcél beállítva!", variant: "destructive" });
+                                        toast({ title: "Eroare: Nu există Obiectiv Principal!", variant: "destructive" });
                                     }
                                 }}
                                 onCreatePlan={(title, subgoalId) => {

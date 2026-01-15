@@ -25,12 +25,12 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-    { href: "/", label: "CEO Dashboard", icon: <LayoutDashboard className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
-    { href: "/my-tasks", label: "My Tasks", icon: <CheckSquare className="h-5 w-5" /> },
-    { href: "/ideal-scene", label: "Ideal Scene", icon: <Target className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
-    { href: "/departments", label: "Departments", icon: <Building2 className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
+    { href: "/", label: "Panou Director", icon: <LayoutDashboard className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
+    { href: "/my-tasks", label: "Sarcinile Mele", icon: <CheckSquare className="h-5 w-5" /> },
+    { href: "/ideal-scene", label: "Scenă Ideală", icon: <Target className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
+    { href: "/departments", label: "Departamente", icon: <Building2 className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
     { href: "/calendar", label: "Calendar", icon: <Calendar className="h-5 w-5" /> },
-    { href: "/settings", label: "Settings", icon: <Settings className="h-5 w-5" />, roles: ["CEO"] },
+    { href: "/settings", label: "Setări", icon: <Settings className="h-5 w-5" />, roles: ["CEO"] },
 ];
 
 interface MainLayoutProps {
@@ -136,7 +136,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                         ) : (
                             <>
                                 <ChevronLeft className="h-4 w-4 mr-2" />
-                                <span className="text-xs">Collapse</span>
+                                <span className="text-xs">Restrânge</span>
                             </>
                         )}
                     </Button>
@@ -155,7 +155,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                     <div className="flex h-full items-center justify-between px-8">
                         <div className="flex items-center gap-4">
                             <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-                                {navItems.find((item) => item.href === location)?.label || "Dashboard"}
+                                {navItems.find((item) => item.href === location)?.label || "Panou"}
                             </h1>
                         </div>
 
@@ -188,7 +188,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                                         className="text-white/40 hover:text-white hover:bg-white/5 rounded-xl px-4"
                                     >
                                         <LogOut className="h-4 w-4" />
-                                        <span className="hidden sm:inline ml-2 text-xs">Logout</span>
+                                        <span className="hidden sm:inline ml-2 text-xs">Deconectare</span>
                                     </Button>
                                 </>
                             )}

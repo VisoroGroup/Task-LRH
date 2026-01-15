@@ -30,7 +30,7 @@ export async function apiRequest<T>(
 export function formatDate(date: Date | string | null | undefined): string {
     if (!date) return "";
     const d = typeof date === "string" ? new Date(date) : date;
-    return d.toLocaleDateString("en-US", {
+    return d.toLocaleDateString("ro-RO", {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -40,7 +40,7 @@ export function formatDate(date: Date | string | null | undefined): string {
 export function formatDateTime(date: Date | string | null | undefined): string {
     if (!date) return "";
     const d = typeof date === "string" ? new Date(date) : date;
-    return d.toLocaleString("en-US", {
+    return d.toLocaleString("ro-RO", {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -57,19 +57,20 @@ export function daysSince(date: Date | string): number {
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
 }
 
-// Hierarchy level display names
+// Hierarchy level display names (Romanian)
 export const hierarchyLabels: Record<string, string> = {
-    SUBGOAL: "Subgoal",
+    SUBGOAL: "Subobiectiv",
+    PLAN: "Plan",
     PROGRAM: "Program",
-    PROJECT: "Project",
-    INSTRUCTION: "Instruction",
+    PROJECT: "Proiect",
+    INSTRUCTION: "Instrucțiune",
 };
 
-// Status display names
+// Status display names (Romanian)
 export const statusLabels: Record<string, string> = {
-    TODO: "To Do",
-    DOING: "In Progress",
-    DONE: "Completed",
+    TODO: "De făcut",
+    DOING: "În lucru",
+    DONE: "Finalizat",
 };
 
 // Flow status determination
