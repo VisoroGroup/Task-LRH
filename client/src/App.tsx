@@ -1,15 +1,23 @@
-import { Route, Switch, useLocation } from "wouter";
+import { Route, Switch, useLocation, useRoute } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { AuthProvider, RequireAuth } from "@/components/AuthProvider";
 import { CEODashboard } from "@/pages/CEODashboard";
 import { MyTasks } from "@/pages/MyTasks";
 import { TeamTasks } from "@/pages/TeamTasks";
+import { TeamSettings } from "@/pages/TeamSettings";
+import { AcceptInvitation } from "@/pages/AcceptInvitation";
 import { IdealScene } from "@/pages/IdealScene";
 import { Departments } from "@/pages/Departments";
 import { Calendar } from "@/pages/Calendar";
 import { Settings } from "@/pages/Settings";
 import { LoginPage } from "@/pages/LoginPage";
+
+// Wrapper component for invitation page with token param
+function InvitePage() {
+  const [, params] = useRoute("/invite/:token");
+  return <AcceptInvitation token={params?.token || ""} />;
+}
 
 function AppRoutes() {
   const [location] = useLocation();
@@ -17,6 +25,11 @@ function AppRoutes() {
   // Login page without layout
   if (location === "/login") {
     return <LoginPage />;
+  }
+
+  // Invitation page without auth
+  if (location.startsWith("/invite/")) {
+    return <InvitePage />;
   }
 
   return (
@@ -58,6 +71,12 @@ function AppRoutes() {
               <Settings />
             </RequireAuth>
           </Route>
+
+          <Route path="/team-settings">
+            <RequireAuth roles={["CEO", "EXECUTIVE"]}>
+              <TeamSettings />
+            </RequireAuth>
+          </Route>
         </Switch>
       </MainLayout>
     </RequireAuth>
@@ -74,3 +93,4 @@ function App() {
 }
 
 export default App;
+

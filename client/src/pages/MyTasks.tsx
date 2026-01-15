@@ -463,14 +463,24 @@ export function MyTasks() {
                             </Button>
                         )}
                         {task.status === "DOING" && (
-                            <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => openCompleteDialog(task)}
-                            >
-                                <Check className="h-3 w-3 mr-1" />
-                                Finalizează
-                            </Button>
+                            <>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => updateStatusMutation.mutate({ taskId: task.id, status: "TODO" })}
+                                    className="text-amber-600 border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                                >
+                                    ↩ Înapoi
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="default"
+                                    onClick={() => openCompleteDialog(task)}
+                                >
+                                    <Check className="h-3 w-3 mr-1" />
+                                    Finalizează
+                                </Button>
+                            </>
                         )}
                     </div>
                 )}

@@ -31,6 +31,7 @@ const navItems: NavItem[] = [
     { href: "/ideal-scene", label: "Scenă Ideală", icon: <Target className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
     { href: "/departments", label: "Departamente", icon: <Building2 className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
     { href: "/calendar", label: "Calendar", icon: <Calendar className="h-5 w-5" /> },
+    { href: "/team-settings", label: "Echipă", icon: <Settings className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
     { href: "/settings", label: "Setări", icon: <Settings className="h-5 w-5" />, roles: ["CEO"] },
 ];
 
