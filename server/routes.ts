@@ -582,7 +582,75 @@ export function registerRoutes(app: Express) {
                 orderBy: [desc(tasks.createdAt)],
             });
 
-            res.json(taskList);
+            // Resolve hierarchy path for each task
+            const tasksWithPath = await Promise.all(taskList.map(async (task) => {
+                let hierarchyPath: string[] = [];
+
+                try {
+                    if (task.hierarchyLevel === "PROJECT") {
+                        const project = await db.query.projects.findFirst({
+                            where: eq(projects.id, task.parentItemId),
+                            with: {
+                                program: {
+                                    with: {
+                                        plan: {
+                                            with: {
+                                                subgoal: true,
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        });
+                        if (project) {
+                            if (project.program?.plan?.subgoal?.title) hierarchyPath.push(project.program.plan.subgoal.title);
+                            if (project.program?.plan?.title) hierarchyPath.push(project.program.plan.title);
+                            if (project.program?.title) hierarchyPath.push(project.program.title);
+                            hierarchyPath.push(project.title);
+                        }
+                    } else if (task.hierarchyLevel === "PROGRAM") {
+                        const program = await db.query.programs.findFirst({
+                            where: eq(programs.id, task.parentItemId),
+                            with: {
+                                plan: {
+                                    with: {
+                                        subgoal: true,
+                                    },
+                                },
+                            },
+                        });
+                        if (program) {
+                            if (program.plan?.subgoal?.title) hierarchyPath.push(program.plan.subgoal.title);
+                            if (program.plan?.title) hierarchyPath.push(program.plan.title);
+                            hierarchyPath.push(program.title);
+                        }
+                    } else if (task.hierarchyLevel === "PLAN") {
+                        const plan = await db.query.plans.findFirst({
+                            where: eq(plans.id, task.parentItemId),
+                            with: {
+                                subgoal: true,
+                            },
+                        });
+                        if (plan) {
+                            if (plan.subgoal?.title) hierarchyPath.push(plan.subgoal.title);
+                            hierarchyPath.push(plan.title);
+                        }
+                    } else if (task.hierarchyLevel === "SUBGOAL") {
+                        const subgoal = await db.query.subgoals.findFirst({
+                            where: eq(subgoals.id, task.parentItemId),
+                        });
+                        if (subgoal) {
+                            hierarchyPath.push(subgoal.title);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error resolving hierarchy for task", task.id, e);
+                }
+
+                return { ...task, hierarchyPath };
+            }));
+
+            res.json(tasksWithPath);
         } catch (error) {
             console.error("Error fetching tasks:", error);
             res.status(500).json({ error: "Failed to fetch tasks" });

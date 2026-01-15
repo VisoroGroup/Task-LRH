@@ -22,6 +22,7 @@ import {
     Building2,
     User,
     FolderTree,
+    ChevronRight,
 } from "lucide-react";
 
 interface Task {
@@ -34,6 +35,7 @@ interface Task {
     lastUpdatedAt: string;
     department: { id: string; name: string };
     completionReport: any;
+    hierarchyPath?: string[];
 }
 
 interface Department {
@@ -389,7 +391,21 @@ export function MyTasks() {
                     )}
                 </div>
 
-                <h4 className="font-medium mb-2">{task.title}</h4>
+                <h4 className="font-medium mb-1">{task.title}</h4>
+
+                {/* Hierarchy Breadcrumb */}
+                {task.hierarchyPath && task.hierarchyPath.length > 0 && (
+                    <div className="flex items-center flex-wrap gap-0.5 text-xs text-muted-foreground mb-2">
+                        {task.hierarchyPath.map((item, idx) => (
+                            <span key={idx} className="flex items-center">
+                                <span className="truncate max-w-[80px]" title={item}>{item}</span>
+                                {idx < task.hierarchyPath!.length - 1 && (
+                                    <ChevronRight className="h-3 w-3 mx-0.5 flex-shrink-0" />
+                                )}
+                            </span>
+                        ))}
+                    </div>
+                )}
 
                 <div className="text-xs text-muted-foreground space-y-1">
                     <div>Department: {task.department?.name}</div>
