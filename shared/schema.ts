@@ -189,6 +189,7 @@ export const mainGoals = pgTable(
         id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
         title: varchar("title").notNull(),
         description: text("description"),
+        idealSceneContent: text("ideal_scene_content"), // Rich text content for the Ideal Scene document
         departmentId: varchar("department_id").references(() => departments.id).notNull(),
         isActive: boolean("is_active").default(true).notNull(),
         createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

@@ -427,6 +427,31 @@ export function registerRoutes(app: Express) {
         }
     });
 
+    // Update Main Goal Ideal Scene Content
+    app.put("/api/ideal-scene/main-goals/:id/content", async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+            const { idealSceneContent } = req.body;
+
+            const [updated] = await db.update(mainGoals)
+                .set({
+                    idealSceneContent,
+                    updatedAt: new Date()
+                })
+                .where(eq(mainGoals.id, id))
+                .returning();
+
+            if (!updated) {
+                return res.status(404).json({ error: "Main goal not found" });
+            }
+
+            res.json(updated);
+        } catch (error) {
+            console.error("Error updating ideal scene content:", error);
+            res.status(500).json({ error: "Failed to update ideal scene content" });
+        }
+    });
+
     // Create Subgoal
     app.post("/api/ideal-scene/subgoals", async (req: Request, res: Response) => {
         try {

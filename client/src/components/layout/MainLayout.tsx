@@ -28,7 +28,7 @@ const navItems: NavItem[] = [
     { href: "/", label: "Panou Director", icon: <LayoutDashboard className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
     { href: "/my-tasks", label: "Sarcinile Mele", icon: <CheckSquare className="h-5 w-5" /> },
     { href: "/team-tasks", label: "Sarcini Echipă", icon: <Building2 className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
-    { href: "/ideal-scene", label: "Scenă Ideală", icon: <Target className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
+    { href: "/ideal-scene", label: "Imaginea Ideală", icon: <Target className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
     { href: "/departments", label: "Departamente", icon: <Building2 className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
     { href: "/calendar", label: "Calendar", icon: <Calendar className="h-5 w-5" /> },
     { href: "/team-settings", label: "Echipă", icon: <Settings className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
@@ -92,31 +92,31 @@ export function MainLayout({ children }: MainLayoutProps) {
                     {visibleNavItems.map((item, index) => {
                         const isActive = location === item.href;
                         return (
-                            <Link key={item.href} href={item.href}>
-                                <a
-                                    className={cn(
-                                        "group flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300",
-                                        isActive
-                                            ? "bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-white border border-purple-500/30"
-                                            : "text-white/60 hover:text-white hover:bg-white/5",
-                                        collapsed && "justify-center px-3"
-                                    )}
-                                    style={{ animationDelay: `${index * 50}ms` }}
-                                >
-                                    <span className={cn(
-                                        "transition-transform duration-300",
-                                        isActive && "text-purple-400",
-                                        "group-hover:scale-110"
-                                    )}>
-                                        {item.icon}
-                                    </span>
-                                    {!collapsed && (
-                                        <span className="transition-all duration-300">{item.label}</span>
-                                    )}
-                                    {isActive && !collapsed && (
-                                        <Sparkles className="h-3 w-3 text-purple-400 ml-auto" />
-                                    )}
-                                </a>
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={cn(
+                                    "group flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300",
+                                    isActive
+                                        ? "bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-white border border-purple-500/30"
+                                        : "text-white/60 hover:text-white hover:bg-white/5",
+                                    collapsed && "justify-center px-3"
+                                )}
+                                style={{ animationDelay: `${index * 50}ms` }}
+                            >
+                                <span className={cn(
+                                    "transition-transform duration-300",
+                                    isActive && "text-purple-400",
+                                    "group-hover:scale-110"
+                                )}>
+                                    {item.icon}
+                                </span>
+                                {!collapsed && (
+                                    <span className="transition-all duration-300">{item.label}</span>
+                                )}
+                                {isActive && !collapsed && (
+                                    <Sparkles className="h-3 w-3 text-purple-400 ml-auto" />
+                                )}
                             </Link>
                         );
                     })}
