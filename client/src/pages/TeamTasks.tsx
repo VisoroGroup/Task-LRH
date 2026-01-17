@@ -397,24 +397,24 @@ function HierarchyNode({
                 <div className="ml-8 border-l-2 border-border/40 pl-4 space-y-1">
                     {/* Add new item input */}
                     {isAdding && onAddChild && childLevel && (
-                        <div className="flex items-center gap-2 py-2 px-3 bg-card/50 rounded-lg border border-border/50" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center gap-3 py-3 px-4 bg-card rounded-xl border border-primary/30 shadow-sm" onClick={(e) => e.stopPropagation()}>
                             <input
                                 type="text"
-                                placeholder={`Nume ${childLevelLabels[childLevel].toLowerCase()} nou...`}
+                                placeholder={`Introdu numele pentru ${childLevelLabels[childLevel].toLowerCase()} nou...`}
                                 value={newItemTitle}
                                 onChange={(e) => setNewItemTitle(e.target.value)}
                                 onKeyDown={(e) => e.key === "Enter" && handleAddChild()}
-                                className="flex-1 bg-transparent border-none focus:outline-none text-sm"
+                                className="flex-1 bg-background border border-border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
                                 autoFocus
                             />
                             <Button size="sm" onClick={handleAddChild} disabled={!newItemTitle.trim()}>
                                 Adaugă
                             </Button>
                             <button
-                                className="p-1 hover:bg-white/10 rounded"
+                                className="p-2 hover:bg-white/10 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
                                 onClick={() => { setIsAdding(false); setNewItemTitle(""); }}
                             >
-                                <X className="h-4 w-4 text-muted-foreground" />
+                                <X className="h-4 w-4" />
                             </button>
                         </div>
                     )}

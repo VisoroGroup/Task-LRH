@@ -526,10 +526,16 @@ export function registerRoutes(app: Express) {
     // Create Program (now references planId instead of subgoalId)
     app.post("/api/ideal-scene/programs", async (req: Request, res: Response) => {
         try {
-            const { title, description, planId, departmentId, assignedUserId } = req.body;
+            let { title, description, planId, departmentId, assignedUserId } = req.body;
 
-            if (!title || !planId || !departmentId) {
-                return res.status(400).json({ error: "Title, planId, and departmentId are required" });
+            if (!title || !planId) {
+                return res.status(400).json({ error: "Title and planId are required" });
+            }
+
+            // Auto-select first department if not provided
+            if (!departmentId) {
+                const [firstDept] = await db.select().from(departments).limit(1);
+                departmentId = firstDept?.id;
             }
 
             const [program] = await db.insert(programs).values({
@@ -550,10 +556,16 @@ export function registerRoutes(app: Express) {
     // Create Project
     app.post("/api/ideal-scene/projects", async (req: Request, res: Response) => {
         try {
-            const { title, description, programId, departmentId, assignedUserId } = req.body;
+            let { title, description, programId, departmentId, assignedUserId } = req.body;
 
-            if (!title || !programId || !departmentId) {
-                return res.status(400).json({ error: "Title, programId, and departmentId are required" });
+            if (!title || !programId) {
+                return res.status(400).json({ error: "Title and programId are required" });
+            }
+
+            // Auto-select first department if not provided
+            if (!departmentId) {
+                const [firstDept] = await db.select().from(departments).limit(1);
+                departmentId = firstDept?.id;
             }
 
             const [project] = await db.insert(projects).values({
@@ -574,10 +586,16 @@ export function registerRoutes(app: Express) {
     // Create Instruction
     app.post("/api/ideal-scene/instructions", async (req: Request, res: Response) => {
         try {
-            const { title, description, projectId, departmentId, assignedUserId } = req.body;
+            let { title, description, projectId, departmentId, assignedUserId } = req.body;
 
-            if (!title || !projectId || !departmentId) {
-                return res.status(400).json({ error: "Title, projectId, and departmentId are required" });
+            if (!title || !projectId) {
+                return res.status(400).json({ error: "Title and projectId are required" });
+            }
+
+            // Auto-select first department if not provided
+            if (!departmentId) {
+                const [firstDept] = await db.select().from(departments).limit(1);
+                departmentId = firstDept?.id;
             }
 
             const [instruction] = await db.insert(instructions).values({
