@@ -648,6 +648,115 @@ export function registerRoutes(app: Express) {
         }
     });
 
+    // Update hierarchy item title
+    app.put("/api/ideal-scene/:type/:id", async (req: Request, res: Response) => {
+        try {
+            const { type, id } = req.params;
+            const { title } = req.body;
+
+            if (!title) {
+                return res.status(400).json({ error: "Title is required" });
+            }
+
+            let result;
+            switch (type) {
+                case "subgoals":
+                    [result] = await db.update(subgoals)
+                        .set({ title, updatedAt: new Date() })
+                        .where(eq(subgoals.id, id))
+                        .returning();
+                    break;
+                case "plans":
+                    [result] = await db.update(plans)
+                        .set({ title, updatedAt: new Date() })
+                        .where(eq(plans.id, id))
+                        .returning();
+                    break;
+                case "programs":
+                    [result] = await db.update(programs)
+                        .set({ title, updatedAt: new Date() })
+                        .where(eq(programs.id, id))
+                        .returning();
+                    break;
+                case "projects":
+                    [result] = await db.update(projects)
+                        .set({ title, updatedAt: new Date() })
+                        .where(eq(projects.id, id))
+                        .returning();
+                    break;
+                case "instructions":
+                    [result] = await db.update(instructions)
+                        .set({ title, updatedAt: new Date() })
+                        .where(eq(instructions.id, id))
+                        .returning();
+                    break;
+                default:
+                    return res.status(400).json({ error: "Invalid hierarchy type" });
+            }
+
+            if (!result) {
+                return res.status(404).json({ error: "Item not found" });
+            }
+
+            res.json(result);
+        } catch (error) {
+            console.error("Error updating hierarchy item:", error);
+            res.status(500).json({ error: "Failed to update item" });
+        }
+    });
+
+    // Delete hierarchy item (soft delete)
+    app.delete("/api/ideal-scene/:type/:id", async (req: Request, res: Response) => {
+        try {
+            const { type, id } = req.params;
+
+            let result;
+            switch (type) {
+                case "subgoals":
+                    [result] = await db.update(subgoals)
+                        .set({ isActive: false, updatedAt: new Date() })
+                        .where(eq(subgoals.id, id))
+                        .returning();
+                    break;
+                case "plans":
+                    [result] = await db.update(plans)
+                        .set({ isActive: false, updatedAt: new Date() })
+                        .where(eq(plans.id, id))
+                        .returning();
+                    break;
+                case "programs":
+                    [result] = await db.update(programs)
+                        .set({ isActive: false, updatedAt: new Date() })
+                        .where(eq(programs.id, id))
+                        .returning();
+                    break;
+                case "projects":
+                    [result] = await db.update(projects)
+                        .set({ isActive: false, updatedAt: new Date() })
+                        .where(eq(projects.id, id))
+                        .returning();
+                    break;
+                case "instructions":
+                    [result] = await db.update(instructions)
+                        .set({ isActive: false, updatedAt: new Date() })
+                        .where(eq(instructions.id, id))
+                        .returning();
+                    break;
+                default:
+                    return res.status(400).json({ error: "Invalid hierarchy type" });
+            }
+
+            if (!result) {
+                return res.status(404).json({ error: "Item not found" });
+            }
+
+            res.json({ message: "Item deleted successfully" });
+        } catch (error) {
+            console.error("Error deleting hierarchy item:", error);
+            res.status(500).json({ error: "Failed to delete item" });
+        }
+    });
+
     // ============================================================================
     // TASKS
     // ============================================================================

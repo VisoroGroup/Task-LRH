@@ -175,6 +175,8 @@ function HierarchyNode({
     onOwnerChange,
     onAddChild,
     childLevel,
+    onEdit,
+    onDelete,
 }: {
     title: string;
     level: "mainGoal" | "subgoal" | "plan" | "program" | "project" | "instruction";
@@ -188,9 +190,13 @@ function HierarchyNode({
     onOwnerChange?: (itemType: string, itemId: string, userId: string | null) => void;
     onAddChild?: (title: string) => void;
     childLevel?: "subgoal" | "plan" | "program" | "project" | "instruction";
+    onEdit?: (newTitle: string) => void;
+    onDelete?: () => void;
 }) {
     const [isExpanded, setIsExpanded] = useState(defaultExpanded);
     const [isAdding, setIsAdding] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editTitle, setEditTitle] = useState(title);
     const [newItemTitle, setNewItemTitle] = useState("");
     const config = LEVEL_CONFIG[level];
     const Icon = config.icon;
@@ -253,7 +259,38 @@ function HierarchyNode({
                 </div>
 
                 <div className="flex-1 min-w-0">
-                    <div className="font-bold text-lg">{title}</div>
+                    {/* Editable title or display title */}
+                    {isEditing && onEdit ? (
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                            <input
+                                type="text"
+                                value={editTitle}
+                                onChange={(e) => setEditTitle(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        onEdit(editTitle);
+                                        setIsEditing(false);
+                                    } else if (e.key === "Escape") {
+                                        setEditTitle(title);
+                                        setIsEditing(false);
+                                    }
+                                }}
+                                className="flex-1 bg-background/50 border border-primary/30 rounded-lg px-3 py-1.5 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                autoFocus
+                            />
+                            <Button size="sm" onClick={() => { onEdit(editTitle); setIsEditing(false); }}>
+                                Salvează
+                            </Button>
+                            <button
+                                className="p-1.5 hover:bg-white/10 rounded-lg"
+                                onClick={() => { setEditTitle(title); setIsEditing(false); }}
+                            >
+                                <X className="h-4 w-4 text-muted-foreground" />
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="font-bold text-lg">{title}</div>
+                    )}
                     <div className="flex items-center gap-3">
                         <span className={cn(
                             "text-base",
@@ -312,6 +349,37 @@ function HierarchyNode({
                     >
                         <Plus className="h-4 w-4" />
                         {childLevelLabels[childLevel]}
+                    </button>
+                )}
+
+                {/* Edit button - visible on hover for non-mainGoal items */}
+                {level !== "mainGoal" && onEdit && !isEditing && (
+                    <button
+                        className="p-2 rounded-lg hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setEditTitle(title);
+                            setIsEditing(true);
+                        }}
+                        title="Editează"
+                    >
+                        <Edit2 className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                    </button>
+                )}
+
+                {/* Delete button - visible on hover for non-mainGoal items */}
+                {level !== "mainGoal" && onDelete && (
+                    <button
+                        className="p-2 rounded-lg hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm("Sigur doriți să ștergeți acest element?")) {
+                                onDelete();
+                            }
+                        }}
+                        title="Șterge"
+                    >
+                        <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
                     </button>
                 )}
 
@@ -453,6 +521,27 @@ export function TeamTasks() {
             return apiRequest("/api/ideal-scene/instructions", {
                 method: "POST",
                 body: JSON.stringify({ projectId, title }),
+            });
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
+    });
+
+    // Generic update mutation for hierarchy items
+    const updateHierarchyMutation = useMutation({
+        mutationFn: async ({ type, id, title }: { type: string; id: string; title: string }) => {
+            return apiRequest(`/api/ideal-scene/${type}/${id}`, {
+                method: "PUT",
+                body: JSON.stringify({ title }),
+            });
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
+    });
+
+    // Generic delete mutation for hierarchy items
+    const deleteHierarchyMutation = useMutation({
+        mutationFn: async ({ type, id }: { type: string; id: string }) => {
+            return apiRequest(`/api/ideal-scene/${type}/${id}`, {
+                method: "DELETE",
             });
         },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
@@ -625,6 +714,8 @@ export function TeamTasks() {
                                         assignedUser={subgoal.assignedUser}
                                         onAddChild={(title) => createPlanMutation.mutate({ subgoalId: subgoal.id, title })}
                                         childLevel="plan"
+                                        onEdit={(newTitle) => updateHierarchyMutation.mutate({ type: "subgoals", id: subgoal.id, title: newTitle })}
+                                        onDelete={() => deleteHierarchyMutation.mutate({ type: "subgoals", id: subgoal.id })}
                                     >
                                         {subgoal.plans?.map((plan) => (
                                             <HierarchyNode
@@ -639,6 +730,8 @@ export function TeamTasks() {
                                                 assignedUser={plan.assignedUser}
                                                 onAddChild={(title) => createProgramMutation.mutate({ planId: plan.id, title })}
                                                 childLevel="program"
+                                                onEdit={(newTitle) => updateHierarchyMutation.mutate({ type: "plans", id: plan.id, title: newTitle })}
+                                                onDelete={() => deleteHierarchyMutation.mutate({ type: "plans", id: plan.id })}
                                             >
                                                 {plan.programs?.map((program) => (
                                                     <HierarchyNode
@@ -653,6 +746,8 @@ export function TeamTasks() {
                                                         assignedUser={program.assignedUser}
                                                         onAddChild={(title) => createProjectMutation.mutate({ programId: program.id, title })}
                                                         childLevel="project"
+                                                        onEdit={(newTitle) => updateHierarchyMutation.mutate({ type: "programs", id: program.id, title: newTitle })}
+                                                        onDelete={() => deleteHierarchyMutation.mutate({ type: "programs", id: program.id })}
                                                     >
                                                         {program.projects?.map((project) => (
                                                             <HierarchyNode
@@ -667,6 +762,8 @@ export function TeamTasks() {
                                                                 assignedUser={project.assignedUser}
                                                                 onAddChild={(title) => createInstructionMutation.mutate({ projectId: project.id, title })}
                                                                 childLevel="instruction"
+                                                                onEdit={(newTitle) => updateHierarchyMutation.mutate({ type: "projects", id: project.id, title: newTitle })}
+                                                                onDelete={() => deleteHierarchyMutation.mutate({ type: "projects", id: project.id })}
                                                             >
                                                                 {project.instructions?.map((instruction) => (
                                                                     <HierarchyNode
@@ -679,6 +776,8 @@ export function TeamTasks() {
                                                                         users={users}
                                                                         onOwnerChange={handleOwnerChange}
                                                                         assignedUser={instruction.assignedUser}
+                                                                        onEdit={(newTitle) => updateHierarchyMutation.mutate({ type: "instructions", id: instruction.id, title: newTitle })}
+                                                                        onDelete={() => deleteHierarchyMutation.mutate({ type: "instructions", id: instruction.id })}
                                                                     />
                                                                 ))}
                                                             </HierarchyNode>
@@ -694,6 +793,6 @@ export function TeamTasks() {
                     )}
                 </CardContent>
             </Card>
-        </div>
+        </div >
     );
 }
