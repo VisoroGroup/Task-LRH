@@ -343,7 +343,7 @@ export function Departments() {
                                                 {dept.head ? (
                                                     <span className="flex items-center gap-1">
                                                         <User className="h-3 w-3" />
-                                                        Șef: {dept.head.name}
+                                                        Șef Departament: {dept.head.name}
                                                     </span>
                                                 ) : (
                                                     <span className="text-yellow-600">Niciun șef desemnat</span>
