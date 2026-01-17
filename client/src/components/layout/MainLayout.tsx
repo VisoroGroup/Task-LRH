@@ -50,11 +50,11 @@ export function MainLayout({ children }: MainLayoutProps) {
     );
 
     // Fetch main goal for mission banner
-    const { data: idealSceneData } = useQuery<{ mainGoals: Array<{ id: string; title: string; description: string | null }> }>({
+    const { data: mainGoals } = useQuery<Array<{ id: string; title: string; description: string | null }>>({
         queryKey: ["ideal-scene"],
         queryFn: () => apiRequest("/api/ideal-scene"),
     });
-    const mainGoal = idealSceneData?.mainGoals?.[0];
+    const mainGoal = mainGoals?.[0];
 
     return (
         <div className="min-h-screen flex">
