@@ -64,7 +64,46 @@ export async function seedDatabase() {
     console.log("🌱 Seeding database...");
 
     try {
-        // Seed departments
+        // First, force update sortOrder for ALL existing departments based on name patterns
+        const allDepts = await db.query.departments.findMany();
+
+        for (const existingDept of allDepts) {
+            const name = existingDept.name.toLowerCase();
+            let newSortOrder = 99;
+            let newName = existingDept.name;
+
+            if (name.includes("admin")) {
+                newSortOrder = 1;
+                newName = "Administrativ";
+            } else if (name.includes("hr") || name.includes("comunicare")) {
+                newSortOrder = 2;
+                newName = "HR - Comunicare";
+            } else if (name.includes("vânz") || name.includes("vanz") || name.includes("market")) {
+                newSortOrder = 3;
+                newName = "Vânzări - Marketing";
+            } else if (name.includes("financ")) {
+                newSortOrder = 4;
+                newName = "Financiar";
+            } else if (name.includes("produc")) {
+                newSortOrder = 5;
+                newName = "Producție";
+            } else if (name.includes("calit")) {
+                newSortOrder = 6;
+                newName = "Calitate";
+            } else if (name.includes("extind")) {
+                newSortOrder = 7;
+                newName = "Extindere";
+            }
+
+            if (newSortOrder !== 99) {
+                await db.update(departments)
+                    .set({ sortOrder: newSortOrder, name: newName })
+                    .where(eq(departments.id, existingDept.id));
+                console.log(`  ✓ Updated ${existingDept.name} → ${newName} (sortOrder: ${newSortOrder})`);
+            }
+        }
+
+        // Seed departments by ID (for new installs)
         for (const dept of defaultDepartments) {
             const existing = await db.query.departments.findFirst({
                 where: eq(departments.id, dept.id),
