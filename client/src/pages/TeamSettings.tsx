@@ -386,20 +386,18 @@ export function TeamSettings() {
                                         <option value="EXECUTIVE">Executiv</option>
                                         <option value="CEO">CEO</option>
                                     </select>
-                                    {user.id !== "user-ceo" && (
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="h-7 w-7 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                                            onClick={() => {
-                                                if (confirm(`Sigur vrei să ștergi pe ${user.name}?`)) {
-                                                    deleteUserMutation.mutate(user.id);
-                                                }
-                                            }}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    )}
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-7 w-7 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                                        onClick={() => {
+                                            if (confirm(`Sigur vrei să ștergi pe ${user.name}?`)) {
+                                                deleteUserMutation.mutate(user.id);
+                                            }
+                                        }}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
                                 </div>
                             ))}
                         </div>

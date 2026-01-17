@@ -1120,11 +1120,6 @@ export function registerRoutes(app: Express) {
         try {
             const { id } = req.params;
 
-            // Don't allow deleting the CEO user
-            if (id === "user-ceo") {
-                return res.status(400).json({ error: "Cannot delete CEO user" });
-            }
-
             const [deleted] = await db.update(users)
                 .set({ isActive: false, updatedAt: new Date() })
                 .where(eq(users.id, id))
