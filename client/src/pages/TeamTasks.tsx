@@ -18,6 +18,8 @@ import {
     AlertCircle,
     Plus,
     X,
+    Edit2,
+    Trash2,
 } from "lucide-react";
 
 interface Task {
@@ -43,6 +45,7 @@ interface TeamMember {
 interface MainGoal {
     id: string;
     title: string;
+    description: string | null;
     subgoals: Subgoal[];
 }
 
@@ -597,7 +600,7 @@ export function TeamTasks() {
                         idealScene.map((mainGoal) => (
                             <HierarchyNode
                                 key={mainGoal.id}
-                                title={mainGoal.title}
+                                title={mainGoal.description || "Misiune"}
                                 level="mainGoal"
                                 defaultExpanded={true}
                                 onAddChild={(title) => {

@@ -50,6 +50,7 @@ interface Department {
     posts: Post[];
     isActive: boolean;
     createdAt: string;
+    sortOrder: number;
 }
 
 export function Departments() {
@@ -314,14 +315,8 @@ export function Departments() {
             ) : (
                 <div className="space-y-4">
                     {[...(departments || [])].sort((a, b) => {
-                        // Sort by predefined order
-                        const order = ["Administrativ", "HR-Comunicare", "Vânzări", "Financiar", "Producție", "Calitate", "Extindere"];
-                        const aIdx = order.findIndex(n => a.name.toLowerCase().includes(n.toLowerCase()));
-                        const bIdx = order.findIndex(n => b.name.toLowerCase().includes(n.toLowerCase()));
-                        if (aIdx === -1 && bIdx === -1) return a.name.localeCompare(b.name);
-                        if (aIdx === -1) return 1;
-                        if (bIdx === -1) return -1;
-                        return aIdx - bIdx;
+                        // Sort by sortOrder from database
+                        return (a.sortOrder || 99) - (b.sortOrder || 99);
                     }).map((dept) => (
                         <Card key={dept.id}>
                             <CardHeader className="pb-3">
