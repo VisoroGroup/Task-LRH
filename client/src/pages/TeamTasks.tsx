@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { apiRequest, cn, formatDate, statusLabels } from "@/lib/utils";
 import {
     Target,
@@ -15,6 +16,8 @@ import {
     ChevronDown,
     ChevronRight,
     AlertCircle,
+    Plus,
+    X,
 } from "lucide-react";
 
 interface Task {
@@ -167,6 +170,8 @@ function HierarchyNode({
     itemType,
     users,
     onOwnerChange,
+    onAddChild,
+    childLevel,
 }: {
     title: string;
     level: "mainGoal" | "subgoal" | "plan" | "program" | "project" | "instruction";
@@ -178,8 +183,12 @@ function HierarchyNode({
     itemType?: string;
     users?: TeamMember[];
     onOwnerChange?: (itemType: string, itemId: string, userId: string | null) => void;
+    onAddChild?: (title: string) => void;
+    childLevel?: "subgoal" | "plan" | "program" | "project" | "instruction";
 }) {
     const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+    const [isAdding, setIsAdding] = useState(false);
+    const [newItemTitle, setNewItemTitle] = useState("");
     const config = LEVEL_CONFIG[level];
     const Icon = config.icon;
     const hasContent = (children && React.Children.count(children) > 0) || (tasks && tasks.length > 0);
@@ -191,6 +200,22 @@ function HierarchyNode({
         program: "Program",
         project: "Proiect",
         instruction: "Instrucțiune",
+    };
+
+    const childLevelLabels: Record<string, string> = {
+        subgoal: "Subobiectiv",
+        plan: "Plan",
+        program: "Program",
+        project: "Proiect",
+        instruction: "Instrucțiune",
+    };
+
+    const handleAddChild = () => {
+        if (newItemTitle.trim() && onAddChild) {
+            onAddChild(newItemTitle.trim());
+            setNewItemTitle("");
+            setIsAdding(false);
+        }
     };
 
     return (
@@ -210,7 +235,7 @@ function HierarchyNode({
                 onClick={() => setIsExpanded(!isExpanded)}
             >
                 <button className="flex-shrink-0 text-muted-foreground">
-                    {hasContent ? (
+                    {hasContent || onAddChild ? (
                         isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />
                     ) : (
                         <span className="w-5" />
@@ -272,6 +297,21 @@ function HierarchyNode({
                     </div>
                 )}
 
+                {/* Add child button - visible on hover */}
+                {onAddChild && childLevel && (
+                    <button
+                        className="px-3 py-1.5 rounded-lg text-sm font-medium bg-primary/10 text-primary hover:bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsExpanded(true);
+                            setIsAdding(true);
+                        }}
+                    >
+                        <Plus className="h-4 w-4" />
+                        {childLevelLabels[childLevel]}
+                    </button>
+                )}
+
                 {tasks && tasks.length > 0 && (
                     <span className={cn(
                         "px-3 py-1.5 rounded-lg text-sm font-medium",
@@ -284,6 +324,29 @@ function HierarchyNode({
 
             {isExpanded && (
                 <div className="ml-8 border-l-2 border-border/40 pl-4 space-y-1">
+                    {/* Add new item input */}
+                    {isAdding && onAddChild && childLevel && (
+                        <div className="flex items-center gap-2 py-2 px-3 bg-card/50 rounded-lg border border-border/50" onClick={(e) => e.stopPropagation()}>
+                            <input
+                                type="text"
+                                placeholder={`Nume ${childLevelLabels[childLevel].toLowerCase()} nou...`}
+                                value={newItemTitle}
+                                onChange={(e) => setNewItemTitle(e.target.value)}
+                                onKeyDown={(e) => e.key === "Enter" && handleAddChild()}
+                                className="flex-1 bg-transparent border-none focus:outline-none text-sm"
+                                autoFocus
+                            />
+                            <Button size="sm" onClick={handleAddChild} disabled={!newItemTitle.trim()}>
+                                Adaugă
+                            </Button>
+                            <button
+                                className="p-1 hover:bg-white/10 rounded"
+                                onClick={() => { setIsAdding(false); setNewItemTitle(""); }}
+                            >
+                                <X className="h-4 w-4 text-muted-foreground" />
+                            </button>
+                        </div>
+                    )}
                     {tasks?.map(task => <TaskCard key={task.id} task={task} />)}
                     {children}
                 </div>
@@ -340,6 +403,57 @@ export function TeamTasks() {
     const handleOwnerChange = (itemType: string, itemId: string, userId: string | null) => {
         updateOwnerMutation.mutate({ type: itemType, id: itemId, userId });
     };
+
+    // Mutations for creating hierarchy items
+    const createSubgoalMutation = useMutation({
+        mutationFn: async ({ mainGoalId, title, departmentId }: { mainGoalId: string; title: string; departmentId: string }) => {
+            return apiRequest("/api/ideal-scene/subgoals", {
+                method: "POST",
+                body: JSON.stringify({ mainGoalId, title, departmentId }),
+            });
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
+    });
+
+    const createPlanMutation = useMutation({
+        mutationFn: async ({ subgoalId, title }: { subgoalId: string; title: string }) => {
+            return apiRequest("/api/ideal-scene/plans", {
+                method: "POST",
+                body: JSON.stringify({ subgoalId, title }),
+            });
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
+    });
+
+    const createProgramMutation = useMutation({
+        mutationFn: async ({ planId, title }: { planId: string; title: string }) => {
+            return apiRequest("/api/ideal-scene/programs", {
+                method: "POST",
+                body: JSON.stringify({ planId, title }),
+            });
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
+    });
+
+    const createProjectMutation = useMutation({
+        mutationFn: async ({ programId, title }: { programId: string; title: string }) => {
+            return apiRequest("/api/ideal-scene/projects", {
+                method: "POST",
+                body: JSON.stringify({ programId, title }),
+            });
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
+    });
+
+    const createInstructionMutation = useMutation({
+        mutationFn: async ({ projectId, title }: { projectId: string; title: string }) => {
+            return apiRequest("/api/ideal-scene/instructions", {
+                method: "POST",
+                body: JSON.stringify({ projectId, title }),
+            });
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
+    });
 
     // Filter tasks
     const filteredTasks = tasks.filter(task => {
@@ -486,6 +600,13 @@ export function TeamTasks() {
                                 title={mainGoal.title}
                                 level="mainGoal"
                                 defaultExpanded={true}
+                                onAddChild={(title) => {
+                                    const firstDept = departments[0];
+                                    if (firstDept) {
+                                        createSubgoalMutation.mutate({ mainGoalId: mainGoal.id, title, departmentId: firstDept.id });
+                                    }
+                                }}
+                                childLevel="subgoal"
                             >
                                 {mainGoal.subgoals?.map((subgoal) => (
                                     <HierarchyNode
@@ -499,6 +620,8 @@ export function TeamTasks() {
                                         users={users}
                                         onOwnerChange={handleOwnerChange}
                                         assignedUser={subgoal.assignedUser}
+                                        onAddChild={(title) => createPlanMutation.mutate({ subgoalId: subgoal.id, title })}
+                                        childLevel="plan"
                                     >
                                         {subgoal.plans?.map((plan) => (
                                             <HierarchyNode
@@ -511,6 +634,8 @@ export function TeamTasks() {
                                                 users={users}
                                                 onOwnerChange={handleOwnerChange}
                                                 assignedUser={plan.assignedUser}
+                                                onAddChild={(title) => createProgramMutation.mutate({ planId: plan.id, title })}
+                                                childLevel="program"
                                             >
                                                 {plan.programs?.map((program) => (
                                                     <HierarchyNode
@@ -523,6 +648,8 @@ export function TeamTasks() {
                                                         users={users}
                                                         onOwnerChange={handleOwnerChange}
                                                         assignedUser={program.assignedUser}
+                                                        onAddChild={(title) => createProjectMutation.mutate({ programId: program.id, title })}
+                                                        childLevel="project"
                                                     >
                                                         {program.projects?.map((project) => (
                                                             <HierarchyNode
@@ -535,6 +662,8 @@ export function TeamTasks() {
                                                                 users={users}
                                                                 onOwnerChange={handleOwnerChange}
                                                                 assignedUser={project.assignedUser}
+                                                                onAddChild={(title) => createInstructionMutation.mutate({ projectId: project.id, title })}
+                                                                childLevel="instruction"
                                                             >
                                                                 {project.instructions?.map((instruction) => (
                                                                     <HierarchyNode
