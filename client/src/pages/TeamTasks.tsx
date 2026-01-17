@@ -700,7 +700,9 @@ export function TeamTasks() {
                                 }}
                                 childLevel="subgoal"
                             >
-                                {mainGoal.subgoals?.map((subgoal) => (
+                                {mainGoal.subgoals?.filter((subgoal) =>
+                                    !selectedDepartment || subgoal.departmentId === selectedDepartment
+                                ).map((subgoal) => (
                                     <HierarchyNode
                                         key={subgoal.id}
                                         title={subgoal.title}
