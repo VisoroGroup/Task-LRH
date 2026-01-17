@@ -443,30 +443,24 @@ export function MyTasks() {
                 {/* Expandable Hierarchy Section */}
                 {task.hierarchyPath && task.hierarchyPath.length > 0 && (
                     <div className="mb-2">
-                        {/* Collapsed view - click to expand */}
+                        {/* Expand/Collapse button - Always visible and prominent */}
                         <button
                             onClick={() => setIsExpanded(!isExpanded)}
-                            className="w-full text-left group"
-                        >
-                            {!isExpanded ? (
-                                <div className="flex items-center flex-wrap gap-0.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                                    {task.hierarchyPath.map((item, idx) => (
-                                        <span key={idx} className="flex items-center">
-                                            <span className="truncate max-w-[80px]" title={item}>{item}</span>
-                                            {idx < task.hierarchyPath!.length - 1 && (
-                                                <ChevronRight className="h-3 w-3 mx-0.5 flex-shrink-0" />
-                                            )}
-                                        </span>
-                                    ))}
-                                    <span className="ml-2 text-blue-500 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-                                        ▼ Extinde
-                                    </span>
-                                </div>
-                            ) : (
-                                <div className="text-xs text-muted-foreground hover:text-foreground">
-                                    <span className="text-blue-500">▲ Restrânge</span>
-                                </div>
+                            className={cn(
+                                "w-full text-left px-3 py-2 rounded-lg flex items-center justify-between transition-all",
+                                isExpanded
+                                    ? "bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400"
+                                    : "bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
                             )}
+                        >
+                            <div className="flex items-center gap-2 text-sm font-medium">
+                                <FolderTree className="h-4 w-4" />
+                                {isExpanded ? "Ascunde fluxul" : "Vizualizează fluxul complet"}
+                            </div>
+                            <ChevronRight className={cn(
+                                "h-4 w-4 transition-transform",
+                                isExpanded && "rotate-90"
+                            )} />
                         </button>
 
                         {/* Expanded view - full hierarchy */}
