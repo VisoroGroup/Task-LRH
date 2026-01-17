@@ -421,10 +421,20 @@ export function MyTasks() {
                     )}
                 </div>
 
-                {/* Main Goal Display */}
+                {/* Main Goal Display - Always fully visible and prominent */}
                 {task.mainGoalTitle && (
-                    <div className="text-xs text-violet-500 dark:text-violet-400 font-medium mb-1">
-                        🎯 Obiectiv Principal: {task.mainGoalTitle}
+                    <div className="mb-3 p-2.5 bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-300 dark:border-violet-600/50 rounded-lg">
+                        <div className="flex items-start gap-2">
+                            <span className="text-lg">🎯</span>
+                            <div>
+                                <div className="text-[10px] uppercase tracking-wider text-violet-600 dark:text-violet-400 font-semibold mb-0.5">
+                                    Obiectiv Principal
+                                </div>
+                                <div className="text-sm font-bold text-violet-700 dark:text-violet-300">
+                                    {task.mainGoalTitle}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
 
