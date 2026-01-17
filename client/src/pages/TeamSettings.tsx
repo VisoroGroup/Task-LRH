@@ -53,6 +53,7 @@ export function TeamSettings() {
     const queryClient = useQueryClient();
     const { toast } = useToast();
     const [newEmail, setNewEmail] = useState("");
+    const [newName, setNewName] = useState("");
     const [newRole, setNewRole] = useState<"CEO" | "EXECUTIVE" | "USER">("USER");
     const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
@@ -70,7 +71,7 @@ export function TeamSettings() {
 
     // Create invitation mutation
     const createInvitationMutation = useMutation({
-        mutationFn: async (data: { email: string; role: string }) => {
+        mutationFn: async (data: { email: string; name?: string; role: string }) => {
             return apiRequest("/api/invitations", {
                 method: "POST",
                 body: JSON.stringify(data),
@@ -78,7 +79,9 @@ export function TeamSettings() {
         },
         onSuccess: (result: any) => {
             queryClient.invalidateQueries({ queryKey: ["invitations"] });
+            queryClient.invalidateQueries({ queryKey: ["users"] });
             setNewEmail("");
+            setNewName("");
             setNewRole("USER");
             toast({
                 title: "Invitație trimisă!",
@@ -124,7 +127,7 @@ export function TeamSettings() {
             toast({ title: "Introdu adresa de email", variant: "destructive" });
             return;
         }
-        createInvitationMutation.mutate({ email: newEmail, role: newRole });
+        createInvitationMutation.mutate({ email: newEmail, name: newName || undefined, role: newRole });
     };
 
     const copyInviteLink = (token: string) => {
@@ -177,6 +180,15 @@ export function TeamSettings() {
                                     />
                                 </div>
                             </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Nume (opțional)</label>
+                            <Input
+                                type="text"
+                                placeholder="Ion Popescu"
+                                value={newName}
+                                onChange={(e) => setNewName(e.target.value)}
+                            />
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Rol *</label>
