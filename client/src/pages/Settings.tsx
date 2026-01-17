@@ -164,7 +164,7 @@ export function Settings() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Target className="h-5 w-5 text-purple-500" />
-                                Company Main Goal (Misiune)
+                                Misiunea companiei
                             </CardTitle>
                             <CardDescription>
                                 Obiectivul principal al companiei. Setați-l o singură dată și se aplică tuturor departamentelor.
