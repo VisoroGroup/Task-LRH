@@ -226,18 +226,33 @@ function HierarchyNode({
 
                 <div className="flex-1 min-w-0">
                     <div className="font-semibold text-base">{title}</div>
-                    <div className={cn(
-                        "text-sm",
-                        level === "mainGoal" ? "text-white/70" : "text-muted-foreground"
-                    )}>
-                        {levelLabels[level]}
+                    <div className="flex items-center gap-3">
+                        <span className={cn(
+                            "text-sm",
+                            level === "mainGoal" ? "text-white/70" : "text-muted-foreground"
+                        )}>
+                            {levelLabels[level]}
+                        </span>
+                        {/* Owner display inline with type label */}
+                        {level !== "mainGoal" && assignedUser && (
+                            <div className="flex items-center gap-2 text-sm">
+                                <span className="text-muted-foreground">•</span>
+                                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white text-[10px] font-bold">
+                                    {assignedUser.name.charAt(0)}
+                                </div>
+                                <span className="font-medium text-primary">{assignedUser.name}</span>
+                            </div>
+                        )}
+                        {level !== "mainGoal" && !assignedUser && (
+                            <span className="text-sm text-yellow-500">• Fără responsabil</span>
+                        )}
                     </div>
                 </div>
 
-                {/* Owner display/selector - always visible */}
+                {/* Owner selector - only on hover */}
                 {level !== "mainGoal" && itemId && itemType && users && onOwnerChange && (
                     <div
-                        className="flex items-center gap-3 ml-auto"
+                        className="flex items-center gap-3"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <select
@@ -249,22 +264,11 @@ function HierarchyNode({
                                 assignedUser ? "border-primary/30 text-foreground" : "border-border text-muted-foreground"
                             )}
                         >
-                            <option value="">— Fr responsabil —</option>
+                            <option value="">— Fără responsabil —</option>
                             {users.map(u => (
                                 <option key={u.id} value={u.id}>{u.name}</option>
                             ))}
                         </select>
-                        {assignedUser && (
-                            <div
-                                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 text-sm font-medium"
-                                title={assignedUser.name}
-                            >
-                                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
-                                    {assignedUser.name.charAt(0)}
-                                </div>
-                                <span>{assignedUser.name}</span>
-                            </div>
-                        )}
                     </div>
                 )}
 
