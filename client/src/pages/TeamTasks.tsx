@@ -388,176 +388,180 @@ export function TeamTasks() {
     }
 
     return (
-        <div className="flex gap-6">
-            {/* Left Sidebar - Team Members */}
-            <Card className="w-64 flex-shrink-0">
-                <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        Membrii echipei
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-1">
-                    <button
-                        className={cn(
-                            "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left text-sm transition-colors",
-                            selectedMember === null
-                                ? "bg-primary/10 text-primary"
-                                : "hover:bg-white/5"
-                        )}
-                        onClick={() => setSelectedMember(null)}
-                    >
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                            <Users className="h-4 w-4 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <div className="font-medium truncate">Toți</div>
-                            <div className="text-xs text-muted-foreground">{tasks.length} sarcini</div>
-                        </div>
-                    </button>
-
-                    {users.map(user => (
-                        <button
-                            key={user.id}
-                            className={cn(
-                                "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left text-sm transition-colors",
-                                selectedMember === user.id
-                                    ? "bg-primary/10 text-primary"
-                                    : "hover:bg-white/5"
-                            )}
-                            onClick={() => setSelectedMember(user.id)}
-                        >
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
-                                {user.name.charAt(0)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="font-medium truncate">{user.name}</div>
-                                <div className="text-xs text-muted-foreground">
-                                    {getTaskCountForUser(user.id)} sarcini
-                                </div>
-                            </div>
-                        </button>
-                    ))}
-                </CardContent>
-            </Card>
-
-            {/* Main Content - Hierarchical Tree */}
-            <div className="flex-1 space-y-4">
-                {/* Header with filters */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h2 className="text-2xl font-bold">Sarcini echipă</h2>
-                        <p className="text-muted-foreground">
-                            {filteredTasks.length} sarcini
-                            {selectedMember && ` pentru ${users.find(u => u.id === selectedMember)?.name}`}
-                        </p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <select
-                            value={selectedDepartment || ""}
-                            onChange={(e) => setSelectedDepartment(e.target.value || null)}
-                            className="px-3 py-2 rounded-lg bg-background border text-sm"
-                        >
-                            <option value="">Toate departamentele</option>
-                            {departments.map(dept => (
-                                <option key={dept.id} value={dept.id}>{dept.name}</option>
-                            ))}
-                        </select>
-                    </div>
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold">Sarcini echipă</h1>
+                    <p className="text-lg text-muted-foreground mt-1">
+                        Structura organizațională și responsabilități
+                    </p>
                 </div>
 
-                {/* Hierarchical Tree View */}
-                <Card>
-                    <CardContent className="p-4 space-y-2">
-                        {idealScene.length === 0 ? (
-                            <div className="text-center py-8 text-muted-foreground">
-                                Nu există obiective definite
-                            </div>
-                        ) : (
-                            idealScene.map((mainGoal) => (
-                                <HierarchyNode
-                                    key={mainGoal.id}
-                                    title={mainGoal.title}
-                                    level="mainGoal"
-                                    defaultExpanded={true}
-                                >
-                                    {mainGoal.subgoals?.map((subgoal) => (
-                                        <HierarchyNode
-                                            key={subgoal.id}
-                                            title={subgoal.title}
-                                            level="subgoal"
-                                            tasks={getTasksForItem("SUBGOAL", subgoal.id)}
-                                            defaultExpanded={true}
-                                            itemId={subgoal.id}
-                                            itemType="subgoals"
-                                            users={users}
-                                            onOwnerChange={handleOwnerChange}
-                                            assignedUser={subgoal.assignedUser}
-                                        >
-                                            {subgoal.plans?.map((plan) => (
-                                                <HierarchyNode
-                                                    key={plan.id}
-                                                    title={plan.title}
-                                                    level="plan"
-                                                    tasks={getTasksForItem("PLAN", plan.id)}
-                                                    itemId={plan.id}
-                                                    itemType="plans"
-                                                    users={users}
-                                                    onOwnerChange={handleOwnerChange}
-                                                    assignedUser={plan.assignedUser}
-                                                >
-                                                    {plan.programs?.map((program) => (
-                                                        <HierarchyNode
-                                                            key={program.id}
-                                                            title={program.title}
-                                                            level="program"
-                                                            tasks={getTasksForItem("PROGRAM", program.id)}
-                                                            itemId={program.id}
-                                                            itemType="programs"
-                                                            users={users}
-                                                            onOwnerChange={handleOwnerChange}
-                                                            assignedUser={program.assignedUser}
-                                                        >
-                                                            {program.projects?.map((project) => (
-                                                                <HierarchyNode
-                                                                    key={project.id}
-                                                                    title={project.title}
-                                                                    level="project"
-                                                                    tasks={getTasksForItem("PROJECT", project.id)}
-                                                                    itemId={project.id}
-                                                                    itemType="projects"
-                                                                    users={users}
-                                                                    onOwnerChange={handleOwnerChange}
-                                                                    assignedUser={project.assignedUser}
-                                                                >
-                                                                    {project.instructions?.map((instruction) => (
-                                                                        <HierarchyNode
-                                                                            key={instruction.id}
-                                                                            title={instruction.title}
-                                                                            level="instruction"
-                                                                            tasks={getTasksForItem("INSTRUCTION", instruction.id)}
-                                                                            itemId={instruction.id}
-                                                                            itemType="instructions"
-                                                                            users={users}
-                                                                            onOwnerChange={handleOwnerChange}
-                                                                            assignedUser={instruction.assignedUser}
-                                                                        />
-                                                                    ))}
-                                                                </HierarchyNode>
-                                                            ))}
-                                                        </HierarchyNode>
-                                                    ))}
-                                                </HierarchyNode>
-                                            ))}
-                                        </HierarchyNode>
-                                    ))}
-                                </HierarchyNode>
-                            ))
-                        )}
-                    </CardContent>
-                </Card>
+                <div className="flex items-center gap-3">
+                    <select
+                        value={selectedDepartment || ""}
+                        onChange={(e) => setSelectedDepartment(e.target.value || null)}
+                        className="px-4 py-2.5 rounded-xl bg-background border text-sm font-medium"
+                    >
+                        <option value="">Toate departamentele</option>
+                        {departments.map(dept => (
+                            <option key={dept.id} value={dept.id}>{dept.name}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
+
+            {/* Team Member Filter - Horizontal Tabs */}
+            <div className="flex flex-wrap gap-2 p-4 rounded-2xl bg-card/50 border border-border/50">
+                <button
+                    className={cn(
+                        "flex items-center gap-3 px-5 py-3 rounded-xl text-sm font-medium transition-all",
+                        selectedMember === null
+                            ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg shadow-purple-500/25"
+                            : "bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-foreground"
+                    )}
+                    onClick={() => setSelectedMember(null)}
+                >
+                    <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                        <Users className="h-4 w-4" />
+                    </div>
+                    <div className="text-left">
+                        <div className="font-semibold">Toți</div>
+                        <div className="text-xs opacity-75">{tasks.length} sarcini</div>
+                    </div>
+                </button>
+
+                {users.map(user => (
+                    <button
+                        key={user.id}
+                        className={cn(
+                            "flex items-center gap-3 px-5 py-3 rounded-xl text-sm font-medium transition-all",
+                            selectedMember === user.id
+                                ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg shadow-purple-500/25"
+                                : "bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-foreground"
+                        )}
+                        onClick={() => setSelectedMember(user.id)}
+                    >
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
+                            {user.name.charAt(0)}
+                        </div>
+                        <div className="text-left">
+                            <div className="font-semibold">{user.name}</div>
+                            <div className="text-xs opacity-75">{getTaskCountForUser(user.id)} sarcini</div>
+                        </div>
+                    </button>
+                ))}
+            </div>
+
+            {/* Filter Status */}
+            {selectedMember && (
+                <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">Afișare:</span>
+                    <span className="px-3 py-1 rounded-full bg-primary/10 text-primary font-medium">
+                        {users.find(u => u.id === selectedMember)?.name}
+                    </span>
+                    <button
+                        onClick={() => setSelectedMember(null)}
+                        className="text-muted-foreground hover:text-foreground ml-2"
+                    >
+                        × Șterge filtru
+                    </button>
+                </div>
+            )}
+
+            {/* Hierarchical Tree View - Full Width */}
+            <Card className="border-2 border-border/50">
+                <CardContent className="p-6 space-y-4">
+                    {idealScene.length === 0 ? (
+                        <div className="text-center py-16 text-muted-foreground">
+                            <Target className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                            <p className="text-lg">Nu există obiective definite</p>
+                            <p className="text-sm">Adaugă un obiectiv principal din pagina Imaginea ideală</p>
+                        </div>
+                    ) : (
+                        idealScene.map((mainGoal) => (
+                            <HierarchyNode
+                                key={mainGoal.id}
+                                title={mainGoal.title}
+                                level="mainGoal"
+                                defaultExpanded={true}
+                            >
+                                {mainGoal.subgoals?.map((subgoal) => (
+                                    <HierarchyNode
+                                        key={subgoal.id}
+                                        title={subgoal.title}
+                                        level="subgoal"
+                                        tasks={getTasksForItem("SUBGOAL", subgoal.id)}
+                                        defaultExpanded={true}
+                                        itemId={subgoal.id}
+                                        itemType="subgoals"
+                                        users={users}
+                                        onOwnerChange={handleOwnerChange}
+                                        assignedUser={subgoal.assignedUser}
+                                    >
+                                        {subgoal.plans?.map((plan) => (
+                                            <HierarchyNode
+                                                key={plan.id}
+                                                title={plan.title}
+                                                level="plan"
+                                                tasks={getTasksForItem("PLAN", plan.id)}
+                                                itemId={plan.id}
+                                                itemType="plans"
+                                                users={users}
+                                                onOwnerChange={handleOwnerChange}
+                                                assignedUser={plan.assignedUser}
+                                            >
+                                                {plan.programs?.map((program) => (
+                                                    <HierarchyNode
+                                                        key={program.id}
+                                                        title={program.title}
+                                                        level="program"
+                                                        tasks={getTasksForItem("PROGRAM", program.id)}
+                                                        itemId={program.id}
+                                                        itemType="programs"
+                                                        users={users}
+                                                        onOwnerChange={handleOwnerChange}
+                                                        assignedUser={program.assignedUser}
+                                                    >
+                                                        {program.projects?.map((project) => (
+                                                            <HierarchyNode
+                                                                key={project.id}
+                                                                title={project.title}
+                                                                level="project"
+                                                                tasks={getTasksForItem("PROJECT", project.id)}
+                                                                itemId={project.id}
+                                                                itemType="projects"
+                                                                users={users}
+                                                                onOwnerChange={handleOwnerChange}
+                                                                assignedUser={project.assignedUser}
+                                                            >
+                                                                {project.instructions?.map((instruction) => (
+                                                                    <HierarchyNode
+                                                                        key={instruction.id}
+                                                                        title={instruction.title}
+                                                                        level="instruction"
+                                                                        tasks={getTasksForItem("INSTRUCTION", instruction.id)}
+                                                                        itemId={instruction.id}
+                                                                        itemType="instructions"
+                                                                        users={users}
+                                                                        onOwnerChange={handleOwnerChange}
+                                                                        assignedUser={instruction.assignedUser}
+                                                                    />
+                                                                ))}
+                                                            </HierarchyNode>
+                                                        ))}
+                                                    </HierarchyNode>
+                                                ))}
+                                            </HierarchyNode>
+                                        ))}
+                                    </HierarchyNode>
+                                ))}
+                            </HierarchyNode>
+                        ))
+                    )}
+                </CardContent>
+            </Card>
         </div>
     );
 }
