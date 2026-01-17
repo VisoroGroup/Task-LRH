@@ -389,11 +389,21 @@ export function MyTasks() {
     const doneTasks = filteredTasks.filter(t => t.status === "DONE");
 
     const TaskCard = ({ task }: { task: Task }) => {
+        const [isExpanded, setIsExpanded] = useState(false);
         const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== "DONE";
+
+        // Hierarchy level icons and colors
+        const levelStyles: Record<string, { icon: string; color: string }> = {
+            subgoal: { icon: "🎯", color: "text-violet-500 dark:text-violet-400" },
+            plan: { icon: "📋", color: "text-indigo-500 dark:text-indigo-400" },
+            program: { icon: "📊", color: "text-blue-500 dark:text-blue-400" },
+            project: { icon: "📁", color: "text-cyan-500 dark:text-cyan-400" },
+            instruction: { icon: "📝", color: "text-teal-500 dark:text-teal-400" },
+        };
 
         return (
             <div className={cn(
-                "p-4 border rounded-lg hover:shadow-md transition-shadow",
+                "p-4 border rounded-lg hover:shadow-md transition-all",
                 isOverdue && "border-red-300 dark:border-red-800"
             )}>
                 <div className="flex items-start justify-between gap-2 mb-2">
@@ -406,7 +416,7 @@ export function MyTasks() {
                     {isOverdue && (
                         <span className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
                             <AlertCircle className="h-3 w-3" />
-                            Întirziat
+                            Întârziat
                         </span>
                     )}
                 </div>
@@ -420,17 +430,83 @@ export function MyTasks() {
 
                 <h4 className="font-medium mb-1">{task.title}</h4>
 
-                {/* Hierarchy Breadcrumb */}
+                {/* Expandable Hierarchy Section */}
                 {task.hierarchyPath && task.hierarchyPath.length > 0 && (
-                    <div className="flex items-center flex-wrap gap-0.5 text-xs text-muted-foreground mb-2">
-                        {task.hierarchyPath.map((item, idx) => (
-                            <span key={idx} className="flex items-center">
-                                <span className="truncate max-w-[80px]" title={item}>{item}</span>
-                                {idx < task.hierarchyPath!.length - 1 && (
-                                    <ChevronRight className="h-3 w-3 mx-0.5 flex-shrink-0" />
-                                )}
-                            </span>
-                        ))}
+                    <div className="mb-2">
+                        {/* Collapsed view - click to expand */}
+                        <button
+                            onClick={() => setIsExpanded(!isExpanded)}
+                            className="w-full text-left group"
+                        >
+                            {!isExpanded ? (
+                                <div className="flex items-center flex-wrap gap-0.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                                    {task.hierarchyPath.map((item, idx) => (
+                                        <span key={idx} className="flex items-center">
+                                            <span className="truncate max-w-[80px]" title={item}>{item}</span>
+                                            {idx < task.hierarchyPath!.length - 1 && (
+                                                <ChevronRight className="h-3 w-3 mx-0.5 flex-shrink-0" />
+                                            )}
+                                        </span>
+                                    ))}
+                                    <span className="ml-2 text-blue-500 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                                        ▼ Extinde
+                                    </span>
+                                </div>
+                            ) : (
+                                <div className="text-xs text-muted-foreground hover:text-foreground">
+                                    <span className="text-blue-500">▲ Restrânge</span>
+                                </div>
+                            )}
+                        </button>
+
+                        {/* Expanded view - full hierarchy */}
+                        {isExpanded && (
+                            <div className="mt-2 p-3 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                                <div className="text-xs font-medium text-muted-foreground mb-2">
+                                    📊 Fluxul Complet:
+                                </div>
+                                <div className="space-y-1.5">
+                                    {task.mainGoalTitle && (
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <span className="text-violet-500">🎯</span>
+                                            <span className="font-medium text-violet-600 dark:text-violet-400">
+                                                {task.mainGoalTitle}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {task.hierarchyPath.map((item, idx) => {
+                                        const levels = ["subgoal", "plan", "program", "project", "instruction"];
+                                        const level = levels[idx] || "instruction";
+                                        const style = levelStyles[level];
+                                        return (
+                                            <div
+                                                key={idx}
+                                                className="flex items-center gap-2 text-sm"
+                                                style={{ marginLeft: `${(idx + 1) * 12}px` }}
+                                            >
+                                                <span className={style.color}>{style.icon}</span>
+                                                <span className={cn("font-medium", style.color)}>
+                                                    {item}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                    {/* Current Task */}
+                                    <div
+                                        className="flex items-center gap-2 text-sm"
+                                        style={{ marginLeft: `${(task.hierarchyPath.length + 1) * 12}px` }}
+                                    >
+                                        <span className="text-emerald-500">✅</span>
+                                        <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                            {task.title}
+                                        </span>
+                                        <span className="text-xs px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300">
+                                            Sarcina Curentă
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
