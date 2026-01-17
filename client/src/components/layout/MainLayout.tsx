@@ -215,7 +215,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                             </div>
                             <div className="flex-1 min-w-0">
                                 <span className="text-xs font-semibold text-purple-300 uppercase tracking-wider">Misiune</span>
-                                <div className="text-sm font-medium text-white line-clamp-1">
+                                <div className="text-sm font-medium text-white">
                                     {mainGoal.description}
                                 </div>
                             </div>
