@@ -355,9 +355,32 @@ export function TeamTasks() {
         );
     };
 
-    // Count tasks per user
+    // Count tasks + hierarchy items per user
     const getTaskCountForUser = (userId: string) => {
-        return tasks.filter(task => task.responsibleUser?.id === userId).length;
+        // Count actual tasks
+        const taskCount = tasks.filter(task => task.responsibleUser?.id === userId).length;
+
+        // Count hierarchy items assigned to this user
+        let hierarchyCount = 0;
+        idealScene.forEach(mainGoal => {
+            mainGoal.subgoals?.forEach(subgoal => {
+                if (subgoal.assignedUserId === userId) hierarchyCount++;
+                subgoal.plans?.forEach(plan => {
+                    if (plan.assignedUserId === userId) hierarchyCount++;
+                    plan.programs?.forEach(program => {
+                        if (program.assignedUserId === userId) hierarchyCount++;
+                        program.projects?.forEach(project => {
+                            if (project.assignedUserId === userId) hierarchyCount++;
+                            project.instructions?.forEach(instruction => {
+                                if (instruction.assignedUserId === userId) hierarchyCount++;
+                            });
+                        });
+                    });
+                });
+            });
+        });
+
+        return taskCount + hierarchyCount;
     };
 
     if (tasksLoading) {
