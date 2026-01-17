@@ -221,10 +221,10 @@ export function MyTasks() {
         onSuccess: (result: any) => {
             queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
             setHierarchyPath(prev => ({ ...prev, subgoalId: result.id, planId: "", programId: "", projectId: "", instructionId: "" }));
-            toast({ title: "Alcél létrehozva!", variant: "success" as any });
+            toast({ title: "Subobiectiv creat!", variant: "success" as any });
         },
         onError: (error: Error) => {
-            toast({ title: "Hiba történt", description: error.message, variant: "destructive" });
+            toast({ title: "A apărut o eroare", description: error.message, variant: "destructive" });
         },
     });
 
@@ -238,7 +238,7 @@ export function MyTasks() {
         onSuccess: (result: any) => {
             queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
             setHierarchyPath(prev => ({ ...prev, planId: result.id, programId: "", projectId: "", instructionId: "" }));
-            toast({ title: "Terv létrehozva!", variant: "success" as any });
+            toast({ title: "Plan creat!", variant: "success" as any });
         },
         onError: (error: Error) => {
             toast({ title: "Hiba történt", description: error.message, variant: "destructive" });
@@ -255,7 +255,7 @@ export function MyTasks() {
         onSuccess: (result: any) => {
             queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
             setHierarchyPath(prev => ({ ...prev, programId: result.id, projectId: "", instructionId: "" }));
-            toast({ title: "Program létrehozva!", variant: "success" as any });
+            toast({ title: "Program creat!", variant: "success" as any });
         },
         onError: (error: Error) => {
             toast({ title: "Hiba történt", description: error.message, variant: "destructive" });
@@ -272,7 +272,7 @@ export function MyTasks() {
         onSuccess: (result: any) => {
             queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
             setHierarchyPath(prev => ({ ...prev, projectId: result.id, instructionId: "" }));
-            toast({ title: "Projekt létrehozva!", variant: "success" as any });
+            toast({ title: "Proiect creat!", variant: "success" as any });
         },
         onError: (error: Error) => {
             toast({ title: "Hiba történt", description: error.message, variant: "destructive" });
@@ -289,7 +289,7 @@ export function MyTasks() {
         onSuccess: (result: any) => {
             queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
             setHierarchyPath(prev => ({ ...prev, instructionId: result.id }));
-            toast({ title: "Utasítás létrehozva!", variant: "success" as any });
+            toast({ title: "Instrucțiune creată!", variant: "success" as any });
         },
         onError: (error: Error) => {
             toast({ title: "Hiba történt", description: error.message, variant: "destructive" });
@@ -714,29 +714,29 @@ export function MyTasks() {
             <Dialog open={isCompleteDialogOpen} onOpenChange={setIsCompleteDialogOpen}>
                 <DialogContent className="max-w-lg">
                     <DialogHeader>
-                        <DialogTitle>Teljesítés Jelentés</DialogTitle>
+                        <DialogTitle>Raport de Finalizare</DialogTitle>
                         <DialogDescription>
-                            {completingTaskTitle} - Submit evidence to complete this task
+                            {completingTaskTitle} - Trimiteți dovada pentru a finaliza această sarcină
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         {/* What was done */}
                         <div>
-                            <label className="text-sm font-medium">Mit csináltál? (What was done) *</label>
+                            <label className="text-sm font-medium">Ce ai făcut? *</label>
                             <textarea
                                 value={whatWasDone}
                                 onChange={(e) => setWhatWasDone(e.target.value)}
                                 className="w-full mt-1 px-3 py-2 border rounded-md bg-background min-h-[80px]"
-                                placeholder="Describe in detail what you did to complete this task..."
+                                placeholder="Descrieți în detaliu ce ați făcut pentru a finaliza această sarcină..."
                             />
                             <p className="text-xs text-muted-foreground mt-1">
-                                ⚠️ "Kész", "OK", "Ready" nem elfogadható!
+                                ⚠️ "Gata", "OK", "Ready" nu sunt acceptabile!
                             </p>
                         </div>
 
                         {/* When done */}
                         <div>
-                            <label className="text-sm font-medium">Mikor? (When) *</label>
+                            <label className="text-sm font-medium">Când? *</label>
                             <input
                                 type="datetime-local"
                                 value={whenDone}
@@ -747,37 +747,37 @@ export function MyTasks() {
 
                         {/* Context */}
                         <div>
-                            <label className="text-sm font-medium">Hol / Kontextus (Where/Context) *</label>
+                            <label className="text-sm font-medium">Unde / Context *</label>
                             <input
                                 type="text"
                                 value={whereContext}
                                 onChange={(e) => setWhereContext(e.target.value)}
                                 className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
-                                placeholder="Location, meeting name, system used, etc."
+                                placeholder="Locație, numele întâlnirii, sistemul utilizat, etc."
                             />
                         </div>
 
                         {/* Evidence type */}
                         <div>
-                            <label className="text-sm font-medium">Bizonyíték típusa (Evidence Type) *</label>
+                            <label className="text-sm font-medium">Tipul Dovezii *</label>
                             <select
                                 value={evidenceType}
                                 onChange={(e) => setEvidenceType(e.target.value)}
                                 className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
                             >
-                                <option value="">Select type...</option>
+                                <option value="">Selectați tipul...</option>
                                 <option value="URL">🔗 URL / Link</option>
-                                <option value="SIGNED_NOTE">✍️ Aláírt feljegyzés</option>
-                                <option value="RECEIPT">🧾 Nyugta / Számla</option>
-                                <option value="DOCUMENT">📄 Dokumentum</option>
-                                <option value="IMAGE">🖼️ Kép / Fénykép</option>
+                                <option value="SIGNED_NOTE">✍️ Notă semnată</option>
+                                <option value="RECEIPT">🧾 Chitanță / Factură</option>
+                                <option value="DOCUMENT">📄 Document</option>
+                                <option value="IMAGE">🖼️ Imagine / Fotografie</option>
                             </select>
                         </div>
 
                         {/* Evidence URL (only shown for URL type) */}
                         {evidenceType === "URL" && (
                             <div>
-                                <label className="text-sm font-medium">Evidence URL *</label>
+                                <label className="text-sm font-medium">URL Dovadă *</label>
                                 <input
                                     type="url"
                                     value={evidenceUrl}
@@ -791,7 +791,7 @@ export function MyTasks() {
                         {/* Note for file-based evidence */}
                         {["IMAGE", "DOCUMENT", "RECEIPT", "SIGNED_NOTE"].includes(evidenceType) && (
                             <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-md text-sm text-amber-700 dark:text-amber-400">
-                                📎 File upload coming soon. For now, please upload to a service and paste the URL.
+                                📎 Încărcarea fișierelor va fi disponibilă în curând. Deocamdată, vă rugăm să încărcați pe un serviciu și să lipiți URL-ul.
                             </div>
                         )}
                     </div>
@@ -809,7 +809,7 @@ export function MyTasks() {
                                 (evidenceType === "URL" && !evidenceUrl.trim())
                             }
                         >
-                            ✓ Complete Task
+                            ✓ Finalizează Sarcina
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -838,13 +838,13 @@ export function MyTasks() {
                 statusFilter ? "md:grid-cols-1 max-w-md" : "md:grid-cols-3"
             )}>
                 {(!statusFilter || statusFilter === "TODO") &&
-                    renderColumn("To Do", todoTasks, "bg-slate-400", "TODO")
+                    renderColumn("De Făcut", todoTasks, "bg-slate-400", "TODO")
                 }
                 {(!statusFilter || statusFilter === "DOING") &&
-                    renderColumn("In Progress", doingTasks, "bg-blue-500", "DOING")
+                    renderColumn("În Lucru", doingTasks, "bg-blue-500", "DOING")
                 }
                 {(!statusFilter || statusFilter === "DONE") &&
-                    renderColumn("Completed", doneTasks, "bg-green-500", "DONE")
+                    renderColumn("Finalizate", doneTasks, "bg-green-500", "DONE")
                 }
             </div>
         </div>

@@ -232,15 +232,15 @@ export function IdealScene() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold">Ideal Scene</h2>
+                    <h2 className="text-2xl font-bold">Scenariu Ideal</h2>
                     <p className="text-muted-foreground">
-                        Főcél → Alcél → Program → Project → Instruction
+                        Obiectiv Principal → Subobiectiv → Program → Proiect → Instrucțiune
                     </p>
                 </div>
                 {mainGoal && (
                     <Button onClick={() => handleOpenAddDialog("subgoal", mainGoal.id)}>
                         <Plus className="h-4 w-4 mr-2" />
-                        Add Alcél
+                        Adaugă Subobiectiv
                     </Button>
                 )}
             </div>
@@ -249,9 +249,9 @@ export function IdealScene() {
             <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Add {levelLabels[addLevel]}</DialogTitle>
+                        <DialogTitle>Adaugă {levelLabels[addLevel]}</DialogTitle>
                         <DialogDescription>
-                            Create a new item in the hierarchy
+                            Creează un element nou în ierarhie
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
@@ -294,7 +294,7 @@ export function IdealScene() {
                     variant={!selectedDepartment ? "default" : "outline"}
                     onClick={() => setSelectedDepartment(null)}
                 >
-                    All
+                    Toate
                 </Button>
                 {departments?.map((dept) => (
                     <Button
@@ -311,21 +311,21 @@ export function IdealScene() {
             {/* Hierarchy Tree */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Goals Hierarchy</CardTitle>
+                    <CardTitle>Ierarhia Obiectivelor</CardTitle>
                     <CardDescription>
-                        Click to expand • Hover to add children
+                        Click pentru a extinde • Treceți cursorul pentru a adăuga elemente copil
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
-                        <div className="text-center py-8 text-muted-foreground">Loading...</div>
+                        <div className="text-center py-8 text-muted-foreground">Se încarcă...</div>
                     ) : mainGoal ? (
                         <div className="space-y-2">
                             {/* Main Goal (root level, not editable here) */}
                             <TreeItem
                                 id={mainGoal.id}
                                 title={mainGoal.title}
-                                description={mainGoal.description || "Company Main Goal"}
+                                description={mainGoal.description || "Obiectivul Principal al Companiei"}
                                 level={0}
                                 hasChildren={mainGoal.subgoals.length > 0}
                                 icon={<Target className="h-4 w-4 text-purple-500" />}
@@ -390,14 +390,14 @@ export function IdealScene() {
                     ) : (
                         <div className="text-center py-12">
                             <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-medium mb-2">No Main Goal configured</h3>
+                            <h3 className="text-lg font-medium mb-2">Niciun Obiectiv Principal configurat</h3>
                             <p className="text-muted-foreground mb-4">
-                                The company's Main Goal must be set in Settings first
+                                Obiectivul Principal al companiei trebuie setat mai întâi în Setări
                             </p>
                             <Link href="/settings">
                                 <Button>
                                     <Settings className="h-4 w-4 mr-2" />
-                                    Go to Settings
+                                    Mergi la Setări
                                 </Button>
                             </Link>
                         </div>

@@ -1329,16 +1329,16 @@ export function registerRoutes(app: Express) {
     // Create invitation (CEO/EXECUTIVE only)
     app.post("/api/invitations", async (req: Request, res: Response) => {
         try {
-            const { email, role } = req.body;
+            const { email, role, name } = req.body;
             const invitedById = req.session?.userId;
 
             if (!email) {
                 return res.status(400).json({ error: "Email is required" });
             }
 
-            // Check if user already exists
+            // Check if user already exists (and is not pending)
             const existingUser = await db.query.users.findFirst({
-                where: eq(users.email, email),
+                where: and(eq(users.email, email), eq(users.isPending, false)),
             });
 
             if (existingUser) {
@@ -1357,6 +1357,22 @@ export function registerRoutes(app: Express) {
                 return res.status(400).json({ error: "Invitation already sent to this email" });
             }
 
+            // Check if there's a pending user already (from a previous expired invitation)
+            let pendingUser = await db.query.users.findFirst({
+                where: and(eq(users.email, email), eq(users.isPending, true)),
+            });
+
+            // Create pending user if not exists
+            if (!pendingUser) {
+                const [newPendingUser] = await db.insert(users).values({
+                    email,
+                    name: name || email.split("@")[0], // Use name if provided, otherwise email prefix
+                    role: role || "USER",
+                    isPending: true,
+                }).returning();
+                pendingUser = newPendingUser;
+            }
+
             // Generate unique token
             const token = crypto.randomUUID();
             const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
@@ -1373,8 +1389,9 @@ export function registerRoutes(app: Express) {
             // For now, return the token for manual sharing
             res.json({
                 ...invitation,
+                pendingUserId: pendingUser.id,
                 inviteUrl: `/invite/${token}`,
-                message: "Invitation created. Share the invite URL with the team member.",
+                message: "Invitation created and pending user added. They can now be assigned to departments and tasks.",
             });
         } catch (error) {
             console.error("Error creating invitation:", error);
@@ -1418,7 +1435,7 @@ export function registerRoutes(app: Express) {
         }
     });
 
-    // Accept invitation (creates user account)
+    // Accept invitation (activates pending user account)
     app.post("/api/invitations/accept/:token", async (req: Request, res: Response) => {
         try {
             const { token } = req.params;
@@ -1440,12 +1457,33 @@ export function registerRoutes(app: Express) {
                 return res.status(400).json({ error: "Invitation expired" });
             }
 
-            // Create user
-            const [newUser] = await db.insert(users).values({
-                email: invitation.email,
-                name: name || invitation.email.split("@")[0],
-                role: invitation.role,
-            }).returning();
+            // Find the pending user that was created when invitation was sent
+            let user = await db.query.users.findFirst({
+                where: eq(users.email, invitation.email),
+            });
+
+            if (user) {
+                // Update existing pending user to active
+                const [updatedUser] = await db.update(users)
+                    .set({
+                        name: name || user.name,
+                        isPending: false,
+                        role: invitation.role, // Ensure role matches invitation
+                        updatedAt: new Date(),
+                    })
+                    .where(eq(users.id, user.id))
+                    .returning();
+                user = updatedUser;
+            } else {
+                // Fallback: Create user if not found (shouldn't happen normally)
+                const [newUser] = await db.insert(users).values({
+                    email: invitation.email,
+                    name: name || invitation.email.split("@")[0],
+                    role: invitation.role,
+                    isPending: false,
+                }).returning();
+                user = newUser;
+            }
 
             // Mark invitation as accepted
             await db.update(invitations)
@@ -1453,12 +1491,12 @@ export function registerRoutes(app: Express) {
                 .where(eq(invitations.id, invitation.id));
 
             // Set session
-            req.session.userId = newUser.id;
-            req.session.userRole = newUser.role;
+            req.session.userId = user.id;
+            req.session.userRole = user.role;
 
             res.json({
                 message: "Invitation accepted! You are now logged in.",
-                user: newUser,
+                user: user,
             });
         } catch (error) {
             console.error("Error accepting invitation:", error);

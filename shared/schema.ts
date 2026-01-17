@@ -70,6 +70,7 @@ export const users = pgTable("users", {
     avatarUrl: varchar("avatar_url"), // Profile picture from Microsoft
     role: userRoleEnum("role").default("USER").notNull(),
     isActive: boolean("is_active").default(true).notNull(),
+    isPending: boolean("is_pending").default(false).notNull(), // True when user is invited but hasn't accepted yet
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });

@@ -200,53 +200,53 @@ export function Departments() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold">Departments</h2>
+                    <h2 className="text-2xl font-bold">Departamente</h2>
                     <p className="text-muted-foreground">
-                        Organizational structure with posts and responsibilities
+                        Structură organizațională cu posturi și responsabilități
                     </p>
                 </div>
                 <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                     <DialogTrigger asChild>
                         <Button>
                             <Plus className="h-4 w-4 mr-2" />
-                            New Department
+                            Departament Nou
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Create Department</DialogTitle>
+                            <DialogTitle>Creează Departament</DialogTitle>
                             <DialogDescription>
-                                Add a new organizational function
+                                Adaugă o nouă funcție organizațională
                             </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 py-4">
                             <div>
-                                <label className="text-sm font-medium">Name *</label>
+                                <label className="text-sm font-medium">Nume *</label>
                                 <input
                                     type="text"
                                     value={newDeptName}
                                     onChange={(e) => setNewDeptName(e.target.value)}
                                     className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
-                                    placeholder="e.g., Marketing"
+                                    placeholder="ex., Marketing"
                                 />
                             </div>
                             <div>
-                                <label className="text-sm font-medium">Description</label>
+                                <label className="text-sm font-medium">Descriere</label>
                                 <textarea
                                     value={newDeptDescription}
                                     onChange={(e) => setNewDeptDescription(e.target.value)}
                                     className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
                                     rows={3}
-                                    placeholder="What this department is responsible for..."
+                                    placeholder="Pentru ce este responsabil acest departament..."
                                 />
                             </div>
                         </div>
                         <DialogFooter>
                             <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-                                Cancel
+                                Anulează
                             </Button>
                             <Button onClick={handleCreate} disabled={!newDeptName.trim()}>
-                                Create Department
+                                Creează Departament
                             </Button>
                         </DialogFooter>
                     </DialogContent>
@@ -257,12 +257,12 @@ export function Departments() {
             <Dialog open={!!editingDept} onOpenChange={(open) => !open && setEditingDept(null)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Edit Department</DialogTitle>
+                        <DialogTitle>Editează Departament</DialogTitle>
                     </DialogHeader>
                     {editingDept && (
                         <div className="space-y-4 py-4">
                             <div>
-                                <label className="text-sm font-medium">Name</label>
+                                <label className="text-sm font-medium">Nume</label>
                                 <input
                                     type="text"
                                     value={editingDept.name}
@@ -271,7 +271,7 @@ export function Departments() {
                                 />
                             </div>
                             <div>
-                                <label className="text-sm font-medium">Description</label>
+                                <label className="text-sm font-medium">Descriere</label>
                                 <textarea
                                     value={editingDept.description || ""}
                                     onChange={(e) => setEditingDept({ ...editingDept, description: e.target.value })}
@@ -280,7 +280,7 @@ export function Departments() {
                                 />
                             </div>
                             <div>
-                                <label className="text-sm font-medium">Department Head</label>
+                                <label className="text-sm font-medium">Șef Departament</label>
                                 <select
                                     value={editingDept.departmentHeadId || ""}
                                     onChange={(e) => {
@@ -291,7 +291,7 @@ export function Departments() {
                                     }}
                                     className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
                                 >
-                                    <option value="">-- No head --</option>
+                                    <option value="">-- Fără șef --</option>
                                     {users?.map(u => (
                                         <option key={u.id} value={u.id}>{u.name}</option>
                                     ))}
@@ -301,16 +301,16 @@ export function Departments() {
                     )}
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setEditingDept(null)}>
-                            Cancel
+                            Anulează
                         </Button>
-                        <Button onClick={handleUpdate}>Save Changes</Button>
+                        <Button onClick={handleUpdate}>Salvează Modificările</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
             {/* Department List */}
             {isLoading ? (
-                <div className="text-center py-8 text-muted-foreground">Loading...</div>
+                <div className="text-center py-8 text-muted-foreground">Se încarcă...</div>
             ) : (
                 <div className="space-y-4">
                     {[...(departments || [])].sort((a, b) => {
@@ -343,13 +343,13 @@ export function Departments() {
                                                 {dept.head ? (
                                                     <span className="flex items-center gap-1">
                                                         <User className="h-3 w-3" />
-                                                        Head: {dept.head.name}
+                                                        Șef: {dept.head.name}
                                                     </span>
                                                 ) : (
-                                                    <span className="text-yellow-600">No head assigned</span>
+                                                    <span className="text-yellow-600">Niciun șef desemnat</span>
                                                 )}
                                                 <span>•</span>
-                                                <span>{dept.posts?.length || 0} posts</span>
+                                                <span>{dept.posts?.length || 0} posturi</span>
                                             </div>
                                         </div>
                                     </div>
@@ -375,18 +375,18 @@ export function Departments() {
                                     <div className="flex items-center justify-between mb-3">
                                         <h4 className="font-medium flex items-center gap-2">
                                             <Users className="h-4 w-4" />
-                                            Posts
+                                            Posturi
                                         </h4>
                                         <Dialog open={isAddPostOpen === dept.id} onOpenChange={(open) => setIsAddPostOpen(open ? dept.id : null)}>
                                             <DialogTrigger asChild>
                                                 <Button size="sm" variant="outline">
                                                     <UserPlus className="h-3 w-3 mr-1" />
-                                                    Add Post
+                                                    Adaugă Post
                                                 </Button>
                                             </DialogTrigger>
                                             <DialogContent>
                                                 <DialogHeader>
-                                                    <DialogTitle>Add Post to {dept.name}</DialogTitle>
+                                                    <DialogTitle>Adaugă Post la {dept.name}</DialogTitle>
                                                 </DialogHeader>
                                                 <div className="space-y-4 py-4">
                                                     <div>
@@ -424,7 +424,7 @@ export function Departments() {
                                     </div>
 
                                     {dept.posts?.length === 0 ? (
-                                        <p className="text-sm text-muted-foreground italic">No posts defined yet</p>
+                                        <p className="text-sm text-muted-foreground italic">Nu există posturi definite încă</p>
                                     ) : (
                                         <div className="space-y-2">
                                             {dept.posts?.map((post) => (
@@ -475,12 +475,12 @@ export function Departments() {
                     <div className="flex items-start gap-4">
                         <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
                         <div>
-                            <h4 className="font-medium mb-1">Department & Posts Rules</h4>
+                            <h4 className="font-medium mb-1">Reguli Departamente și Posturi</h4>
                             <ul className="text-sm text-muted-foreground space-y-1">
-                                <li>• Each department has one head (responsible person)</li>
-                                <li>• Posts are positions within the department</li>
-                                <li>• Each post can have one person assigned to it</li>
-                                <li>• Vacant posts are highlighted in yellow</li>
+                                <li>• Fiecare departament are un șef (persoană responsabilă)</li>
+                                <li>• Posturile sunt poziții în cadrul departamentului</li>
+                                <li>• Fiecare post poate avea o persoană atribuită</li>
+                                <li>• Posturile vacante sunt evidențiate cu galben</li>
                             </ul>
                         </div>
                     </div>

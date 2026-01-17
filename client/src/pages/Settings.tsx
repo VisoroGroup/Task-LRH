@@ -149,14 +149,14 @@ export function Settings() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h2 className="text-2xl font-bold">Settings</h2>
+                <h2 className="text-2xl font-bold">Setări</h2>
                 <p className="text-muted-foreground">
-                    Configure system behavior and company goals
+                    Configurează comportamentul sistemului și obiectivele companiei
                 </p>
             </div>
 
             {isLoading ? (
-                <div className="text-center py-8 text-muted-foreground">Loading...</div>
+                <div className="text-center py-8 text-muted-foreground">Se încarcă...</div>
             ) : (
                 <div className="grid gap-6 max-w-2xl">
                     {/* Company Main Goal */}
@@ -164,10 +164,10 @@ export function Settings() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Target className="h-5 w-5 text-purple-500" />
-                                Company Main Goal (Főcél)
+                                Company Main Goal (Obiectiv Principal)
                             </CardTitle>
                             <CardDescription>
-                                The company's primary objective. Set this once and it applies to all departments.
+                                Obiectivul principal al companiei. Setați-l o singură dată și se aplică tuturor departamentelor.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -187,29 +187,29 @@ export function Settings() {
                                         onClick={() => setIsEditingMainGoal(true)}
                                     >
                                         <Edit2 className="h-4 w-4 mr-2" />
-                                        Edit Main Goal
+                                        Editează Obiectivul Principal
                                     </Button>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="text-sm font-medium">Goal Title *</label>
+                                        <label className="text-sm font-medium">Titlul Obiectivului *</label>
                                         <input
                                             type="text"
                                             value={mainGoalTitle}
                                             onChange={(e) => setMainGoalTitle(e.target.value)}
                                             className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
-                                            placeholder="e.g., Become market leader in Romania"
+                                            placeholder="ex., A deveni lider de piață în România"
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-sm font-medium">Description</label>
+                                        <label className="text-sm font-medium">Descriere</label>
                                         <textarea
                                             value={mainGoalDescription}
                                             onChange={(e) => setMainGoalDescription(e.target.value)}
                                             className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
                                             rows={3}
-                                            placeholder="Detailed description of the company's main objective..."
+                                            placeholder="Descrierea detaliată a obiectivului principal al companiei..."
                                         />
                                     </div>
                                     <div className="flex gap-2">
@@ -222,7 +222,7 @@ export function Settings() {
                                                     setIsEditingMainGoal(false);
                                                 }}
                                             >
-                                                Cancel
+                                                Anulează
                                             </Button>
                                         )}
                                         <Button
@@ -230,7 +230,7 @@ export function Settings() {
                                             disabled={!mainGoalTitle.trim()}
                                         >
                                             <Save className="h-4 w-4 mr-2" />
-                                            {mainGoal ? "Update Main Goal" : "Create Main Goal"}
+                                            {mainGoal ? "Actualizează Obiectivul Principal" : "Creează Obiectiv Principal"}
                                         </Button>
                                     </div>
                                 </div>
@@ -243,16 +243,16 @@ export function Settings() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Clock className="h-5 w-5" />
-                                Flow Control
+                                Control Flux
                             </CardTitle>
                             <CardDescription>
-                                Configure how the system detects stalled tasks and overload conditions
+                                Configurează modul în care sistemul detectează sarcinile blocate și condițiile de supraîncărcare
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div>
                                 <label className="block text-sm font-medium mb-2">
-                                    Stalled Detection Threshold
+                                    Prag Detectare Blocare
                                 </label>
                                 <div className="flex items-center gap-3">
                                     <input
@@ -263,12 +263,12 @@ export function Settings() {
                                         onChange={(e) => setStalledDays(parseInt(e.target.value))}
                                         className="w-20 px-3 py-2 border rounded-md bg-background text-center"
                                     />
-                                    <span className="text-muted-foreground">days without update</span>
+                                    <span className="text-muted-foreground">zile fără actualizare</span>
                                 </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium mb-2">
-                                    Overload Threshold
+                                    Prag Supraîncărcare
                                 </label>
                                 <div className="flex items-center gap-3">
                                     <input
@@ -279,7 +279,7 @@ export function Settings() {
                                         onChange={(e) => setOverloadThreshold(parseInt(e.target.value))}
                                         className="w-20 px-3 py-2 border rounded-md bg-background text-center"
                                     />
-                                    <span className="text-muted-foreground">active items per person</span>
+                                    <span className="text-muted-foreground">elemente active per persoană</span>
                                 </div>
                             </div>
                         </CardContent>
@@ -290,22 +290,22 @@ export function Settings() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <SettingsIcon className="h-5 w-5" />
-                                System Information
+                                Informații Sistem
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Version</span>
+                                    <span className="text-muted-foreground">Versiune</span>
                                     <span>1.0.0</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-muted-foreground">System</span>
+                                    <span className="text-muted-foreground">Sistem</span>
                                     <span>Visoro Task Manager</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Status</span>
-                                    <span className="text-green-600">● Operational</span>
+                                    <span className="text-muted-foreground">Stare</span>
+                                    <span className="text-green-600">● Operațional</span>
                                 </div>
                             </div>
                         </CardContent>
@@ -314,7 +314,7 @@ export function Settings() {
                     {/* Save Button */}
                     <Button onClick={handleSave} className="w-full">
                         <Save className="h-4 w-4 mr-2" />
-                        Save Settings
+                        Salvează Setările
                     </Button>
                 </div>
             )}
