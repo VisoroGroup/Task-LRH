@@ -202,66 +202,67 @@ function HierarchyNode({
 
             <div
                 className={cn(
-                    "flex items-center gap-3 py-2 px-3 rounded-lg cursor-pointer group",
-                    "hover:bg-white/5 transition-colors",
+                    "flex items-center gap-4 py-4 px-4 rounded-xl cursor-pointer group",
+                    "hover:bg-white/5 transition-colors border border-transparent",
+                    "hover:border-white/10",
                     level === "mainGoal" && `bg-gradient-to-r ${config.gradient} text-white`
                 )}
                 onClick={() => setIsExpanded(!isExpanded)}
             >
                 <button className="flex-shrink-0 text-muted-foreground">
                     {hasContent ? (
-                        isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
+                        isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />
                     ) : (
-                        <span className="w-4" />
+                        <span className="w-5" />
                     )}
                 </button>
 
                 <div className={cn(
-                    "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center",
+                    "flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center",
                     level === "mainGoal" ? "bg-white/20" : config.bg
                 )}>
-                    <Icon className={cn("h-4 w-4", level === "mainGoal" ? "text-white" : config.color)} />
+                    <Icon className={cn("h-5 w-5", level === "mainGoal" ? "text-white" : config.color)} />
                 </div>
 
                 <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm truncate">{title}</div>
+                    <div className="font-semibold text-base">{title}</div>
                     <div className={cn(
-                        "text-xs",
+                        "text-sm",
                         level === "mainGoal" ? "text-white/70" : "text-muted-foreground"
                     )}>
                         {levelLabels[level]}
                     </div>
                 </div>
 
-                {/* Owner display/selector */}
+                {/* Owner display/selector - always visible */}
                 {level !== "mainGoal" && itemId && itemType && users && onOwnerChange && (
                     <div
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-3 ml-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <select
                             value={assignedUser?.id || ""}
                             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onOwnerChange(itemType, itemId, e.target.value || null)}
                             className={cn(
-                                "px-2 py-1 rounded text-xs font-medium border bg-background",
+                                "px-3 py-2 rounded-lg text-sm font-medium border bg-background",
                                 "opacity-0 group-hover:opacity-100 transition-opacity",
                                 assignedUser ? "border-primary/30 text-foreground" : "border-border text-muted-foreground"
                             )}
                         >
-                            <option value="">— Fără responsabil —</option>
+                            <option value="">— Fr responsabil —</option>
                             {users.map(u => (
                                 <option key={u.id} value={u.id}>{u.name}</option>
                             ))}
                         </select>
                         {assignedUser && (
                             <div
-                                className="flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-xs"
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 text-sm font-medium"
                                 title={assignedUser.name}
                             >
-                                <div className="w-4 h-4 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white text-[8px] font-bold">
+                                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
                                     {assignedUser.name.charAt(0)}
                                 </div>
-                                <span className="max-w-[60px] truncate">{assignedUser.name}</span>
+                                <span>{assignedUser.name}</span>
                             </div>
                         )}
                     </div>
@@ -269,7 +270,7 @@ function HierarchyNode({
 
                 {tasks && tasks.length > 0 && (
                     <span className={cn(
-                        "px-2 py-0.5 rounded-full text-xs font-medium",
+                        "px-3 py-1.5 rounded-lg text-sm font-medium",
                         config.bg, config.color
                     )}>
                         {tasks.length} sarcini
@@ -278,7 +279,7 @@ function HierarchyNode({
             </div>
 
             {isExpanded && (
-                <div className="ml-6 border-l border-border/30 pl-2">
+                <div className="ml-8 border-l-2 border-border/40 pl-4 space-y-1">
                     {tasks?.map(task => <TaskCard key={task.id} task={task} />)}
                     {children}
                 </div>
