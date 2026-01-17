@@ -12,14 +12,14 @@ const defaultDepartments = [
     },
     {
         id: "dept-hr",
-        name: "HR-Comunicare",
+        name: "HR - Comunicare",
         description: "Recruitment, training, onboarding, personnel handling, internal communication",
         sortOrder: 2,
     },
     {
         id: "dept-sales",
-        name: "Vânzări",
-        description: "Sales activity, lead handling, contracts, client communication",
+        name: "Vânzări - Marketing",
+        description: "Sales activity, lead handling, contracts, client communication, marketing",
         sortOrder: 3,
     },
     {
@@ -80,11 +80,11 @@ export async function seedDatabase() {
                 });
                 console.log(`  ✓ Created department: ${dept.name}`);
             } else {
-                // Update sortOrder for existing departments
+                // Update sortOrder and name for existing departments
                 await db.update(departments)
-                    .set({ sortOrder: dept.sortOrder })
+                    .set({ sortOrder: dept.sortOrder, name: dept.name })
                     .where(eq(departments.id, dept.id));
-                console.log(`  - Department exists: ${dept.name} (updated sortOrder)`);
+                console.log(`  - Department exists: ${dept.name} (updated sortOrder and name)`);
             }
         }
 
