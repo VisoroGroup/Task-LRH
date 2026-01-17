@@ -62,7 +62,7 @@ export function LoginPage() {
                     <Feature
                         icon={<Zap className="h-5 w-5" />}
                         title="Goal Management"
-                        description="Ideal Scene hierarchy management"
+                        description="Imaginea Ideală - gestionarea ierarhiei"
                         gradient="from-yellow-400 to-orange-500"
                     />
                 </div>

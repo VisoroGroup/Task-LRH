@@ -232,7 +232,7 @@ export function IdealScene() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold">Scenariu Ideal</h2>
+                    <h2 className="text-2xl font-bold">Imaginea Ideală</h2>
                     <p className="text-muted-foreground">
                         Misiune → Subobiectiv → Program → Proiect → Instrucțiune
                     </p>
