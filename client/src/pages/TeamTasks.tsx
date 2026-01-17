@@ -222,13 +222,13 @@ function HierarchyNode({
         <div className="relative">
             {/* Connecting line */}
             {level !== "mainGoal" && (
-                <div className="absolute left-4 top-0 w-px h-4 bg-border/50" />
+                <div className="absolute left-6 top-0 w-px h-5 bg-border/50" />
             )}
 
             <div
                 className={cn(
-                    "flex items-center gap-4 py-4 px-4 rounded-xl cursor-pointer group",
-                    "hover:bg-white/5 transition-colors border border-transparent",
+                    "flex items-center gap-5 py-5 px-5 rounded-2xl cursor-pointer group",
+                    "hover:bg-white/5 transition-colors border-2 border-transparent",
                     "hover:border-white/10",
                     level === "mainGoal" && `bg-gradient-to-r ${config.gradient} text-white`
                 )}
@@ -236,40 +236,40 @@ function HierarchyNode({
             >
                 <button className="flex-shrink-0 text-muted-foreground">
                     {hasContent || onAddChild ? (
-                        isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />
+                        isExpanded ? <ChevronDown className="h-7 w-7" /> : <ChevronRight className="h-7 w-7" />
                     ) : (
-                        <span className="w-5" />
+                        <span className="w-7" />
                     )}
                 </button>
 
                 <div className={cn(
-                    "flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center",
+                    "flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center",
                     level === "mainGoal" ? "bg-white/20" : config.bg
                 )}>
-                    <Icon className={cn("h-5 w-5", level === "mainGoal" ? "text-white" : config.color)} />
+                    <Icon className={cn("h-7 w-7", level === "mainGoal" ? "text-white" : config.color)} />
                 </div>
 
                 <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-base">{title}</div>
+                    <div className="font-bold text-lg">{title}</div>
                     <div className="flex items-center gap-3">
                         <span className={cn(
-                            "text-sm",
+                            "text-base",
                             level === "mainGoal" ? "text-white/70" : "text-muted-foreground"
                         )}>
                             {levelLabels[level]}
                         </span>
                         {/* Owner display inline with type label */}
                         {level !== "mainGoal" && assignedUser && (
-                            <div className="flex items-center gap-2 text-sm">
+                            <div className="flex items-center gap-2 text-base">
                                 <span className="text-muted-foreground">•</span>
-                                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white text-[10px] font-bold">
+                                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
                                     {assignedUser.name.charAt(0)}
                                 </div>
-                                <span className="font-medium text-primary">{assignedUser.name}</span>
+                                <span className="font-semibold text-primary">{assignedUser.name}</span>
                             </div>
                         )}
                         {level !== "mainGoal" && !assignedUser && (
-                            <span className="text-sm text-yellow-500">• Fără responsabil</span>
+                            <span className="text-base text-yellow-500 font-medium">• Fără responsabil</span>
                         )}
                     </div>
                 </div>
@@ -284,7 +284,7 @@ function HierarchyNode({
                             value={assignedUser?.id || ""}
                             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onOwnerChange(itemType, itemId, e.target.value || null)}
                             className={cn(
-                                "px-3 py-2 rounded-lg text-sm font-medium border bg-background",
+                                "px-4 py-2.5 rounded-xl text-base font-medium border bg-background",
                                 "opacity-0 group-hover:opacity-100 transition-opacity",
                                 assignedUser ? "border-primary/30 text-foreground" : "border-border text-muted-foreground"
                             )}
