@@ -1222,7 +1222,30 @@ export function registerRoutes(app: Express) {
                     where: eq(tasks.responsibleUserId, user.id),
                 });
 
-                const todoCount = userTasks.filter(t => t.status === "TODO").length;
+                // Count hierarchy items assigned to this user
+                const [subgoalCount] = await db.select({ count: sql<number>`count(*)` })
+                    .from(subgoals)
+                    .where(and(eq(subgoals.assignedUserId, user.id), eq(subgoals.isActive, true)));
+                const [planCount] = await db.select({ count: sql<number>`count(*)` })
+                    .from(plans)
+                    .where(and(eq(plans.assignedUserId, user.id), eq(plans.isActive, true)));
+                const [programCount] = await db.select({ count: sql<number>`count(*)` })
+                    .from(programs)
+                    .where(and(eq(programs.assignedUserId, user.id), eq(programs.isActive, true)));
+                const [projectCount] = await db.select({ count: sql<number>`count(*)` })
+                    .from(projects)
+                    .where(and(eq(projects.assignedUserId, user.id), eq(projects.isActive, true)));
+                const [instructionCount] = await db.select({ count: sql<number>`count(*)` })
+                    .from(instructions)
+                    .where(and(eq(instructions.assignedUserId, user.id), eq(instructions.isActive, true)));
+
+                const hierarchyCount = Number(subgoalCount.count || 0) +
+                    Number(planCount.count || 0) +
+                    Number(programCount.count || 0) +
+                    Number(projectCount.count || 0) +
+                    Number(instructionCount.count || 0);
+
+                const todoCount = userTasks.filter(t => t.status === "TODO").length + hierarchyCount;
                 const doingCount = userTasks.filter(t => t.status === "DOING").length;
                 const doneCount = userTasks.filter(t => t.status === "DONE").length;
 
