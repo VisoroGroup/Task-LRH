@@ -147,7 +147,7 @@ export function CEODashboard() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Users className="h-5 w-5" />
-                        Grila Stare Deținători Posturi
+                        Grila stare deținători posturi
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -158,7 +158,7 @@ export function CEODashboard() {
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b">
-                                        <th className="text-left py-3 px-4 font-medium">Deținător Post</th>
+                                        <th className="text-left py-3 px-4 font-medium">Deținător post</th>
                                         <th className="text-center py-3 px-4 font-medium">TODO</th>
                                         <th className="text-center py-3 px-4 font-medium">DOING</th>
                                         <th className="text-center py-3 px-4 font-medium">DONE</th>
