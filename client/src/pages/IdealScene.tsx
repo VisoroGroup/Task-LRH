@@ -234,7 +234,7 @@ export function IdealScene() {
                 <div>
                     <h2 className="text-2xl font-bold">Scenariu Ideal</h2>
                     <p className="text-muted-foreground">
-                        Obiectiv Principal → Subobiectiv → Program → Proiect → Instrucțiune
+                        Misiune → Subobiectiv → Program → Proiect → Instrucțiune
                     </p>
                 </div>
                 {mainGoal && (
@@ -325,7 +325,7 @@ export function IdealScene() {
                             <TreeItem
                                 id={mainGoal.id}
                                 title={mainGoal.title}
-                                description={mainGoal.description || "Obiectivul Principal al Companiei"}
+                                description={mainGoal.description || "Misiunea al Companiei"}
                                 level={0}
                                 hasChildren={mainGoal.subgoals.length > 0}
                                 icon={<Target className="h-4 w-4 text-purple-500" />}
@@ -390,9 +390,9 @@ export function IdealScene() {
                     ) : (
                         <div className="text-center py-12">
                             <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-medium mb-2">Niciun Obiectiv Principal configurat</h3>
+                            <h3 className="text-lg font-medium mb-2">Niciun Misiune configurat</h3>
                             <p className="text-muted-foreground mb-4">
-                                Obiectivul Principal al companiei trebuie setat mai întâi în Setări
+                                Misiunea al companiei trebuie setat mai întâi în Setări
                             </p>
                             <Link href="/settings">
                                 <Button>

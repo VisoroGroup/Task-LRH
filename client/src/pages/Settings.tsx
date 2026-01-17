@@ -164,7 +164,7 @@ export function Settings() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Target className="h-5 w-5 text-purple-500" />
-                                Company Main Goal (Obiectiv Principal)
+                                Company Main Goal (Misiune)
                             </CardTitle>
                             <CardDescription>
                                 Obiectivul principal al companiei. Setați-l o singură dată și se aplică tuturor departamentelor.
@@ -187,7 +187,7 @@ export function Settings() {
                                         onClick={() => setIsEditingMainGoal(true)}
                                     >
                                         <Edit2 className="h-4 w-4 mr-2" />
-                                        Editează Obiectivul Principal
+                                        Editează Misiunea
                                     </Button>
                                 </div>
                             ) : (
@@ -230,7 +230,7 @@ export function Settings() {
                                             disabled={!mainGoalTitle.trim()}
                                         >
                                             <Save className="h-4 w-4 mr-2" />
-                                            {mainGoal ? "Actualizează Obiectivul Principal" : "Creează Obiectiv Principal"}
+                                            {mainGoal ? "Actualizează Misiunea" : "Creează Misiune"}
                                         </Button>
                                     </div>
                                 </div>

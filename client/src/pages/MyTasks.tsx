@@ -428,7 +428,7 @@ export function MyTasks() {
                             <span className="text-lg">🎯</span>
                             <div>
                                 <div className="text-[10px] uppercase tracking-wider text-violet-600 dark:text-violet-400 font-semibold mb-0.5">
-                                    Obiectiv Principal
+                                    Misiune
                                 </div>
                                 <div className="text-sm font-bold text-violet-700 dark:text-violet-300">
                                     {task.mainGoalTitle}
@@ -742,7 +742,7 @@ export function MyTasks() {
                                             departmentId: newTaskDepartmentId,
                                         });
                                     } else {
-                                        toast({ title: "Eroare: Nu există Obiectiv Principal!", variant: "destructive" });
+                                        toast({ title: "Eroare: Nu există Misiune!", variant: "destructive" });
                                     }
                                 }}
                                 onCreatePlan={(title, subgoalId) => {

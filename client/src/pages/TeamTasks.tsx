@@ -185,7 +185,7 @@ function HierarchyNode({
     const hasContent = (children && React.Children.count(children) > 0) || (tasks && tasks.length > 0);
 
     const levelLabels = {
-        mainGoal: "Obiectiv Principal",
+        mainGoal: "Misiune",
         subgoal: "Subobiectiv",
         plan: "Plan",
         program: "Program",
