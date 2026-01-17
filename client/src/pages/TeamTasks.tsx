@@ -188,7 +188,7 @@ function HierarchyNode({
     itemType?: string;
     users?: TeamMember[];
     onOwnerChange?: (itemType: string, itemId: string, userId: string | null) => void;
-    onAddChild?: (title: string) => void;
+    onAddChild?: (title: string, dueDate: string) => void;
     childLevel?: "subgoal" | "plan" | "program" | "project" | "instruction";
     onEdit?: (newTitle: string) => void;
     onDelete?: () => void;
@@ -198,6 +198,7 @@ function HierarchyNode({
     const [isEditing, setIsEditing] = useState(false);
     const [editTitle, setEditTitle] = useState(title);
     const [newItemTitle, setNewItemTitle] = useState("");
+    const [newItemDueDate, setNewItemDueDate] = useState("");
     const config = LEVEL_CONFIG[level];
     const Icon = config.icon;
     const hasContent = (children && React.Children.count(children) > 0) || (tasks && tasks.length > 0);
@@ -220,9 +221,10 @@ function HierarchyNode({
     };
 
     const handleAddChild = () => {
-        if (newItemTitle.trim() && onAddChild) {
-            onAddChild(newItemTitle.trim());
+        if (newItemTitle.trim() && newItemDueDate && onAddChild) {
+            onAddChild(newItemTitle.trim(), newItemDueDate);
             setNewItemTitle("");
+            setNewItemDueDate("");
             setIsAdding(false);
         }
     };
@@ -397,22 +399,31 @@ function HierarchyNode({
                 <div className="ml-8 border-l-2 border-border/40 pl-4 space-y-1">
                     {/* Add new item input */}
                     {isAdding && onAddChild && childLevel && (
-                        <div className="flex items-center gap-3 py-3 px-4 bg-card rounded-xl border border-primary/30 shadow-sm" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex flex-wrap items-center gap-3 py-3 px-4 bg-card rounded-xl border border-primary/30 shadow-sm" onClick={(e) => e.stopPropagation()}>
                             <input
                                 type="text"
-                                placeholder={`Introdu numele pentru ${childLevelLabels[childLevel].toLowerCase()} nou...`}
+                                placeholder={`Numele ${childLevelLabels[childLevel].toLowerCase()}...`}
                                 value={newItemTitle}
                                 onChange={(e) => setNewItemTitle(e.target.value)}
-                                onKeyDown={(e) => e.key === "Enter" && handleAddChild()}
-                                className="flex-1 bg-background border border-border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                                className="flex-1 min-w-[200px] bg-background border border-border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
                                 autoFocus
                             />
-                            <Button size="sm" onClick={handleAddChild} disabled={!newItemTitle.trim()}>
+                            <div className="flex items-center gap-2">
+                                <label className="text-sm text-muted-foreground whitespace-nowrap">Termen:</label>
+                                <input
+                                    type="date"
+                                    value={newItemDueDate}
+                                    onChange={(e) => setNewItemDueDate(e.target.value)}
+                                    className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                                    required
+                                />
+                            </div>
+                            <Button size="sm" onClick={handleAddChild} disabled={!newItemTitle.trim() || !newItemDueDate}>
                                 Adaugă
                             </Button>
                             <button
                                 className="p-2 hover:bg-white/10 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
-                                onClick={() => { setIsAdding(false); setNewItemTitle(""); }}
+                                onClick={() => { setIsAdding(false); setNewItemTitle(""); setNewItemDueDate(""); }}
                             >
                                 <X className="h-4 w-4" />
                             </button>
@@ -477,50 +488,50 @@ export function TeamTasks() {
 
     // Mutations for creating hierarchy items
     const createSubgoalMutation = useMutation({
-        mutationFn: async ({ mainGoalId, title, departmentId }: { mainGoalId: string; title: string; departmentId: string }) => {
+        mutationFn: async ({ mainGoalId, title, departmentId, dueDate }: { mainGoalId: string; title: string; departmentId: string; dueDate: string }) => {
             return apiRequest("/api/ideal-scene/subgoals", {
                 method: "POST",
-                body: JSON.stringify({ mainGoalId, title, departmentId }),
+                body: JSON.stringify({ mainGoalId, title, departmentId, dueDate }),
             });
         },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
     });
 
     const createPlanMutation = useMutation({
-        mutationFn: async ({ subgoalId, title }: { subgoalId: string; title: string }) => {
+        mutationFn: async ({ subgoalId, title, dueDate }: { subgoalId: string; title: string; dueDate: string }) => {
             return apiRequest("/api/ideal-scene/plans", {
                 method: "POST",
-                body: JSON.stringify({ subgoalId, title }),
+                body: JSON.stringify({ subgoalId, title, dueDate }),
             });
         },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
     });
 
     const createProgramMutation = useMutation({
-        mutationFn: async ({ planId, title }: { planId: string; title: string }) => {
+        mutationFn: async ({ planId, title, dueDate }: { planId: string; title: string; dueDate: string }) => {
             return apiRequest("/api/ideal-scene/programs", {
                 method: "POST",
-                body: JSON.stringify({ planId, title }),
+                body: JSON.stringify({ planId, title, dueDate }),
             });
         },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
     });
 
     const createProjectMutation = useMutation({
-        mutationFn: async ({ programId, title }: { programId: string; title: string }) => {
+        mutationFn: async ({ programId, title, dueDate }: { programId: string; title: string; dueDate: string }) => {
             return apiRequest("/api/ideal-scene/projects", {
                 method: "POST",
-                body: JSON.stringify({ programId, title }),
+                body: JSON.stringify({ programId, title, dueDate }),
             });
         },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
     });
 
     const createInstructionMutation = useMutation({
-        mutationFn: async ({ projectId, title }: { projectId: string; title: string }) => {
+        mutationFn: async ({ projectId, title, dueDate }: { projectId: string; title: string; dueDate: string }) => {
             return apiRequest("/api/ideal-scene/instructions", {
                 method: "POST",
-                body: JSON.stringify({ projectId, title }),
+                body: JSON.stringify({ projectId, title, dueDate }),
             });
         },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
@@ -692,10 +703,10 @@ export function TeamTasks() {
                                 title={mainGoal.description || "Misiune"}
                                 level="mainGoal"
                                 defaultExpanded={true}
-                                onAddChild={(title) => {
+                                onAddChild={(title, dueDate) => {
                                     const firstDept = departments[0];
                                     if (firstDept) {
-                                        createSubgoalMutation.mutate({ mainGoalId: mainGoal.id, title, departmentId: firstDept.id });
+                                        createSubgoalMutation.mutate({ mainGoalId: mainGoal.id, title, departmentId: firstDept.id, dueDate });
                                     }
                                 }}
                                 childLevel="subgoal"
@@ -714,7 +725,7 @@ export function TeamTasks() {
                                         users={users}
                                         onOwnerChange={handleOwnerChange}
                                         assignedUser={subgoal.assignedUser}
-                                        onAddChild={(title) => createPlanMutation.mutate({ subgoalId: subgoal.id, title })}
+                                        onAddChild={(title, dueDate) => createPlanMutation.mutate({ subgoalId: subgoal.id, title, dueDate })}
                                         childLevel="plan"
                                         onEdit={(newTitle) => updateHierarchyMutation.mutate({ type: "subgoals", id: subgoal.id, title: newTitle })}
                                         onDelete={() => deleteHierarchyMutation.mutate({ type: "subgoals", id: subgoal.id })}
@@ -730,7 +741,7 @@ export function TeamTasks() {
                                                 users={users}
                                                 onOwnerChange={handleOwnerChange}
                                                 assignedUser={plan.assignedUser}
-                                                onAddChild={(title) => createProgramMutation.mutate({ planId: plan.id, title })}
+                                                onAddChild={(title, dueDate) => createProgramMutation.mutate({ planId: plan.id, title, dueDate })}
                                                 childLevel="program"
                                                 onEdit={(newTitle) => updateHierarchyMutation.mutate({ type: "plans", id: plan.id, title: newTitle })}
                                                 onDelete={() => deleteHierarchyMutation.mutate({ type: "plans", id: plan.id })}
@@ -746,7 +757,7 @@ export function TeamTasks() {
                                                         users={users}
                                                         onOwnerChange={handleOwnerChange}
                                                         assignedUser={program.assignedUser}
-                                                        onAddChild={(title) => createProjectMutation.mutate({ programId: program.id, title })}
+                                                        onAddChild={(title, dueDate) => createProjectMutation.mutate({ programId: program.id, title, dueDate })}
                                                         childLevel="project"
                                                         onEdit={(newTitle) => updateHierarchyMutation.mutate({ type: "programs", id: program.id, title: newTitle })}
                                                         onDelete={() => deleteHierarchyMutation.mutate({ type: "programs", id: program.id })}
@@ -762,7 +773,7 @@ export function TeamTasks() {
                                                                 users={users}
                                                                 onOwnerChange={handleOwnerChange}
                                                                 assignedUser={project.assignedUser}
-                                                                onAddChild={(title) => createInstructionMutation.mutate({ projectId: project.id, title })}
+                                                                onAddChild={(title, dueDate) => createInstructionMutation.mutate({ projectId: project.id, title, dueDate })}
                                                                 childLevel="instruction"
                                                                 onEdit={(newTitle) => updateHierarchyMutation.mutate({ type: "projects", id: project.id, title: newTitle })}
                                                                 onDelete={() => deleteHierarchyMutation.mutate({ type: "projects", id: project.id })}

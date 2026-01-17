@@ -455,10 +455,10 @@ export function registerRoutes(app: Express) {
     // Create Subgoal
     app.post("/api/ideal-scene/subgoals", async (req: Request, res: Response) => {
         try {
-            const { title, description, mainGoalId, departmentId, assignedUserId } = req.body;
+            const { title, description, mainGoalId, departmentId, assignedUserId, dueDate } = req.body;
 
-            if (!title || !mainGoalId || !departmentId) {
-                return res.status(400).json({ error: "Title, mainGoalId, and departmentId are required" });
+            if (!title || !mainGoalId || !departmentId || !dueDate) {
+                return res.status(400).json({ error: "Title, mainGoalId, departmentId, and dueDate are required" });
             }
 
             const [subgoal] = await db.insert(subgoals).values({
@@ -467,6 +467,7 @@ export function registerRoutes(app: Express) {
                 mainGoalId,
                 departmentId,
                 assignedUserId: assignedUserId || null,
+                dueDate: new Date(dueDate),
             }).returning();
 
             res.status(201).json(subgoal);
@@ -479,10 +480,10 @@ export function registerRoutes(app: Express) {
     // Create Plan (Terv)
     app.post("/api/ideal-scene/plans", async (req: Request, res: Response) => {
         try {
-            const { title, description, subgoalId, departmentId, assignedUserId } = req.body;
+            const { title, description, subgoalId, departmentId, assignedUserId, dueDate } = req.body;
 
-            if (!title || !subgoalId || !departmentId) {
-                return res.status(400).json({ error: "Title, subgoalId, and departmentId are required" });
+            if (!title || !subgoalId || !departmentId || !dueDate) {
+                return res.status(400).json({ error: "Title, subgoalId, departmentId, and dueDate are required" });
             }
 
             const [plan] = await db.insert(plans).values({
@@ -491,6 +492,7 @@ export function registerRoutes(app: Express) {
                 subgoalId,
                 departmentId,
                 assignedUserId: assignedUserId || null,
+                dueDate: new Date(dueDate),
             }).returning();
 
             res.status(201).json(plan);
@@ -526,10 +528,10 @@ export function registerRoutes(app: Express) {
     // Create Program (now references planId instead of subgoalId)
     app.post("/api/ideal-scene/programs", async (req: Request, res: Response) => {
         try {
-            let { title, description, planId, departmentId, assignedUserId } = req.body;
+            let { title, description, planId, departmentId, assignedUserId, dueDate } = req.body;
 
-            if (!title || !planId) {
-                return res.status(400).json({ error: "Title and planId are required" });
+            if (!title || !planId || !dueDate) {
+                return res.status(400).json({ error: "Title, planId, and dueDate are required" });
             }
 
             // Auto-select first department if not provided
@@ -544,6 +546,7 @@ export function registerRoutes(app: Express) {
                 planId,
                 departmentId,
                 assignedUserId: assignedUserId || null,
+                dueDate: new Date(dueDate),
             }).returning();
 
             res.status(201).json(program);
@@ -556,10 +559,10 @@ export function registerRoutes(app: Express) {
     // Create Project
     app.post("/api/ideal-scene/projects", async (req: Request, res: Response) => {
         try {
-            let { title, description, programId, departmentId, assignedUserId } = req.body;
+            let { title, description, programId, departmentId, assignedUserId, dueDate } = req.body;
 
-            if (!title || !programId) {
-                return res.status(400).json({ error: "Title and programId are required" });
+            if (!title || !programId || !dueDate) {
+                return res.status(400).json({ error: "Title, programId, and dueDate are required" });
             }
 
             // Auto-select first department if not provided
@@ -574,6 +577,7 @@ export function registerRoutes(app: Express) {
                 programId,
                 departmentId,
                 assignedUserId: assignedUserId || null,
+                dueDate: new Date(dueDate),
             }).returning();
 
             res.status(201).json(project);
@@ -586,10 +590,10 @@ export function registerRoutes(app: Express) {
     // Create Instruction
     app.post("/api/ideal-scene/instructions", async (req: Request, res: Response) => {
         try {
-            let { title, description, projectId, departmentId, assignedUserId } = req.body;
+            let { title, description, projectId, departmentId, assignedUserId, dueDate } = req.body;
 
-            if (!title || !projectId) {
-                return res.status(400).json({ error: "Title and projectId are required" });
+            if (!title || !projectId || !dueDate) {
+                return res.status(400).json({ error: "Title, projectId, and dueDate are required" });
             }
 
             // Auto-select first department if not provided
@@ -604,6 +608,7 @@ export function registerRoutes(app: Express) {
                 projectId,
                 departmentId,
                 assignedUserId: assignedUserId || null,
+                dueDate: new Date(dueDate),
             }).returning();
 
             res.status(201).json(instruction);
