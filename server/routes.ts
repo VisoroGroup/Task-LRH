@@ -1115,6 +1115,32 @@ export function registerRoutes(app: Express) {
         }
     });
 
+    // Delete user (soft delete - sets isActive to false)
+    app.delete("/api/users/:id", async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+
+            // Don't allow deleting the CEO user
+            if (id === "user-ceo") {
+                return res.status(400).json({ error: "Cannot delete CEO user" });
+            }
+
+            const [deleted] = await db.update(users)
+                .set({ isActive: false, updatedAt: new Date() })
+                .where(eq(users.id, id))
+                .returning();
+
+            if (!deleted) {
+                return res.status(404).json({ error: "User not found" });
+            }
+
+            res.json({ success: true, message: "User deleted" });
+        } catch (error) {
+            console.error("Error deleting user:", error);
+            res.status(500).json({ error: "Failed to delete user" });
+        }
+    });
+
     // ============================================================================
     // CEO DASHBOARD
     // ============================================================================
