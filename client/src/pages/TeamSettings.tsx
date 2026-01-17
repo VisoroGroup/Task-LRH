@@ -15,6 +15,7 @@ import {
     Trash2,
     Copy,
     Send,
+    Pencil,
 } from "lucide-react";
 
 interface Invitation {
@@ -56,6 +57,7 @@ export function TeamSettings() {
     const [newName, setNewName] = useState("");
     const [newRole, setNewRole] = useState<"CEO" | "EXECUTIVE" | "USER">("USER");
     const [copiedToken, setCopiedToken] = useState<string | null>(null);
+    const [editingUser, setEditingUser] = useState<{ id: string; name: string } | null>(null);
 
     // Fetch team members
     const { data: users = [] } = useQuery<TeamMember[]>({
@@ -119,6 +121,21 @@ export function TeamSettings() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["users"] });
             toast({ title: "Rol actualizat!" });
+        },
+    });
+
+    // Update user name mutation
+    const updateNameMutation = useMutation({
+        mutationFn: async ({ userId, name }: { userId: string; name: string }) => {
+            return apiRequest(`/api/users/${userId}/name`, {
+                method: "PUT",
+                body: JSON.stringify({ name }),
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["users"] });
+            setEditingUser(null);
+            toast({ title: "Nume actualizat!" });
         },
     });
 
@@ -293,13 +310,45 @@ export function TeamSettings() {
                             {users.map((user) => (
                                 <div
                                     key={user.id}
-                                    className="flex items-center gap-3 p-3 rounded-lg bg-muted/50"
+                                    className="group flex items-center gap-3 p-3 rounded-lg bg-muted/50"
                                 >
                                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white font-bold">
                                         {user.name.charAt(0)}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div className="font-medium text-sm truncate">{user.name}</div>
+                                        {editingUser?.id === user.id ? (
+                                            <div className="flex items-center gap-1">
+                                                <Input
+                                                    value={editingUser.name}
+                                                    onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+                                                    className="h-7 text-sm"
+                                                    autoFocus
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            updateNameMutation.mutate({ userId: user.id, name: editingUser.name });
+                                                        } else if (e.key === 'Escape') {
+                                                            setEditingUser(null);
+                                                        }
+                                                    }}
+                                                />
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="h-7 w-7 p-0"
+                                                    onClick={() => updateNameMutation.mutate({ userId: user.id, name: editingUser.name })}
+                                                >
+                                                    <Check className="h-3 w-3" />
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <div
+                                                className="font-medium text-sm truncate cursor-pointer hover:text-primary flex items-center gap-1"
+                                                onClick={() => setEditingUser({ id: user.id, name: user.name })}
+                                            >
+                                                {user.name}
+                                                <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-50" />
+                                            </div>
+                                        )}
                                         <div className="text-xs text-muted-foreground truncate">{user.email}</div>
                                     </div>
                                     <select
