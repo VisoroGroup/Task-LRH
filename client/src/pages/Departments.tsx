@@ -280,7 +280,7 @@ export function Departments() {
                                 />
                             </div>
                             <div>
-                                <label className="text-sm font-medium">Șef Departament</label>
+                                <label className="text-sm font-medium">Șef departament</label>
                                 <select
                                     value={editingDept.departmentHeadId || ""}
                                     onChange={(e) => {
@@ -343,7 +343,7 @@ export function Departments() {
                                                 {dept.head ? (
                                                     <span className="flex items-center gap-1">
                                                         <User className="h-3 w-3" />
-                                                        Șef Departament: {dept.head.name}
+                                                        Șef departament: {dept.head.name}
                                                     </span>
                                                 ) : (
                                                     <span className="text-yellow-600">Niciun șef desemnat</span>
