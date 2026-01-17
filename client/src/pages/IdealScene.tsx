@@ -339,36 +339,36 @@ export function IdealScene() {
                                         title={subgoal.title}
                                         description={subgoal.description}
                                         level={1}
-                                        hasChildren={subgoal.programs.length > 0}
+                                        hasChildren={(subgoal.programs?.length || 0) > 0}
                                         icon={<Flag className="h-4 w-4 text-indigo-500" />}
                                         onAddChild={() => handleOpenAddDialog("program", subgoal.id)}
                                         childLabel="Program"
                                     >
-                                        {subgoal.programs.map((program) => (
+                                        {(subgoal.programs || []).map((program) => (
                                             <TreeItem
                                                 key={program.id}
                                                 id={program.id}
                                                 title={program.title}
                                                 description={program.description}
                                                 level={2}
-                                                hasChildren={program.projects.length > 0}
+                                                hasChildren={(program.projects?.length || 0) > 0}
                                                 icon={<Layers className="h-4 w-4 text-blue-500" />}
                                                 onAddChild={() => handleOpenAddDialog("project", program.id)}
                                                 childLabel="Project"
                                             >
-                                                {program.projects.map((project) => (
+                                                {(program.projects || []).map((project) => (
                                                     <TreeItem
                                                         key={project.id}
                                                         id={project.id}
                                                         title={project.title}
                                                         description={project.description}
                                                         level={3}
-                                                        hasChildren={project.instructions.length > 0}
+                                                        hasChildren={(project.instructions?.length || 0) > 0}
                                                         icon={<FolderKanban className="h-4 w-4 text-cyan-500" />}
                                                         onAddChild={() => handleOpenAddDialog("instruction", project.id)}
                                                         childLabel="Instruction"
                                                     >
-                                                        {project.instructions.map((instruction) => (
+                                                        {(project.instructions || []).map((instruction) => (
                                                             <TreeItem
                                                                 key={instruction.id}
                                                                 id={instruction.id}
