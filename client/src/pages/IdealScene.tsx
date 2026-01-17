@@ -51,7 +51,7 @@ export function IdealScene() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
-            toast({ title: "Imaginea Ideală salvată!", variant: "success" as any });
+            toast({ title: "Imaginea ideală salvată!", variant: "success" as any });
             setIsEditing(false);
         },
         onError: (error: Error) => {
@@ -82,7 +82,7 @@ export function IdealScene() {
                 <div>
                     <h2 className="text-2xl font-bold flex items-center gap-2">
                         <Sparkles className="h-6 w-6 text-violet-500" />
-                        Imaginea Ideală
+                        Imaginea ideală
                     </h2>
                     <p className="text-muted-foreground">
                         Viziunea completă a companiei - cum vrem să arate, cum vrem să funcționeze
@@ -95,7 +95,7 @@ export function IdealScene() {
                 <Card className="border-dashed">
                     <CardContent className="text-center py-16">
                         <Target className="h-16 w-16 mx-auto text-muted-foreground mb-6" />
-                        <h3 className="text-xl font-semibold mb-3">Nicio Misiune configurată</h3>
+                        <h3 className="text-xl font-semibold mb-3">Nicio misiune configurată</h3>
                         <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                             Mai întâi trebuie să setați Misiunea companiei în Setări.
                             Aceasta este fundația pe care se construiește Imaginea Ideală.
@@ -118,7 +118,7 @@ export function IdealScene() {
                                 <Target className="h-8 w-8" />
                                 <div>
                                     <div className="text-xs uppercase tracking-wider opacity-80 mb-1">
-                                        Misiunea Companiei
+                                        Misiunea companiei
                                     </div>
                                     <div className="text-xl font-bold">
                                         {mainGoal.title}
@@ -139,7 +139,7 @@ export function IdealScene() {
                             <div>
                                 <CardTitle className="flex items-center gap-2">
                                     <Sparkles className="h-5 w-5 text-violet-500" />
-                                    Documentul Imaginii Ideale
+                                    Documentul imaginii ideale
                                 </CardTitle>
                                 <CardDescription>
                                     Descrie în detaliu cum vrei să arate compania, cum vrei să funcționeze, unde vrei să ajungă

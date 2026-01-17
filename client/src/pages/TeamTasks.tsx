@@ -366,7 +366,7 @@ export function TeamTasks() {
                 <CardHeader className="pb-3">
                     <CardTitle className="text-base flex items-center gap-2">
                         <Users className="h-4 w-4" />
-                        Membrii Echipei
+                        Membrii echipei
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-1">
@@ -418,7 +418,7 @@ export function TeamTasks() {
                 {/* Header with filters */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-2xl font-bold">Sarcini Echipă</h2>
+                        <h2 className="text-2xl font-bold">Sarcini echipă</h2>
                         <p className="text-muted-foreground">
                             {filteredTasks.length} sarcini
                             {selectedMember && ` pentru ${users.find(u => u.id === selectedMember)?.name}`}

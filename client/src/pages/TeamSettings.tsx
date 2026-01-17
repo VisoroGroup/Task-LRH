@@ -183,7 +183,7 @@ export function TeamSettings() {
             <div>
                 <h2 className="text-2xl font-bold flex items-center gap-2">
                     <Users className="h-6 w-6 text-primary" />
-                    Setări Echipă
+                    Setări echipă
                 </h2>
                 <p className="text-muted-foreground">
                     Gestionează membrii echipei și trimite invitații
@@ -196,7 +196,7 @@ export function TeamSettings() {
                     <CardHeader>
                         <CardTitle className="text-lg flex items-center gap-2">
                             <UserPlus className="h-5 w-5 text-emerald-500" />
-                            Invită Membru Nou
+                            Invită membru nou
                         </CardTitle>
                         <CardDescription>
                             Trimite o invitație pe email pentru a adăuga un nou membru în echipă
@@ -245,7 +245,7 @@ export function TeamSettings() {
                             className="w-full"
                         >
                             <Send className="h-4 w-4 mr-2" />
-                            {createInvitationMutation.isPending ? "Se trimite..." : "Trimite Invitație"}
+                            {createInvitationMutation.isPending ? "Se trimite..." : "Trimite invitație"}
                         </Button>
                     </CardContent>
                 </Card>
@@ -316,7 +316,7 @@ export function TeamSettings() {
                 <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
                         <Shield className="h-5 w-5 text-blue-500" />
-                        Membrii Echipei ({users.length})
+                        Membrii echipei ({users.length})
                     </CardTitle>
                     <CardDescription>
                         Gestionează rolurile membrilor echipei

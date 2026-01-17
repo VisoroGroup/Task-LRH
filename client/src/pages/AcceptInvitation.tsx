@@ -95,7 +95,7 @@ export function AcceptInvitation({ token }: { token: string }) {
                         <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
                             <AlertCircle className="h-8 w-8 text-red-500" />
                         </div>
-                        <h2 className="text-xl font-bold mb-2">Invitație Invalidă</h2>
+                        <h2 className="text-xl font-bold mb-2">Invitație invalidă</h2>
                         <p className="text-muted-foreground mb-6">
                             Această invitație poate fi expirată, deja folosită, sau linkul este incorect.
                         </p>
@@ -169,7 +169,7 @@ export function AcceptInvitation({ token }: { token: string }) {
                         ) : (
                             <>
                                 <CheckCircle className="h-4 w-4 mr-2" />
-                                Acceptă Invitația
+                                Acceptă invitația
                             </>
                         )}
                     </Button>

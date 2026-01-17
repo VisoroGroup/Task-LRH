@@ -187,13 +187,13 @@ export function Settings() {
                                         onClick={() => setIsEditingMainGoal(true)}
                                     >
                                         <Edit2 className="h-4 w-4 mr-2" />
-                                        Editează Misiunea
+                                        Editează misiunea
                                     </Button>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="text-sm font-medium">Titlul Obiectivului *</label>
+                                        <label className="text-sm font-medium">Titlul obiectivului *</label>
                                         <input
                                             type="text"
                                             value={mainGoalTitle}
@@ -230,7 +230,7 @@ export function Settings() {
                                             disabled={!mainGoalTitle.trim()}
                                         >
                                             <Save className="h-4 w-4 mr-2" />
-                                            {mainGoal ? "Actualizează Misiunea" : "Creează Misiune"}
+                                            {mainGoal ? "Actualizează misiunea" : "Creează misiune"}
                                         </Button>
                                     </div>
                                 </div>
@@ -243,7 +243,7 @@ export function Settings() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Clock className="h-5 w-5" />
-                                Control Flux
+                                Control flux
                             </CardTitle>
                             <CardDescription>
                                 Configurează modul în care sistemul detectează sarcinile blocate și condițiile de supraîncărcare
@@ -252,7 +252,7 @@ export function Settings() {
                         <CardContent className="space-y-6">
                             <div>
                                 <label className="block text-sm font-medium mb-2">
-                                    Prag Detectare Blocare
+                                    Prag detectare blocare
                                 </label>
                                 <div className="flex items-center gap-3">
                                     <input
@@ -268,7 +268,7 @@ export function Settings() {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium mb-2">
-                                    Prag Supraîncărcare
+                                    Prag supraîncărcare
                                 </label>
                                 <div className="flex items-center gap-3">
                                     <input
@@ -290,7 +290,7 @@ export function Settings() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <SettingsIcon className="h-5 w-5" />
-                                Informații Sistem
+                                Informații sistem
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -314,7 +314,7 @@ export function Settings() {
                     {/* Save Button */}
                     <Button onClick={handleSave} className="w-full">
                         <Save className="h-4 w-4 mr-2" />
-                        Salvează Setările
+                        Salvează setările
                     </Button>
                 </div>
             )}

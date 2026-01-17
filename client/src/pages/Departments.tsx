@@ -209,12 +209,12 @@ export function Departments() {
                     <DialogTrigger asChild>
                         <Button>
                             <Plus className="h-4 w-4 mr-2" />
-                            Departament Nou
+                            Departament nou
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Creează Departament</DialogTitle>
+                            <DialogTitle>Creează departament</DialogTitle>
                             <DialogDescription>
                                 Adaugă o nouă funcție organizațională
                             </DialogDescription>
@@ -246,7 +246,7 @@ export function Departments() {
                                 Anulează
                             </Button>
                             <Button onClick={handleCreate} disabled={!newDeptName.trim()}>
-                                Creează Departament
+                                Creează departament
                             </Button>
                         </DialogFooter>
                     </DialogContent>
@@ -257,7 +257,7 @@ export function Departments() {
             <Dialog open={!!editingDept} onOpenChange={(open) => !open && setEditingDept(null)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Editează Departament</DialogTitle>
+                        <DialogTitle>Editează departament</DialogTitle>
                     </DialogHeader>
                     {editingDept && (
                         <div className="space-y-4 py-4">
@@ -303,7 +303,7 @@ export function Departments() {
                         <Button variant="outline" onClick={() => setEditingDept(null)}>
                             Anulează
                         </Button>
-                        <Button onClick={handleUpdate}>Salvează Modificările</Button>
+                        <Button onClick={handleUpdate}>Salvează modificările</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -381,12 +381,12 @@ export function Departments() {
                                             <DialogTrigger asChild>
                                                 <Button size="sm" variant="outline">
                                                     <UserPlus className="h-3 w-3 mr-1" />
-                                                    Adaugă Post
+                                                    Adaugă post
                                                 </Button>
                                             </DialogTrigger>
                                             <DialogContent>
                                                 <DialogHeader>
-                                                    <DialogTitle>Adaugă Post la {dept.name}</DialogTitle>
+                                                    <DialogTitle>Adaugă post la {dept.name}</DialogTitle>
                                                 </DialogHeader>
                                                 <div className="space-y-4 py-4">
                                                     <div>
@@ -475,7 +475,7 @@ export function Departments() {
                     <div className="flex items-start gap-4">
                         <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
                         <div>
-                            <h4 className="font-medium mb-1">Reguli Departamente și Posturi</h4>
+                            <h4 className="font-medium mb-1">Reguli departamente și posturi</h4>
                             <ul className="text-sm text-muted-foreground space-y-1">
                                 <li>• Fiecare departament are un șef (persoană responsabilă)</li>
                                 <li>• Posturile sunt poziții în cadrul departamentului</li>
