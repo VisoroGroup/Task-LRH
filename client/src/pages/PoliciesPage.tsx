@@ -1,0 +1,454 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { apiRequest, cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import {
+    Plus,
+    FileText,
+    Building2,
+    Users,
+    Edit2,
+    Trash2,
+    Check,
+} from "lucide-react";
+
+interface Post {
+    id: string;
+    name: string;
+    department: { id: string; name: string };
+    user: { id: string; name: string } | null;
+}
+
+interface PolicyPost {
+    id: string;
+    post: Post;
+}
+
+interface Policy {
+    id: string;
+    title: string;
+    content: string;
+    scope: "COMPANY" | "POST";
+    isActive: boolean;
+    createdBy: { id: string; name: string };
+    policyPosts: PolicyPost[];
+    createdAt: string;
+}
+
+interface Department {
+    id: string;
+    name: string;
+    posts: Post[];
+}
+
+export function PoliciesPage() {
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+    const [activeTab, setActiveTab] = useState<"COMPANY" | "POST">("COMPANY");
+    const [isNewPolicyOpen, setIsNewPolicyOpen] = useState(false);
+    const [editingPolicy, setEditingPolicy] = useState<Policy | null>(null);
+
+    // Form state
+    const [title, setTitle] = useState("");
+    const [content, setContent] = useState("");
+    const [scope, setScope] = useState<"COMPANY" | "POST">("COMPANY");
+    const [selectedPostIds, setSelectedPostIds] = useState<string[]>([]);
+
+    // Fetch policies
+    const { data: policies, isLoading } = useQuery({
+        queryKey: ["policies"],
+        queryFn: () => apiRequest<Policy[]>("/api/policies"),
+    });
+
+    // Fetch departments with posts for selection
+    const { data: departments } = useQuery({
+        queryKey: ["departments"],
+        queryFn: () => apiRequest<Department[]>("/api/departments"),
+    });
+
+    // Fetch current user (for createdById)
+    const { data: currentUser } = useQuery({
+        queryKey: ["current-user"],
+        queryFn: () => apiRequest<{ id: string; name: string; role: string }>("/api/auth/me"),
+    });
+
+    // Create policy mutation
+    const createPolicyMutation = useMutation({
+        mutationFn: async (data: {
+            title: string;
+            content: string;
+            scope: string;
+            createdById: string;
+            postIds?: string[];
+        }) => {
+            return apiRequest("/api/policies", {
+                method: "POST",
+                body: JSON.stringify(data),
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["policies"] });
+            toast({ title: "Irányelv létrehozva!", variant: "success" as any });
+            closeDialog();
+        },
+        onError: (error: Error) => {
+            toast({ title: "Hiba", description: error.message, variant: "destructive" });
+        },
+    });
+
+    // Update policy mutation
+    const updatePolicyMutation = useMutation({
+        mutationFn: async (data: { id: string; title: string; content: string; scope: string }) => {
+            return apiRequest(`/api/policies/${data.id}`, {
+                method: "PUT",
+                body: JSON.stringify(data),
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["policies"] });
+            toast({ title: "Irányelv frissítve!", variant: "success" as any });
+            closeDialog();
+        },
+        onError: (error: Error) => {
+            toast({ title: "Hiba", description: error.message, variant: "destructive" });
+        },
+    });
+
+    // Update post assignments
+    const updatePostsMutation = useMutation({
+        mutationFn: async (data: { policyId: string; postIds: string[] }) => {
+            return apiRequest(`/api/policies/${data.policyId}/posts`, {
+                method: "POST",
+                body: JSON.stringify({ postIds: data.postIds }),
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["policies"] });
+        },
+    });
+
+    // Delete policy mutation
+    const deletePolicyMutation = useMutation({
+        mutationFn: async (id: string) => {
+            return apiRequest(`/api/policies/${id}`, { method: "DELETE" });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["policies"] });
+            toast({ title: "Irányelv törölve!", variant: "success" as any });
+        },
+        onError: (error: Error) => {
+            toast({ title: "Hiba", description: error.message, variant: "destructive" });
+        },
+    });
+
+    const closeDialog = () => {
+        setIsNewPolicyOpen(false);
+        setEditingPolicy(null);
+        setTitle("");
+        setContent("");
+        setScope("COMPANY");
+        setSelectedPostIds([]);
+    };
+
+    const openEditDialog = (policy: Policy) => {
+        setEditingPolicy(policy);
+        setTitle(policy.title);
+        setContent(policy.content);
+        setScope(policy.scope);
+        setSelectedPostIds(policy.policyPosts.map(pp => pp.post.id));
+        setIsNewPolicyOpen(true);
+    };
+
+    const handleSubmit = async () => {
+        if (!title.trim() || !content.trim()) {
+            toast({ title: "Cím és tartalom kötelező!", variant: "destructive" });
+            return;
+        }
+
+        if (editingPolicy) {
+            // Update existing
+            await updatePolicyMutation.mutateAsync({
+                id: editingPolicy.id,
+                title,
+                content,
+                scope,
+            });
+            // Update post assignments if scope is POST
+            if (scope === "POST") {
+                await updatePostsMutation.mutateAsync({
+                    policyId: editingPolicy.id,
+                    postIds: selectedPostIds,
+                });
+            }
+        } else {
+            // Create new
+            createPolicyMutation.mutate({
+                title,
+                content,
+                scope,
+                createdById: currentUser?.id || "",
+                postIds: scope === "POST" ? selectedPostIds : undefined,
+            });
+        }
+    };
+
+    const togglePostSelection = (postId: string) => {
+        setSelectedPostIds(prev =>
+            prev.includes(postId)
+                ? prev.filter(id => id !== postId)
+                : [...prev, postId]
+        );
+    };
+
+    const filteredPolicies = policies?.filter(p => p.scope === activeTab) || [];
+
+    if (isLoading) {
+        return <div className="text-center py-8 text-muted-foreground">Se încarcă...</div>;
+    }
+
+    return (
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-2xl font-bold">Irányelvek</h2>
+                    <p className="text-muted-foreground">Directive de funcționare pentru companie și posturi</p>
+                </div>
+                <Button onClick={() => setIsNewPolicyOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Új Irányelv
+                </Button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-2 border-b">
+                <button
+                    onClick={() => setActiveTab("COMPANY")}
+                    className={cn(
+                        "px-4 py-2 font-medium transition-colors",
+                        activeTab === "COMPANY"
+                            ? "border-b-2 border-primary text-primary"
+                            : "text-muted-foreground hover:text-foreground"
+                    )}
+                >
+                    <Building2 className="h-4 w-4 inline mr-2" />
+                    Cég-szintű
+                </button>
+                <button
+                    onClick={() => setActiveTab("POST")}
+                    className={cn(
+                        "px-4 py-2 font-medium transition-colors",
+                        activeTab === "POST"
+                            ? "border-b-2 border-primary text-primary"
+                            : "text-muted-foreground hover:text-foreground"
+                    )}
+                >
+                    <Users className="h-4 w-4 inline mr-2" />
+                    Poszt-specifikus
+                </button>
+            </div>
+
+            {/* Policies List */}
+            <div className="grid gap-4">
+                {filteredPolicies.length === 0 ? (
+                    <Card>
+                        <CardContent className="py-8 text-center text-muted-foreground">
+                            Nincs {activeTab === "COMPANY" ? "cég-szintű" : "poszt-specifikus"} irányelv.
+                            <br />
+                            <Button variant="link" onClick={() => setIsNewPolicyOpen(true)}>
+                                Hozz létre egyet!
+                            </Button>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    filteredPolicies.map(policy => (
+                        <Card key={policy.id} className="hover:shadow-md transition-shadow">
+                            <CardHeader className="pb-2">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <FileText className="h-5 w-5 text-primary" />
+                                        <CardTitle className="text-lg">{policy.title}</CardTitle>
+                                    </div>
+                                    <div className="flex gap-1">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => openEditDialog(policy)}
+                                        >
+                                            <Edit2 className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => deletePolicyMutation.mutate(policy.id)}
+                                        >
+                                            <Trash2 className="h-4 w-4 text-red-500" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-muted-foreground whitespace-pre-wrap mb-3">
+                                    {policy.content}
+                                </p>
+                                {policy.scope === "POST" && policy.policyPosts.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                        {policy.policyPosts.map(pp => (
+                                            <span
+                                                key={pp.id}
+                                                className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full"
+                                            >
+                                                {pp.post.name} ({pp.post.department?.name})
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+                                <div className="text-xs text-muted-foreground mt-3">
+                                    Létrehozta: {policy.createdBy?.name} •{" "}
+                                    {new Date(policy.createdAt).toLocaleDateString()}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))
+                )}
+            </div>
+
+            {/* Create/Edit Dialog */}
+            <Dialog open={isNewPolicyOpen} onOpenChange={setIsNewPolicyOpen}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {editingPolicy ? "Irányelv Szerkesztése" : "Új Irányelv"}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {editingPolicy
+                                ? "Módosítsd az irányelv adatait"
+                                : "Hozz létre egy új irányelvet a szervezet számára"}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        {/* Title */}
+                        <div>
+                            <label className="text-sm font-medium">Cím *</label>
+                            <input
+                                type="text"
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                placeholder="pl. Telefonos kommunikáció szabályai"
+                            />
+                        </div>
+
+                        {/* Scope */}
+                        <div>
+                            <label className="text-sm font-medium">Hatókör *</label>
+                            <div className="flex gap-4 mt-2">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="scope"
+                                        checked={scope === "COMPANY"}
+                                        onChange={() => setScope("COMPANY")}
+                                        className="w-4 h-4"
+                                    />
+                                    <Building2 className="h-4 w-4" />
+                                    Cég-szintű
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="scope"
+                                        checked={scope === "POST"}
+                                        onChange={() => setScope("POST")}
+                                        className="w-4 h-4"
+                                    />
+                                    <Users className="h-4 w-4" />
+                                    Poszt-specifikus
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* Post Selection (only for POST scope) */}
+                        {scope === "POST" && (
+                            <div>
+                                <label className="text-sm font-medium">Posztok kiválasztása *</label>
+                                <div className="mt-2 max-h-48 overflow-y-auto border rounded-md p-3 space-y-3">
+                                    {departments?.map(dept => (
+                                        <div key={dept.id}>
+                                            <div className="text-xs font-semibold text-muted-foreground uppercase mb-1">
+                                                {dept.name}
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {dept.posts?.map(post => (
+                                                    <button
+                                                        key={post.id}
+                                                        type="button"
+                                                        onClick={() => togglePostSelection(post.id)}
+                                                        className={cn(
+                                                            "px-3 py-1.5 rounded-full text-sm transition-colors flex items-center gap-1",
+                                                            selectedPostIds.includes(post.id)
+                                                                ? "bg-primary text-primary-foreground"
+                                                                : "bg-muted hover:bg-muted/80"
+                                                        )}
+                                                    >
+                                                        {selectedPostIds.includes(post.id) && (
+                                                            <Check className="h-3 w-3" />
+                                                        )}
+                                                        {post.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                {selectedPostIds.length > 0 && (
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                        {selectedPostIds.length} poszt kiválasztva
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Content */}
+                        <div>
+                            <label className="text-sm font-medium">Tartalom *</label>
+                            <textarea
+                                value={content}
+                                onChange={(e) => setContent(e.target.value)}
+                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background min-h-[150px]"
+                                placeholder="Írd le részletesen az irányelvet..."
+                            />
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={closeDialog}>
+                            Mégse
+                        </Button>
+                        <Button
+                            onClick={handleSubmit}
+                            disabled={
+                                !title.trim() ||
+                                !content.trim() ||
+                                (scope === "POST" && selectedPostIds.length === 0)
+                            }
+                        >
+                            {editingPolicy ? "Mentés" : "Létrehozás"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+}

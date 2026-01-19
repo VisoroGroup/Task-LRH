@@ -12,6 +12,7 @@ import { Departments } from "@/pages/Departments";
 import { Calendar } from "@/pages/Calendar";
 import { Settings } from "@/pages/Settings";
 import { LoginPage } from "@/pages/LoginPage";
+import { PoliciesPage } from "@/pages/PoliciesPage";
 
 // Wrapper component for invitation page with token param
 function InvitePage() {
@@ -75,6 +76,13 @@ function AppRoutes() {
           <Route path="/team-settings">
             <RequireAuth roles={["CEO", "EXECUTIVE"]}>
               <TeamSettings />
+            </RequireAuth>
+          </Route>
+
+          {/* CEO only - Policies */}
+          <Route path="/policies">
+            <RequireAuth roles={["CEO"]}>
+              <PoliciesPage />
             </RequireAuth>
           </Route>
         </Switch>

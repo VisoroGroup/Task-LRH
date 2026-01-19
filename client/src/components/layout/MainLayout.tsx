@@ -15,6 +15,7 @@ import {
     LogOut,
     User,
     Sparkles,
+    FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -31,6 +32,7 @@ const navItems: NavItem[] = [
     { href: "/team-tasks", label: "Sarcini echipă", icon: <Building2 className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
     { href: "/ideal-scene", label: "Imaginea ideală", icon: <Target className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
     { href: "/departments", label: "Departamente", icon: <Building2 className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
+    { href: "/policies", label: "Irányelvek", icon: <FileText className="h-5 w-5" />, roles: ["CEO"] },
     { href: "/calendar", label: "Calendar", icon: <Calendar className="h-5 w-5" /> },
     { href: "/team-settings", label: "Echipă", icon: <Settings className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
     { href: "/settings", label: "Setări", icon: <Settings className="h-5 w-5" />, roles: ["CEO"] },

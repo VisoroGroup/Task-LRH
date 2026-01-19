@@ -43,6 +43,9 @@ export const evidenceTypeEnum = pgEnum("evidence_type", [
     "SIGNED_NOTE"
 ]);
 
+// Policy scope - company-wide or post-specific
+export const policyScopeEnum = pgEnum("policy_scope", ["COMPANY", "POST"]);
+
 // ============================================================================
 // SESSIONS (for authentication)
 // ============================================================================
@@ -167,7 +170,7 @@ export const posts = pgTable(
     ]
 );
 
-export const postsRelations = relations(posts, ({ one }) => ({
+export const postsRelations = relations(posts, ({ one, many }) => ({
     department: one(departments, {
         fields: [posts.departmentId],
         references: [departments.id],
@@ -176,6 +179,7 @@ export const postsRelations = relations(posts, ({ one }) => ({
         fields: [posts.userId],
         references: [users.id],
     }),
+    policyPosts: many(policyPosts),
 }));
 
 // ============================================================================
@@ -565,6 +569,62 @@ export const settings = pgTable("settings", {
 });
 
 // ============================================================================
+// POLICIES (Irányelvek / Directive de Funcționare)
+// ============================================================================
+
+export const policies = pgTable(
+    "policies",
+    {
+        id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+        title: varchar("title").notNull(),
+        content: text("content").notNull(), // Rich text content
+        scope: policyScopeEnum("scope").default("POST").notNull(),
+        isActive: boolean("is_active").default(true).notNull(),
+        createdById: varchar("created_by_id").references(() => users.id).notNull(),
+        createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    },
+    (table) => [
+        index("idx_policies_scope").on(table.scope),
+        index("idx_policies_created_by").on(table.createdById),
+    ]
+);
+
+export const policiesRelations = relations(policies, ({ one, many }) => ({
+    createdBy: one(users, {
+        fields: [policies.createdById],
+        references: [users.id],
+    }),
+    policyPosts: many(policyPosts),
+}));
+
+// Junction table for many-to-many relationship between policies and posts
+export const policyPosts = pgTable(
+    "policy_posts",
+    {
+        id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+        policyId: varchar("policy_id").references(() => policies.id, { onDelete: "cascade" }).notNull(),
+        postId: varchar("post_id").references(() => posts.id, { onDelete: "cascade" }).notNull(),
+        createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    },
+    (table) => [
+        index("idx_policy_posts_policy").on(table.policyId),
+        index("idx_policy_posts_post").on(table.postId),
+    ]
+);
+
+export const policyPostsRelations = relations(policyPosts, ({ one }) => ({
+    policy: one(policies, {
+        fields: [policyPosts.policyId],
+        references: [policies.id],
+    }),
+    post: one(posts, {
+        fields: [policyPosts.postId],
+        references: [posts.id],
+    }),
+}));
+
+// ============================================================================
 // ZOD SCHEMAS FOR VALIDATION
 // ============================================================================
 
@@ -593,6 +653,13 @@ export const insertCompletionReportSchema = createInsertSchema(completionReports
     whereContext: z.string().min(3, "Context must be at least 3 characters"),
 });
 export const selectCompletionReportSchema = createSelectSchema(completionReports);
+
+// Policy schemas
+export const insertPolicySchema = createInsertSchema(policies, {
+    title: z.string().min(1).max(200),
+    content: z.string().min(10, "Content must be at least 10 characters"),
+});
+export const selectPolicySchema = createSelectSchema(policies);
 
 // ============================================================================
 // TYPE EXPORTS
@@ -634,7 +701,14 @@ export type InsertCompletionReport = typeof completionReports.$inferInsert;
 export type Upload = typeof uploads.$inferSelect;
 export type InsertUpload = typeof uploads.$inferInsert;
 
+export type Policy = typeof policies.$inferSelect;
+export type InsertPolicy = typeof policies.$inferInsert;
+
+export type PolicyPost = typeof policyPosts.$inferSelect;
+export type InsertPolicyPost = typeof policyPosts.$inferInsert;
+
 export type TaskStatus = "TODO" | "DOING" | "DONE";
 export type HierarchyLevel = "SUBGOAL" | "PLAN" | "PROGRAM" | "PROJECT" | "INSTRUCTION";
 export type UserRole = "CEO" | "EXECUTIVE" | "USER";
 export type EvidenceType = "FILE" | "IMAGE" | "URL" | "DOCUMENT" | "RECEIPT" | "SIGNED_NOTE";
+export type PolicyScope = "COMPANY" | "POST";

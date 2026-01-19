@@ -15,9 +15,12 @@ import {
     completionReports,
     settings,
     invitations,
+    policies,
+    policyPosts,
     insertDepartmentSchema,
     insertTaskSchema,
     insertCompletionReportSchema,
+    insertPolicySchema,
 } from "@shared/schema";
 
 // Helper to get stalled threshold from settings
@@ -1747,5 +1750,263 @@ export function registerRoutes(app: Express) {
     // Health check
     app.get("/api/health", (req: Request, res: Response) => {
         res.json({ status: "ok", timestamp: new Date().toISOString() });
+    });
+
+    // ============================================================================
+    // POLICIES (Irányelvek / Directive de Funcționare)
+    // ============================================================================
+
+    // Get all policies (with optional scope filter)
+    app.get("/api/policies", async (req: Request, res: Response) => {
+        try {
+            const { scope } = req.query;
+
+            const policyList = await db.query.policies.findMany({
+                where: scope
+                    ? and(eq(policies.scope, scope as any), eq(policies.isActive, true))
+                    : eq(policies.isActive, true),
+                with: {
+                    createdBy: true,
+                    policyPosts: {
+                        with: {
+                            post: {
+                                with: {
+                                    department: true,
+                                    user: true,
+                                },
+                            },
+                        },
+                    },
+                },
+                orderBy: [desc(policies.createdAt)],
+            });
+
+            res.json(policyList);
+        } catch (error) {
+            console.error("Error fetching policies:", error);
+            res.status(500).json({ error: "Failed to fetch policies" });
+        }
+    });
+
+    // Get single policy by ID
+    app.get("/api/policies/:id", async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+
+            const policy = await db.query.policies.findFirst({
+                where: eq(policies.id, id),
+                with: {
+                    createdBy: true,
+                    policyPosts: {
+                        with: {
+                            post: {
+                                with: {
+                                    department: true,
+                                    user: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+
+            if (!policy) {
+                return res.status(404).json({ error: "Policy not found" });
+            }
+
+            res.json(policy);
+        } catch (error) {
+            console.error("Error fetching policy:", error);
+            res.status(500).json({ error: "Failed to fetch policy" });
+        }
+    });
+
+    // Create policy (CEO only)
+    app.post("/api/policies", async (req: Request, res: Response) => {
+        try {
+            const parsed = insertPolicySchema.safeParse(req.body);
+            if (!parsed.success) {
+                return res.status(400).json({ error: "Invalid policy data", details: parsed.error });
+            }
+
+            const { title, content, scope, createdById, postIds } = req.body;
+
+            if (!title || !content || !createdById) {
+                return res.status(400).json({ error: "Title, content, and createdById are required" });
+            }
+
+            // Create the policy
+            const [policy] = await db.insert(policies).values({
+                title,
+                content,
+                scope: scope || "POST",
+                createdById,
+            }).returning();
+
+            // If postIds provided, create policy-post associations
+            if (postIds && Array.isArray(postIds) && postIds.length > 0) {
+                const policyPostValues = postIds.map((postId: string) => ({
+                    policyId: policy.id,
+                    postId,
+                }));
+                await db.insert(policyPosts).values(policyPostValues);
+            }
+
+            // Fetch the complete policy with relations
+            const completePolicy = await db.query.policies.findFirst({
+                where: eq(policies.id, policy.id),
+                with: {
+                    createdBy: true,
+                    policyPosts: {
+                        with: {
+                            post: true,
+                        },
+                    },
+                },
+            });
+
+            res.status(201).json(completePolicy);
+        } catch (error) {
+            console.error("Error creating policy:", error);
+            res.status(500).json({ error: "Failed to create policy" });
+        }
+    });
+
+    // Update policy (CEO only)
+    app.put("/api/policies/:id", async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+            const { title, content, scope } = req.body;
+
+            const [updated] = await db
+                .update(policies)
+                .set({
+                    title,
+                    content,
+                    scope,
+                    updatedAt: new Date(),
+                })
+                .where(eq(policies.id, id))
+                .returning();
+
+            if (!updated) {
+                return res.status(404).json({ error: "Policy not found" });
+            }
+
+            res.json(updated);
+        } catch (error) {
+            console.error("Error updating policy:", error);
+            res.status(500).json({ error: "Failed to update policy" });
+        }
+    });
+
+    // Soft delete policy (CEO only)
+    app.delete("/api/policies/:id", async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+
+            const [updated] = await db
+                .update(policies)
+                .set({ isActive: false, updatedAt: new Date() })
+                .where(eq(policies.id, id))
+                .returning();
+
+            if (!updated) {
+                return res.status(404).json({ error: "Policy not found" });
+            }
+
+            res.json({ success: true, message: "Policy archived" });
+        } catch (error) {
+            console.error("Error deleting policy:", error);
+            res.status(500).json({ error: "Failed to delete policy" });
+        }
+    });
+
+    // Get policies for a specific post
+    app.get("/api/posts/:id/policies", async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+
+            // Get post-specific policies
+            const postPolicies = await db.query.policyPosts.findMany({
+                where: eq(policyPosts.postId, id),
+                with: {
+                    policy: {
+                        with: {
+                            createdBy: true,
+                        },
+                    },
+                },
+            });
+
+            // Get company-wide policies
+            const companyPolicies = await db.query.policies.findMany({
+                where: and(eq(policies.scope, "COMPANY"), eq(policies.isActive, true)),
+                with: {
+                    createdBy: true,
+                },
+            });
+
+            // Combine and return
+            const allPolicies = {
+                postPolicies: postPolicies
+                    .filter(pp => pp.policy.isActive)
+                    .map(pp => pp.policy),
+                companyPolicies,
+            };
+
+            res.json(allPolicies);
+        } catch (error) {
+            console.error("Error fetching post policies:", error);
+            res.status(500).json({ error: "Failed to fetch post policies" });
+        }
+    });
+
+    // Assign posts to a policy (CEO only)
+    app.post("/api/policies/:id/posts", async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+            const { postIds } = req.body;
+
+            if (!postIds || !Array.isArray(postIds)) {
+                return res.status(400).json({ error: "postIds array is required" });
+            }
+
+            // Delete existing associations
+            await db.delete(policyPosts).where(eq(policyPosts.policyId, id));
+
+            // Create new associations
+            if (postIds.length > 0) {
+                const policyPostValues = postIds.map((postId: string) => ({
+                    policyId: id,
+                    postId,
+                }));
+                await db.insert(policyPosts).values(policyPostValues);
+            }
+
+            res.json({ success: true, message: "Posts assigned to policy" });
+        } catch (error) {
+            console.error("Error assigning posts to policy:", error);
+            res.status(500).json({ error: "Failed to assign posts to policy" });
+        }
+    });
+
+    // Remove a post from a policy (CEO only)
+    app.delete("/api/policies/:policyId/posts/:postId", async (req: Request, res: Response) => {
+        try {
+            const { policyId, postId } = req.params;
+
+            await db.delete(policyPosts).where(
+                and(
+                    eq(policyPosts.policyId, policyId),
+                    eq(policyPosts.postId, postId)
+                )
+            );
+
+            res.json({ success: true, message: "Post removed from policy" });
+        } catch (error) {
+            console.error("Error removing post from policy:", error);
+            res.status(500).json({ error: "Failed to remove post from policy" });
+        }
     });
 }
