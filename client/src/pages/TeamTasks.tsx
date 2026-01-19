@@ -498,10 +498,10 @@ export function TeamTasks() {
     });
 
     const createPlanMutation = useMutation({
-        mutationFn: async ({ subgoalId, title, dueDate }: { subgoalId: string; title: string; dueDate: string }) => {
+        mutationFn: async ({ subgoalId, title, dueDate, departmentId }: { subgoalId: string; title: string; dueDate: string; departmentId: string }) => {
             return apiRequest("/api/ideal-scene/plans", {
                 method: "POST",
-                body: JSON.stringify({ subgoalId, title, dueDate }),
+                body: JSON.stringify({ subgoalId, title, dueDate, departmentId }),
             });
         },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
@@ -725,7 +725,7 @@ export function TeamTasks() {
                                         users={users}
                                         onOwnerChange={handleOwnerChange}
                                         assignedUser={subgoal.assignedUser}
-                                        onAddChild={(title, dueDate) => createPlanMutation.mutate({ subgoalId: subgoal.id, title, dueDate })}
+                                        onAddChild={(title, dueDate) => createPlanMutation.mutate({ subgoalId: subgoal.id, title, dueDate, departmentId: subgoal.departmentId })}
                                         childLevel="plan"
                                         onEdit={(newTitle) => updateHierarchyMutation.mutate({ type: "subgoals", id: subgoal.id, title: newTitle })}
                                         onDelete={() => deleteHierarchyMutation.mutate({ type: "subgoals", id: subgoal.id })}

@@ -483,10 +483,23 @@ export function registerRoutes(app: Express) {
     // Create Plan (Terv)
     app.post("/api/ideal-scene/plans", async (req: Request, res: Response) => {
         try {
-            const { title, description, subgoalId, departmentId, assignedUserId, dueDate } = req.body;
+            let { title, description, subgoalId, departmentId, assignedUserId, dueDate } = req.body;
 
-            if (!title || !subgoalId || !departmentId || !dueDate) {
-                return res.status(400).json({ error: "Title, subgoalId, departmentId, and dueDate are required" });
+            if (!title || !subgoalId || !dueDate) {
+                return res.status(400).json({ error: "Title, subgoalId, and dueDate are required" });
+            }
+
+            // Auto-select department from subgoal or first department if not provided
+            if (!departmentId) {
+                const subgoal = await db.query.subgoals.findFirst({
+                    where: eq(subgoals.id, subgoalId),
+                });
+                departmentId = subgoal?.departmentId;
+
+                if (!departmentId) {
+                    const [firstDept] = await db.select().from(departments).limit(1);
+                    departmentId = firstDept?.id;
+                }
             }
 
             const [plan] = await db.insert(plans).values({
