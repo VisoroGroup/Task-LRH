@@ -1843,10 +1843,17 @@ export function registerRoutes(app: Express) {
     // Create policy (CEO only)
     app.post("/api/policies", async (req: Request, res: Response) => {
         try {
+            console.log("Policy creation request body:", JSON.stringify(req.body));
             const { title, content, scope, createdById, postIds, departmentIds } = req.body;
 
-            if (!title || !content || !createdById) {
-                return res.status(400).json({ error: "Title, content, and createdById are required" });
+            if (!title) {
+                return res.status(400).json({ error: "Title is required" });
+            }
+            if (!content) {
+                return res.status(400).json({ error: "Content is required" });
+            }
+            if (!createdById) {
+                return res.status(400).json({ error: "CreatedById is required - are you logged in?" });
             }
 
             // Create the policy
