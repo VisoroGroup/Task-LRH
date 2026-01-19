@@ -1843,11 +1843,6 @@ export function registerRoutes(app: Express) {
     // Create policy (CEO only)
     app.post("/api/policies", async (req: Request, res: Response) => {
         try {
-            const parsed = insertPolicySchema.safeParse(req.body);
-            if (!parsed.success) {
-                return res.status(400).json({ error: "Invalid policy data", details: parsed.error });
-            }
-
             const { title, content, scope, createdById, postIds, departmentIds } = req.body;
 
             if (!title || !content || !createdById) {
