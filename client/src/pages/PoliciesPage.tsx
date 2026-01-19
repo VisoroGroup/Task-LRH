@@ -17,6 +17,7 @@ import {
     FileText,
     Building2,
     Users,
+    Briefcase,
     Edit2,
     Trash2,
     Check,
@@ -34,14 +35,20 @@ interface PolicyPost {
     post: Post;
 }
 
+interface PolicyDepartment {
+    id: string;
+    department: { id: string; name: string };
+}
+
 interface Policy {
     id: string;
     title: string;
     content: string;
-    scope: "COMPANY" | "POST";
+    scope: "COMPANY" | "DEPARTMENT" | "POST";
     isActive: boolean;
     createdBy: { id: string; name: string };
     policyPosts: PolicyPost[];
+    policyDepartments?: PolicyDepartment[];
     createdAt: string;
 }
 
@@ -54,15 +61,16 @@ interface Department {
 export function PoliciesPage() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
-    const [activeTab, setActiveTab] = useState<"COMPANY" | "POST">("COMPANY");
+    const [activeTab, setActiveTab] = useState<"COMPANY" | "DEPARTMENT" | "POST">("COMPANY");
     const [isNewPolicyOpen, setIsNewPolicyOpen] = useState(false);
     const [editingPolicy, setEditingPolicy] = useState<Policy | null>(null);
 
     // Form state
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
-    const [scope, setScope] = useState<"COMPANY" | "POST">("COMPANY");
+    const [scope, setScope] = useState<"COMPANY" | "DEPARTMENT" | "POST">("COMPANY");
     const [selectedPostIds, setSelectedPostIds] = useState<string[]>([]);
+    const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>([]);
 
     // Fetch policies
     const { data: policies, isLoading } = useQuery({
@@ -90,6 +98,7 @@ export function PoliciesPage() {
             scope: string;
             createdById: string;
             postIds?: string[];
+            departmentIds?: string[];
         }) => {
             return apiRequest("/api/policies", {
                 method: "POST",
@@ -124,19 +133,6 @@ export function PoliciesPage() {
         },
     });
 
-    // Update post assignments
-    const updatePostsMutation = useMutation({
-        mutationFn: async (data: { policyId: string; postIds: string[] }) => {
-            return apiRequest(`/api/policies/${data.policyId}/posts`, {
-                method: "POST",
-                body: JSON.stringify({ postIds: data.postIds }),
-            });
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["policies"] });
-        },
-    });
-
     // Delete policy mutation
     const deletePolicyMutation = useMutation({
         mutationFn: async (id: string) => {
@@ -158,6 +154,7 @@ export function PoliciesPage() {
         setContent("");
         setScope("COMPANY");
         setSelectedPostIds([]);
+        setSelectedDepartmentIds([]);
     };
 
     const openEditDialog = (policy: Policy) => {
@@ -165,7 +162,8 @@ export function PoliciesPage() {
         setTitle(policy.title);
         setContent(policy.content);
         setScope(policy.scope);
-        setSelectedPostIds(policy.policyPosts.map(pp => pp.post.id));
+        setSelectedPostIds(policy.policyPosts?.map(pp => pp.post.id) || []);
+        setSelectedDepartmentIds(policy.policyDepartments?.map(pd => pd.department.id) || []);
         setIsNewPolicyOpen(true);
     };
 
@@ -183,13 +181,6 @@ export function PoliciesPage() {
                 content,
                 scope,
             });
-            // Update post assignments if scope is POST
-            if (scope === "POST") {
-                await updatePostsMutation.mutateAsync({
-                    policyId: editingPolicy.id,
-                    postIds: selectedPostIds,
-                });
-            }
         } else {
             // Create new
             createPolicyMutation.mutate({
@@ -198,6 +189,7 @@ export function PoliciesPage() {
                 scope,
                 createdById: currentUser?.id || "",
                 postIds: scope === "POST" ? selectedPostIds : undefined,
+                departmentIds: scope === "DEPARTMENT" ? selectedDepartmentIds : undefined,
             });
         }
     };
@@ -210,7 +202,23 @@ export function PoliciesPage() {
         );
     };
 
+    const toggleDepartmentSelection = (deptId: string) => {
+        setSelectedDepartmentIds(prev =>
+            prev.includes(deptId)
+                ? prev.filter(id => id !== deptId)
+                : [...prev, deptId]
+        );
+    };
+
     const filteredPolicies = policies?.filter(p => p.scope === activeTab) || [];
+
+    const getScopeLabel = (s: "COMPANY" | "DEPARTMENT" | "POST") => {
+        switch (s) {
+            case "COMPANY": return "cég-szintű";
+            case "DEPARTMENT": return "osztály-szintű";
+            case "POST": return "poszt-specifikus";
+        }
+    };
 
     if (isLoading) {
         return <div className="text-center py-8 text-muted-foreground">Se încarcă...</div>;
@@ -222,7 +230,7 @@ export function PoliciesPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-bold">Irányelvek</h2>
-                    <p className="text-muted-foreground">Directive de funcționare pentru companie și posturi</p>
+                    <p className="text-muted-foreground">Működési irányelvek (cég / osztály / poszt szinten)</p>
                 </div>
                 <Button onClick={() => setIsNewPolicyOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
@@ -230,7 +238,7 @@ export function PoliciesPage() {
                 </Button>
             </div>
 
-            {/* Tabs */}
+            {/* Tabs - 3 tabs now */}
             <div className="flex gap-2 border-b">
                 <button
                     onClick={() => setActiveTab("COMPANY")}
@@ -242,7 +250,19 @@ export function PoliciesPage() {
                     )}
                 >
                     <Building2 className="h-4 w-4 inline mr-2" />
-                    Cég-szintű
+                    Cég
+                </button>
+                <button
+                    onClick={() => setActiveTab("DEPARTMENT")}
+                    className={cn(
+                        "px-4 py-2 font-medium transition-colors",
+                        activeTab === "DEPARTMENT"
+                            ? "border-b-2 border-primary text-primary"
+                            : "text-muted-foreground hover:text-foreground"
+                    )}
+                >
+                    <Briefcase className="h-4 w-4 inline mr-2" />
+                    Osztály
                 </button>
                 <button
                     onClick={() => setActiveTab("POST")}
@@ -254,7 +274,7 @@ export function PoliciesPage() {
                     )}
                 >
                     <Users className="h-4 w-4 inline mr-2" />
-                    Poszt-specifikus
+                    Poszt
                 </button>
             </div>
 
@@ -263,7 +283,7 @@ export function PoliciesPage() {
                 {filteredPolicies.length === 0 ? (
                     <Card>
                         <CardContent className="py-8 text-center text-muted-foreground">
-                            Nincs {activeTab === "COMPANY" ? "cég-szintű" : "poszt-specifikus"} irányelv.
+                            Nincs {getScopeLabel(activeTab)} irányelv.
                             <br />
                             <Button variant="link" onClick={() => setIsNewPolicyOpen(true)}>
                                 Hozz létre egyet!
@@ -301,7 +321,8 @@ export function PoliciesPage() {
                                 <p className="text-sm text-muted-foreground whitespace-pre-wrap mb-3">
                                     {policy.content}
                                 </p>
-                                {policy.scope === "POST" && policy.policyPosts.length > 0 && (
+                                {/* Show assigned posts for POST scope */}
+                                {policy.scope === "POST" && policy.policyPosts?.length > 0 && (
                                     <div className="flex flex-wrap gap-2 mt-2">
                                         {policy.policyPosts.map(pp => (
                                             <span
@@ -309,6 +330,19 @@ export function PoliciesPage() {
                                                 className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full"
                                             >
                                                 {pp.post.name} ({pp.post.department?.name})
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+                                {/* Show assigned departments for DEPARTMENT scope */}
+                                {policy.scope === "DEPARTMENT" && policy.policyDepartments && policy.policyDepartments.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                        {policy.policyDepartments.map(pd => (
+                                            <span
+                                                key={pd.id}
+                                                className="px-2 py-1 bg-blue-500/10 text-blue-500 text-xs rounded-full"
+                                            >
+                                                {pd.department.name}
                                             </span>
                                         ))}
                                     </div>
@@ -350,10 +384,10 @@ export function PoliciesPage() {
                             />
                         </div>
 
-                        {/* Scope */}
+                        {/* Scope - 3 options now */}
                         <div>
                             <label className="text-sm font-medium">Hatókör *</label>
-                            <div className="flex gap-4 mt-2">
+                            <div className="flex flex-wrap gap-4 mt-2">
                                 <label className="flex items-center gap-2 cursor-pointer">
                                     <input
                                         type="radio"
@@ -369,6 +403,17 @@ export function PoliciesPage() {
                                     <input
                                         type="radio"
                                         name="scope"
+                                        checked={scope === "DEPARTMENT"}
+                                        onChange={() => setScope("DEPARTMENT")}
+                                        className="w-4 h-4"
+                                    />
+                                    <Briefcase className="h-4 w-4" />
+                                    Osztály-szintű
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="scope"
                                         checked={scope === "POST"}
                                         onChange={() => setScope("POST")}
                                         className="w-4 h-4"
@@ -379,7 +424,39 @@ export function PoliciesPage() {
                             </div>
                         </div>
 
-                        {/* Post Selection (only for POST scope) */}
+                        {/* Department Selection (for DEPARTMENT scope) */}
+                        {scope === "DEPARTMENT" && (
+                            <div>
+                                <label className="text-sm font-medium">Osztályok kiválasztása *</label>
+                                <div className="mt-2 flex flex-wrap gap-2 p-3 border rounded-md">
+                                    {departments?.map(dept => (
+                                        <button
+                                            key={dept.id}
+                                            type="button"
+                                            onClick={() => toggleDepartmentSelection(dept.id)}
+                                            className={cn(
+                                                "px-3 py-1.5 rounded-full text-sm transition-colors flex items-center gap-1",
+                                                selectedDepartmentIds.includes(dept.id)
+                                                    ? "bg-blue-500 text-white"
+                                                    : "bg-muted hover:bg-muted/80"
+                                            )}
+                                        >
+                                            {selectedDepartmentIds.includes(dept.id) && (
+                                                <Check className="h-3 w-3" />
+                                            )}
+                                            {dept.name}
+                                        </button>
+                                    ))}
+                                </div>
+                                {selectedDepartmentIds.length > 0 && (
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                        {selectedDepartmentIds.length} osztály kiválasztva
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Post Selection (for POST scope) */}
                         {scope === "POST" && (
                             <div>
                                 <label className="text-sm font-medium">Posztok kiválasztása *</label>
@@ -441,7 +518,8 @@ export function PoliciesPage() {
                             disabled={
                                 !title.trim() ||
                                 !content.trim() ||
-                                (scope === "POST" && selectedPostIds.length === 0)
+                                (scope === "POST" && selectedPostIds.length === 0) ||
+                                (scope === "DEPARTMENT" && selectedDepartmentIds.length === 0)
                             }
                         >
                             {editingPolicy ? "Mentés" : "Létrehozás"}

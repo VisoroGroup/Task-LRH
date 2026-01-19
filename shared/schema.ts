@@ -43,8 +43,8 @@ export const evidenceTypeEnum = pgEnum("evidence_type", [
     "SIGNED_NOTE"
 ]);
 
-// Policy scope - company-wide or post-specific
-export const policyScopeEnum = pgEnum("policy_scope", ["COMPANY", "POST"]);
+// Policy scope - company-wide, department-specific, or post-specific
+export const policyScopeEnum = pgEnum("policy_scope", ["COMPANY", "DEPARTMENT", "POST"]);
 
 // ============================================================================
 // SESSIONS (for authentication)
@@ -596,6 +596,7 @@ export const policiesRelations = relations(policies, ({ one, many }) => ({
         references: [users.id],
     }),
     policyPosts: many(policyPosts),
+    policyDepartments: many(policyDepartments),
 }));
 
 // Junction table for many-to-many relationship between policies and posts
@@ -621,6 +622,32 @@ export const policyPostsRelations = relations(policyPosts, ({ one }) => ({
     post: one(posts, {
         fields: [policyPosts.postId],
         references: [posts.id],
+    }),
+}));
+
+// Junction table for many-to-many relationship between policies and departments
+export const policyDepartments = pgTable(
+    "policy_departments",
+    {
+        id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+        policyId: varchar("policy_id").references(() => policies.id, { onDelete: "cascade" }).notNull(),
+        departmentId: varchar("department_id").references(() => departments.id, { onDelete: "cascade" }).notNull(),
+        createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    },
+    (table) => [
+        index("idx_policy_departments_policy").on(table.policyId),
+        index("idx_policy_departments_department").on(table.departmentId),
+    ]
+);
+
+export const policyDepartmentsRelations = relations(policyDepartments, ({ one }) => ({
+    policy: one(policies, {
+        fields: [policyDepartments.policyId],
+        references: [policies.id],
+    }),
+    department: one(departments, {
+        fields: [policyDepartments.departmentId],
+        references: [departments.id],
     }),
 }));
 
@@ -707,8 +734,11 @@ export type InsertPolicy = typeof policies.$inferInsert;
 export type PolicyPost = typeof policyPosts.$inferSelect;
 export type InsertPolicyPost = typeof policyPosts.$inferInsert;
 
+export type PolicyDepartment = typeof policyDepartments.$inferSelect;
+export type InsertPolicyDepartment = typeof policyDepartments.$inferInsert;
+
 export type TaskStatus = "TODO" | "DOING" | "DONE";
 export type HierarchyLevel = "SUBGOAL" | "PLAN" | "PROGRAM" | "PROJECT" | "INSTRUCTION";
 export type UserRole = "CEO" | "EXECUTIVE" | "USER";
 export type EvidenceType = "FILE" | "IMAGE" | "URL" | "DOCUMENT" | "RECEIPT" | "SIGNED_NOTE";
-export type PolicyScope = "COMPANY" | "POST";
+export type PolicyScope = "COMPANY" | "DEPARTMENT" | "POST";

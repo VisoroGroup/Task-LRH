@@ -17,6 +17,7 @@ import {
     invitations,
     policies,
     policyPosts,
+    policyDepartments,
     insertDepartmentSchema,
     insertTaskSchema,
     insertCompletionReportSchema,
@@ -1790,6 +1791,11 @@ export function registerRoutes(app: Express) {
                             },
                         },
                     },
+                    policyDepartments: {
+                        with: {
+                            department: true,
+                        },
+                    },
                 },
                 orderBy: [desc(policies.createdAt)],
             });
@@ -1842,7 +1848,7 @@ export function registerRoutes(app: Express) {
                 return res.status(400).json({ error: "Invalid policy data", details: parsed.error });
             }
 
-            const { title, content, scope, createdById, postIds } = req.body;
+            const { title, content, scope, createdById, postIds, departmentIds } = req.body;
 
             if (!title || !content || !createdById) {
                 return res.status(400).json({ error: "Title, content, and createdById are required" });
@@ -1856,13 +1862,22 @@ export function registerRoutes(app: Express) {
                 createdById,
             }).returning();
 
-            // If postIds provided, create policy-post associations
+            // If postIds provided (for POST scope), create policy-post associations
             if (postIds && Array.isArray(postIds) && postIds.length > 0) {
                 const policyPostValues = postIds.map((postId: string) => ({
                     policyId: policy.id,
                     postId,
                 }));
                 await db.insert(policyPosts).values(policyPostValues);
+            }
+
+            // If departmentIds provided (for DEPARTMENT scope), create policy-department associations
+            if (departmentIds && Array.isArray(departmentIds) && departmentIds.length > 0) {
+                const policyDeptValues = departmentIds.map((departmentId: string) => ({
+                    policyId: policy.id,
+                    departmentId,
+                }));
+                await db.insert(policyDepartments).values(policyDeptValues);
             }
 
             // Fetch the complete policy with relations
@@ -1873,6 +1888,11 @@ export function registerRoutes(app: Express) {
                     policyPosts: {
                         with: {
                             post: true,
+                        },
+                    },
+                    policyDepartments: {
+                        with: {
+                            department: true,
                         },
                     },
                 },
