@@ -25,6 +25,13 @@ import {
     ChevronRight,
 } from "lucide-react";
 
+interface HierarchyItem {
+    title: string;
+    level: string;
+    dueDate?: string | null;
+    assignedUser?: { id: string; name: string } | null;
+}
+
 interface Task {
     id: string;
     title: string;
@@ -35,7 +42,7 @@ interface Task {
     lastUpdatedAt: string;
     department: { id: string; name: string };
     completionReport: any;
-    hierarchyPath?: string[];
+    hierarchyPath?: HierarchyItem[];
     mainGoalTitle?: string | null;
     responsibleUser?: { id: string; name: string; email: string };
 }
@@ -881,14 +888,14 @@ export function MyTasks() {
                                                     `bg-gradient-to-r ${levelInfo.bg} border-${levelInfo.color}-300 dark:border-${levelInfo.color}-600/30`
                                                 )}
                                             >
-                                                <div className="flex items-center gap-3">
+                                                <div className="flex items-start gap-3">
                                                     <div className={cn(
-                                                        "w-10 h-10 rounded-lg flex items-center justify-center text-lg",
+                                                        "w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0",
                                                         `bg-${levelInfo.color}-500/20`
                                                     )}>
                                                         {levelInfo.icon}
                                                     </div>
-                                                    <div>
+                                                    <div className="flex-1 min-w-0">
                                                         <div className={cn(
                                                             "text-xs uppercase tracking-wider font-semibold",
                                                             `text-${levelInfo.color}-600 dark:text-${levelInfo.color}-400`
@@ -899,8 +906,25 @@ export function MyTasks() {
                                                             "text-base font-semibold",
                                                             `text-${levelInfo.color}-700 dark:text-${levelInfo.color}-300`
                                                         )}>
-                                                            {item}
+                                                            {item.title}
                                                         </div>
+                                                        {/* Due date and assignee details */}
+                                                        {(item.dueDate || item.assignedUser) && (
+                                                            <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
+                                                                {item.assignedUser && (
+                                                                    <span className="flex items-center gap-1">
+                                                                        <User className="h-3 w-3" />
+                                                                        {item.assignedUser.name}
+                                                                    </span>
+                                                                )}
+                                                                {item.dueDate && (
+                                                                    <span className="flex items-center gap-1">
+                                                                        <Calendar className="h-3 w-3" />
+                                                                        {formatDate(item.dueDate)}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>

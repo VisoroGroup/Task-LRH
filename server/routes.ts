@@ -823,8 +823,14 @@ export function registerRoutes(app: Express) {
             });
 
             // Resolve hierarchy path and main goal for each task
-            const tasksWithPath = await Promise.all(taskList.map(async (task) => {
-                let hierarchyPath: string[] = [];
+            const tasksWithPath = await Promise.all(taskList.map(async (task: any) => {
+                interface HierarchyItem {
+                    title: string;
+                    level: string;
+                    dueDate?: string | null;
+                    assignedUser?: { id: string; name: string } | null;
+                }
+                let hierarchyPath: HierarchyItem[] = [];
                 let mainGoalTitle: string | null = null;
 
                 try {
@@ -832,14 +838,19 @@ export function registerRoutes(app: Express) {
                         const instruction = await db.query.instructions.findFirst({
                             where: eq(instructions.id, task.parentItemId),
                             with: {
+                                assignedUser: true,
                                 project: {
                                     with: {
+                                        assignedUser: true,
                                         program: {
                                             with: {
+                                                assignedUser: true,
                                                 plan: {
                                                     with: {
+                                                        assignedUser: true,
                                                         subgoal: {
                                                             with: {
+                                                                assignedUser: true,
                                                                 mainGoal: true,
                                                             },
                                                         },
@@ -853,22 +864,55 @@ export function registerRoutes(app: Express) {
                         });
                         if (instruction) {
                             mainGoalTitle = instruction.project?.program?.plan?.subgoal?.mainGoal?.title || null;
-                            if (instruction.project?.program?.plan?.subgoal?.title) hierarchyPath.push(instruction.project.program.plan.subgoal.title);
-                            if (instruction.project?.program?.plan?.title) hierarchyPath.push(instruction.project.program.plan.title);
-                            if (instruction.project?.program?.title) hierarchyPath.push(instruction.project.program.title);
-                            if (instruction.project?.title) hierarchyPath.push(instruction.project.title);
-                            hierarchyPath.push(instruction.title);
+                            const subgoal = instruction.project?.program?.plan?.subgoal;
+                            const plan = instruction.project?.program?.plan;
+                            const program = instruction.project?.program;
+                            const project = instruction.project;
+                            if (subgoal?.title) hierarchyPath.push({
+                                title: subgoal.title,
+                                level: "SUBGOAL",
+                                dueDate: subgoal.dueDate,
+                                assignedUser: subgoal.assignedUser ? { id: subgoal.assignedUser.id, name: subgoal.assignedUser.name } : null
+                            });
+                            if (plan?.title) hierarchyPath.push({
+                                title: plan.title,
+                                level: "PLAN",
+                                dueDate: plan.dueDate,
+                                assignedUser: plan.assignedUser ? { id: plan.assignedUser.id, name: plan.assignedUser.name } : null
+                            });
+                            if (program?.title) hierarchyPath.push({
+                                title: program.title,
+                                level: "PROGRAM",
+                                dueDate: program.dueDate,
+                                assignedUser: program.assignedUser ? { id: program.assignedUser.id, name: program.assignedUser.name } : null
+                            });
+                            if (project?.title) hierarchyPath.push({
+                                title: project.title,
+                                level: "PROJECT",
+                                dueDate: project.dueDate,
+                                assignedUser: project.assignedUser ? { id: project.assignedUser.id, name: project.assignedUser.name } : null
+                            });
+                            hierarchyPath.push({
+                                title: instruction.title,
+                                level: "INSTRUCTION",
+                                dueDate: instruction.dueDate,
+                                assignedUser: instruction.assignedUser ? { id: instruction.assignedUser.id, name: instruction.assignedUser.name } : null
+                            });
                         }
                     } else if (task.hierarchyLevel === "PROJECT") {
                         const project = await db.query.projects.findFirst({
                             where: eq(projects.id, task.parentItemId),
                             with: {
+                                assignedUser: true,
                                 program: {
                                     with: {
+                                        assignedUser: true,
                                         plan: {
                                             with: {
+                                                assignedUser: true,
                                                 subgoal: {
                                                     with: {
+                                                        assignedUser: true,
                                                         mainGoal: true,
                                                     },
                                                 },
@@ -880,19 +924,45 @@ export function registerRoutes(app: Express) {
                         });
                         if (project) {
                             mainGoalTitle = project.program?.plan?.subgoal?.mainGoal?.title || null;
-                            if (project.program?.plan?.subgoal?.title) hierarchyPath.push(project.program.plan.subgoal.title);
-                            if (project.program?.plan?.title) hierarchyPath.push(project.program.plan.title);
-                            if (project.program?.title) hierarchyPath.push(project.program.title);
-                            hierarchyPath.push(project.title);
+                            const subgoal = project.program?.plan?.subgoal;
+                            const plan = project.program?.plan;
+                            const program = project.program;
+                            if (subgoal?.title) hierarchyPath.push({
+                                title: subgoal.title,
+                                level: "SUBGOAL",
+                                dueDate: subgoal.dueDate,
+                                assignedUser: subgoal.assignedUser ? { id: subgoal.assignedUser.id, name: subgoal.assignedUser.name } : null
+                            });
+                            if (plan?.title) hierarchyPath.push({
+                                title: plan.title,
+                                level: "PLAN",
+                                dueDate: plan.dueDate,
+                                assignedUser: plan.assignedUser ? { id: plan.assignedUser.id, name: plan.assignedUser.name } : null
+                            });
+                            if (program?.title) hierarchyPath.push({
+                                title: program.title,
+                                level: "PROGRAM",
+                                dueDate: program.dueDate,
+                                assignedUser: program.assignedUser ? { id: program.assignedUser.id, name: program.assignedUser.name } : null
+                            });
+                            hierarchyPath.push({
+                                title: project.title,
+                                level: "PROJECT",
+                                dueDate: project.dueDate,
+                                assignedUser: project.assignedUser ? { id: project.assignedUser.id, name: project.assignedUser.name } : null
+                            });
                         }
                     } else if (task.hierarchyLevel === "PROGRAM") {
                         const program = await db.query.programs.findFirst({
                             where: eq(programs.id, task.parentItemId),
                             with: {
+                                assignedUser: true,
                                 plan: {
                                     with: {
+                                        assignedUser: true,
                                         subgoal: {
                                             with: {
+                                                assignedUser: true,
                                                 mainGoal: true,
                                             },
                                         },
@@ -902,16 +972,35 @@ export function registerRoutes(app: Express) {
                         });
                         if (program) {
                             mainGoalTitle = program.plan?.subgoal?.mainGoal?.title || null;
-                            if (program.plan?.subgoal?.title) hierarchyPath.push(program.plan.subgoal.title);
-                            if (program.plan?.title) hierarchyPath.push(program.plan.title);
-                            hierarchyPath.push(program.title);
+                            const subgoal = program.plan?.subgoal;
+                            const plan = program.plan;
+                            if (subgoal?.title) hierarchyPath.push({
+                                title: subgoal.title,
+                                level: "SUBGOAL",
+                                dueDate: subgoal.dueDate,
+                                assignedUser: subgoal.assignedUser ? { id: subgoal.assignedUser.id, name: subgoal.assignedUser.name } : null
+                            });
+                            if (plan?.title) hierarchyPath.push({
+                                title: plan.title,
+                                level: "PLAN",
+                                dueDate: plan.dueDate,
+                                assignedUser: plan.assignedUser ? { id: plan.assignedUser.id, name: plan.assignedUser.name } : null
+                            });
+                            hierarchyPath.push({
+                                title: program.title,
+                                level: "PROGRAM",
+                                dueDate: program.dueDate,
+                                assignedUser: program.assignedUser ? { id: program.assignedUser.id, name: program.assignedUser.name } : null
+                            });
                         }
                     } else if (task.hierarchyLevel === "PLAN") {
                         const plan = await db.query.plans.findFirst({
                             where: eq(plans.id, task.parentItemId),
                             with: {
+                                assignedUser: true,
                                 subgoal: {
                                     with: {
+                                        assignedUser: true,
                                         mainGoal: true,
                                     },
                                 },
@@ -919,19 +1008,36 @@ export function registerRoutes(app: Express) {
                         });
                         if (plan) {
                             mainGoalTitle = plan.subgoal?.mainGoal?.title || null;
-                            if (plan.subgoal?.title) hierarchyPath.push(plan.subgoal.title);
-                            hierarchyPath.push(plan.title);
+                            const subgoal = plan.subgoal;
+                            if (subgoal?.title) hierarchyPath.push({
+                                title: subgoal.title,
+                                level: "SUBGOAL",
+                                dueDate: subgoal.dueDate,
+                                assignedUser: subgoal.assignedUser ? { id: subgoal.assignedUser.id, name: subgoal.assignedUser.name } : null
+                            });
+                            hierarchyPath.push({
+                                title: plan.title,
+                                level: "PLAN",
+                                dueDate: plan.dueDate,
+                                assignedUser: plan.assignedUser ? { id: plan.assignedUser.id, name: plan.assignedUser.name } : null
+                            });
                         }
                     } else if (task.hierarchyLevel === "SUBGOAL") {
                         const subgoal = await db.query.subgoals.findFirst({
                             where: eq(subgoals.id, task.parentItemId),
                             with: {
+                                assignedUser: true,
                                 mainGoal: true,
                             },
                         });
                         if (subgoal) {
                             mainGoalTitle = subgoal.mainGoal?.title || null;
-                            hierarchyPath.push(subgoal.title);
+                            hierarchyPath.push({
+                                title: subgoal.title,
+                                level: "SUBGOAL",
+                                dueDate: subgoal.dueDate,
+                                assignedUser: subgoal.assignedUser ? { id: subgoal.assignedUser.id, name: subgoal.assignedUser.name } : null
+                            });
                         }
                     }
                 } catch (e) {
