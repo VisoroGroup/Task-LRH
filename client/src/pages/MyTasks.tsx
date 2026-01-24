@@ -213,13 +213,6 @@ export function MyTasks() {
         });
     };
 
-    const openCompleteDialog = (task: Task) => {
-        setCompletingTaskId(task.id);
-        setCompletingTaskTitle(task.title);
-        setWhenDone(new Date().toISOString().slice(0, 16)); // Default to now
-        setIsCompleteDialogOpen(true);
-    };
-
     // Mutations for creating hierarchy items inline (called from HierarchyTreeSelector)
     const createSubgoalMutation = useMutation({
         mutationFn: async (data: { title: string; mainGoalId: string; departmentId: string }) => {
@@ -471,47 +464,47 @@ export function MyTasks() {
                 </div>
 
                 {/* Status change buttons */}
-                {task.status !== "DONE" && (
-                    <div className="flex gap-2 mt-3">
-                        {task.status === "TODO" && (
+                <div className="flex gap-2 mt-3">
+                    {task.status === "TODO" && (
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateStatusMutation.mutate({ taskId: task.id, status: "DOING" })}
+                        >
+                            Începe Lucru
+                        </Button>
+                    )}
+                    {task.status === "DOING" && (
+                        <>
                             <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => updateStatusMutation.mutate({ taskId: task.id, status: "DOING" })}
+                                onClick={() => updateStatusMutation.mutate({ taskId: task.id, status: "TODO" })}
+                                className="text-amber-600 border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20"
                             >
-                                Începe Lucru
+                                ↩ Înapoi
                             </Button>
-                        )}
-                        {task.status === "DOING" && (
-                            <>
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => updateStatusMutation.mutate({ taskId: task.id, status: "TODO" })}
-                                    className="text-amber-600 border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20"
-                                >
-                                    ↩ Înapoi
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant="default"
-                                    onClick={() => openCompleteDialog(task)}
-                                >
-                                    <Check className="h-3 w-3 mr-1" />
-                                    Finalizează
-                                </Button>
-                            </>
-                        )}
-                    </div>
-                )}
-
-                {task.status === "DONE" && task.completionReport && (
-                    <div className="mt-3 p-2 bg-green-50 dark:bg-green-900/20 rounded text-xs">
-                        <div className="font-medium text-green-700 dark:text-green-400">
-                            ✓ Finalizat cu raport
-                        </div>
-                    </div>
-                )}
+                            <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => updateStatusMutation.mutate({ taskId: task.id, status: "DONE" })}
+                            >
+                                <Check className="h-3 w-3 mr-1" />
+                                Finalizează
+                            </Button>
+                        </>
+                    )}
+                    {task.status === "DONE" && (
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateStatusMutation.mutate({ taskId: task.id, status: "TODO" })}
+                            className="text-amber-600 border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                        >
+                            ↩ Înapoi la De făcut
+                        </Button>
+                    )}
+                </div>
             </div>
         );
     };
