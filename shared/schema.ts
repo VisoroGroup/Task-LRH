@@ -70,6 +70,9 @@ export const users = pgTable("users", {
     name: varchar("name").notNull(),
     password: varchar("password"), // For local auth (optional)
     microsoftId: varchar("microsoft_id").unique(), // Microsoft OAuth ID
+    microsoftAccessToken: text("microsoft_access_token"), // For Graph API calls
+    microsoftRefreshToken: text("microsoft_refresh_token"), // To refresh access token
+    microsoftTokenExpiry: timestamp("microsoft_token_expiry", { withTimezone: true }), // Token expiration
     avatarUrl: varchar("avatar_url"), // Profile picture from Microsoft
     role: userRoleEnum("role").default("USER").notNull(),
     isActive: boolean("is_active").default(true).notNull(),

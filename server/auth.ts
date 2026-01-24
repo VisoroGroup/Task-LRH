@@ -78,7 +78,7 @@ export function registerAuthRoutes(app: Express) {
         }
 
         const redirectUri = getRedirectUri(req);
-        const scope = "openid profile email User.Read";
+        const scope = "openid profile email User.Read Calendars.ReadWrite offline_access";
 
         const authUrl = new URL(`https://login.microsoftonline.com/${MICROSOFT_TENANT_ID}/oauth2/v2.0/authorize`);
         authUrl.searchParams.set("client_id", MICROSOFT_CLIENT_ID);
@@ -149,6 +149,18 @@ export function registerAuthRoutes(app: Express) {
                 where: eq(users.microsoftId, microsoftId),
             });
 
+            if (user) {
+                // Update existing user's tokens
+                await db.update(users)
+                    .set({
+                        microsoftAccessToken: tokens.access_token,
+                        microsoftRefreshToken: tokens.refresh_token || user.microsoftRefreshToken,
+                        microsoftTokenExpiry: new Date(Date.now() + tokens.expires_in * 1000),
+                        updatedAt: new Date(),
+                    })
+                    .where(eq(users.id, user.id));
+            }
+
             if (!user) {
                 // Check if user exists by email
                 user = await db.query.users.findFirst({
@@ -156,16 +168,26 @@ export function registerAuthRoutes(app: Express) {
                 });
 
                 if (user) {
-                    // Link existing user to Microsoft account
+                    // Link existing user to Microsoft account and save tokens
                     await db.update(users)
-                        .set({ microsoftId, avatarUrl: null, updatedAt: new Date() })
+                        .set({
+                            microsoftId,
+                            microsoftAccessToken: tokens.access_token,
+                            microsoftRefreshToken: tokens.refresh_token,
+                            microsoftTokenExpiry: new Date(Date.now() + tokens.expires_in * 1000),
+                            avatarUrl: null,
+                            updatedAt: new Date()
+                        })
                         .where(eq(users.id, user.id));
                 } else {
-                    // Create new user
+                    // Create new user with tokens
                     const [newUser] = await db.insert(users).values({
                         email,
                         name,
                         microsoftId,
+                        microsoftAccessToken: tokens.access_token,
+                        microsoftRefreshToken: tokens.refresh_token,
+                        microsoftTokenExpiry: new Date(Date.now() + tokens.expires_in * 1000),
                         role: "USER", // Default role, admin can upgrade later
                     }).returning();
                     user = newUser;

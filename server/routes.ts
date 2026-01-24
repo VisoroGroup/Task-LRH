@@ -23,6 +23,7 @@ import {
     insertCompletionReportSchema,
     insertPolicySchema,
 } from "@shared/schema";
+import { syncTaskToCalendar, syncAllTasksToCalendar, hasCalendarConnected } from "./calendar";
 
 // Helper to get stalled threshold from settings
 async function getStalledThreshold(): Promise<number> {
@@ -2149,5 +2150,53 @@ export function registerRoutes(app: Express) {
             console.error("Error removing post from policy:", error);
             res.status(500).json({ error: "Failed to remove post from policy" });
         }
+    });
+
+    // ============================================================================
+    // CALENDAR SYNC ENDPOINTS
+    // ============================================================================
+
+    // Check if calendar is connected for current user
+    app.get("/api/calendar/status", async (req: Request, res: Response) => {
+        const userId = (req.session as any)?.userId;
+        if (!userId) {
+            return res.status(401).json({ error: "Not authenticated" });
+        }
+
+        const connected = await hasCalendarConnected(userId);
+        res.json({ connected });
+    });
+
+    // Sync a single task to calendar
+    app.post("/api/calendar/sync-task/:taskId", async (req: Request, res: Response) => {
+        const userId = (req.session as any)?.userId;
+        if (!userId) {
+            return res.status(401).json({ error: "Not authenticated" });
+        }
+
+        const { taskId } = req.params;
+        const result = await syncTaskToCalendar(taskId, userId);
+
+        if (result.success) {
+            res.json({ success: true, eventId: result.eventId });
+        } else {
+            res.status(400).json({ success: false, error: result.error });
+        }
+    });
+
+    // Sync all user's tasks to calendar
+    app.post("/api/calendar/sync-all", async (req: Request, res: Response) => {
+        const userId = (req.session as any)?.userId;
+        if (!userId) {
+            return res.status(401).json({ error: "Not authenticated" });
+        }
+
+        const result = await syncAllTasksToCalendar(userId);
+        res.json({
+            success: true,
+            synced: result.synced,
+            failed: result.failed,
+            message: `${result.synced} sarcini sincronizate cu calendarul Outlook.`
+        });
     });
 }
