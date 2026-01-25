@@ -42,16 +42,19 @@ if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Initialize Replit Object Storage client (only in Replit environment)
+// Initialize Replit Object Storage client (only when bucket is configured)
+// NOTE: Object Storage is disabled until a bucket is created in Replit.
+// To enable: 1) Create bucket in Replit Object Storage, 2) Uncomment below
 let objectStorageClient: ObjectStorageClient | null = null;
-if (process.env.REPLIT_DB_URL || process.env.REPL_ID) {
-    try {
-        objectStorageClient = new ObjectStorageClient();
-        console.log("Replit Object Storage initialized");
-    } catch (err) {
-        console.log("Object Storage not available, using local filesystem");
-    }
-}
+// if (process.env.REPLIT_DB_URL || process.env.REPL_ID) {
+//     try {
+//         objectStorageClient = new ObjectStorageClient();
+//         console.log("Replit Object Storage initialized");
+//     } catch (err) {
+//         console.log("Object Storage not available, using local filesystem");
+//     }
+// }
+console.log("Avatar storage: using local filesystem (Object Storage disabled)");
 
 const avatarStorage = multer.diskStorage({
     destination: (req, file, cb) => {
