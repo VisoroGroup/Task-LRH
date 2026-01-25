@@ -47,7 +47,10 @@ export function ImageCropper({ isOpen, onClose, onSave, currentImage }: ImageCro
 
     const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
         const { width, height } = e.currentTarget;
-        setCrop(centerAspectCrop(width, height, 1));
+        const initialCrop = centerAspectCrop(width, height, 1);
+        setCrop(initialCrop);
+        // Also set completedCrop so Save works without manual adjustment
+        setCompletedCrop(initialCrop);
     }, []);
 
     const getCroppedImg = useCallback(async (): Promise<Blob | null> => {
