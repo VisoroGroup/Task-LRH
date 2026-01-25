@@ -394,7 +394,7 @@ export function HierarchyTreeSelector({
                     <Target className="h-8 w-8 text-violet-500" />
                 </div>
                 <p className="text-lg font-medium text-muted-foreground">
-                    Válassz osztályt a hierarchia megtekintéséhez
+                    Selectează departamentul pentru a vedea ierarhia
                 </p>
             </div>
         );

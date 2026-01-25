@@ -147,7 +147,7 @@ export function CEODashboard() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Users className="h-5 w-5" />
-                        Grilă Status Titulari de Post
+                        Grilă status titulari de post
                     </CardTitle>
                 </CardHeader>
                 <CardContent>

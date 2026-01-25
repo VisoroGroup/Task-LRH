@@ -372,21 +372,19 @@ export function PoliciesPage() {
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
-                        {/* Title */}
                         <div>
-                            <label className="text-sm font-medium">Cím *</label>
+                            <label className="text-sm font-medium">Titlu *</label>
                             <input
                                 type="text"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
-                                placeholder="pl. Telefonos kommunikáció szabályai"
+                                placeholder="ex. Reguli comunicare telefonică"
                             />
                         </div>
 
-                        {/* Scope - 3 options now */}
                         <div>
-                            <label className="text-sm font-medium">Hatókör *</label>
+                            <label className="text-sm font-medium">Domeniu de aplicare *</label>
                             <div className="flex flex-wrap gap-4 mt-2">
                                 <label className="flex items-center gap-2 cursor-pointer">
                                     <input
@@ -397,7 +395,7 @@ export function PoliciesPage() {
                                         className="w-4 h-4"
                                     />
                                     <Building2 className="h-4 w-4" />
-                                    Cég-szintű
+                                    La nivel de companie
                                 </label>
                                 <label className="flex items-center gap-2 cursor-pointer">
                                     <input
@@ -408,7 +406,7 @@ export function PoliciesPage() {
                                         className="w-4 h-4"
                                     />
                                     <Briefcase className="h-4 w-4" />
-                                    Osztály-szintű
+                                    La nivel de departament
                                 </label>
                                 <label className="flex items-center gap-2 cursor-pointer">
                                     <input
@@ -419,7 +417,7 @@ export function PoliciesPage() {
                                         className="w-4 h-4"
                                     />
                                     <Users className="h-4 w-4" />
-                                    Poszt-specifikus
+                                    Specific postului
                                 </label>
                             </div>
                         </div>
@@ -427,7 +425,7 @@ export function PoliciesPage() {
                         {/* Department Selection (for DEPARTMENT scope) */}
                         {scope === "DEPARTMENT" && (
                             <div>
-                                <label className="text-sm font-medium">Osztályok kiválasztása *</label>
+                                <label className="text-sm font-medium">Selectare departamente *</label>
                                 <div className="mt-2 flex flex-wrap gap-2 p-3 border rounded-md">
                                     {departments?.map(dept => (
                                         <button
@@ -450,7 +448,7 @@ export function PoliciesPage() {
                                 </div>
                                 {selectedDepartmentIds.length > 0 && (
                                     <div className="text-xs text-muted-foreground mt-1">
-                                        {selectedDepartmentIds.length} osztály kiválasztva
+                                        {selectedDepartmentIds.length} departamente selectate
                                     </div>
                                 )}
                             </div>
@@ -459,7 +457,7 @@ export function PoliciesPage() {
                         {/* Post Selection (for POST scope) */}
                         {scope === "POST" && (
                             <div>
-                                <label className="text-sm font-medium">Posztok kiválasztása *</label>
+                                <label className="text-sm font-medium">Selectare posturi *</label>
                                 <div className="mt-2 max-h-48 overflow-y-auto border rounded-md p-3 space-y-3">
                                     {departments?.map(dept => (
                                         <div key={dept.id}>
@@ -491,27 +489,26 @@ export function PoliciesPage() {
                                 </div>
                                 {selectedPostIds.length > 0 && (
                                     <div className="text-xs text-muted-foreground mt-1">
-                                        {selectedPostIds.length} poszt kiválasztva
+                                        {selectedPostIds.length} posturi selectate
                                     </div>
                                 )}
                             </div>
                         )}
 
-                        {/* Content */}
                         <div>
-                            <label className="text-sm font-medium">Tartalom *</label>
+                            <label className="text-sm font-medium">Conținut *</label>
                             <textarea
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}
                                 className="w-full mt-1 px-3 py-2 border rounded-md bg-background min-h-[150px]"
-                                placeholder="Írd le részletesen az irányelvet..."
+                                placeholder="Descrieți în detaliu directiva de funcționare..."
                             />
                         </div>
                     </div>
 
                     <DialogFooter>
                         <Button variant="outline" onClick={closeDialog}>
-                            Mégse
+                            Renunță
                         </Button>
                         <Button
                             onClick={handleSubmit}
@@ -522,7 +519,7 @@ export function PoliciesPage() {
                                 (scope === "DEPARTMENT" && selectedDepartmentIds.length === 0)
                             }
                         >
-                            {editingPolicy ? "Mentés" : "Létrehozás"}
+                            {editingPolicy ? "Salvează" : "Crează"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

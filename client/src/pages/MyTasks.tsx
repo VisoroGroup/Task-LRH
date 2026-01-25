@@ -554,7 +554,7 @@ export function MyTasks() {
                 </div>
                 <Button onClick={() => setIsNewTaskOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Sarcină Nouă
+                    Sarcină nouă
                 </Button>
             </div>
 
@@ -562,7 +562,7 @@ export function MyTasks() {
             <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
                 <DialogContent className="max-w-4xl w-[80vw] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>Creează Sarcină Nouă</DialogTitle>
+                        <DialogTitle>Creează sarcină nouă</DialogTitle>
                         <DialogDescription>
                             Adaugă o sarcină nouă cu toate informațiile necesare
                         </DialogDescription>
@@ -572,7 +572,7 @@ export function MyTasks() {
                         <div className="space-y-4">
                             {/* Task Title */}
                             <div>
-                                <label className="text-sm font-medium">Titlul Sarcinii *</label>
+                                <label className="text-sm font-medium">Titlul sarcinii *</label>
                                 <input
                                     type="text"
                                     value={newTaskTitle}
@@ -608,7 +608,7 @@ export function MyTasks() {
                             <div>
                                 <label className="text-sm font-medium flex items-center gap-2">
                                     <User className="h-4 w-4" />
-                                    Persoana Responsabilă *
+                                    Persoana responsabilă *
                                 </label>
                                 <select
                                     value={newTaskResponsibleUserId}
@@ -626,7 +626,7 @@ export function MyTasks() {
                             <div>
                                 <label className="text-sm font-medium flex items-center gap-2">
                                     <Calendar className="h-4 w-4" />
-                                    Data Limită *
+                                    Data limită *
                                 </label>
                                 <input
                                     type="date"
@@ -717,7 +717,7 @@ export function MyTasks() {
                                 !hierarchyPath.subgoalId
                             }
                         >
-                            Crează Sarcină
+                            Creează sarcină
                         </Button>
                     </DialogFooter>
                 </DialogContent>
