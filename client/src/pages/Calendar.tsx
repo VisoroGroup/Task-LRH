@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiRequest, cn, formatDate } from "@/lib/utils";
+import { useAuth } from "@/components/AuthProvider";
 import { Calendar as CalendarIcon, Clock, Target, FileText, Layers, FolderKanban, ListChecks } from "lucide-react";
 
 interface Task {
@@ -42,9 +43,16 @@ interface CalendarItem {
 }
 
 export function Calendar() {
+    const { user } = useAuth();
+
+    // Only fetch tasks assigned to current user
     const { data: tasks, isLoading: tasksLoading } = useQuery({
-        queryKey: ["calendar-tasks"],
-        queryFn: () => apiRequest<Task[]>("/api/tasks"),
+        queryKey: ["calendar-tasks", user?.id],
+        queryFn: () => {
+            if (!user?.id) return [];
+            return apiRequest<Task[]>(`/api/tasks?responsibleUserId=${user.id}`);
+        },
+        enabled: !!user?.id,
     });
 
     const { data: idealScene, isLoading: hierarchyLoading } = useQuery({

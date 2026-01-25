@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { apiRequest, cn, formatDate, statusLabels, hierarchyLabels } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/components/AuthProvider";
 import { HierarchyTreeSelector } from "@/components/tasks/HierarchyTreeSelector";
 import {
     Plus,
@@ -120,15 +121,20 @@ export function MyTasks() {
         return { level: "", parentId: "" };
     };
 
-    // For now, we'll show all tasks (in production, filter by current user)
+    // Get current user for filtering
+    const { user } = useAuth();
+
+    // Filter tasks by current user (responsibleUserId)
     const { data: tasks, isLoading } = useQuery({
-        queryKey: ["my-tasks", statusFilter],
+        queryKey: ["my-tasks", statusFilter, user?.id],
         queryFn: () => {
-            const url = statusFilter
-                ? `/api/tasks?status=${statusFilter}`
-                : "/api/tasks";
-            return apiRequest<Task[]>(url);
+            if (!user?.id) return [];
+            const params = new URLSearchParams();
+            params.append("responsibleUserId", user.id);
+            if (statusFilter) params.append("status", statusFilter);
+            return apiRequest<Task[]>(`/api/tasks?${params.toString()}`);
         },
+        enabled: !!user?.id,
     });
 
     const updateStatusMutation = useMutation({
