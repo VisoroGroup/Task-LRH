@@ -130,7 +130,7 @@ export function Departments() {
             }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["departments"] });
-            toast({ title: "Department created", variant: "success" as any });
+            toast({ title: "Departament creat", variant: "success" as any });
             setIsCreateOpen(false);
             setNewDeptName("");
             setNewDeptDescription("");
@@ -148,11 +148,11 @@ export function Departments() {
             }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["departments"] });
-            toast({ title: "Department updated", variant: "success" as any });
+            toast({ title: "Departament actualizat", variant: "success" as any });
             setEditingDept(null);
         },
         onError: (error: Error) => {
-            toast({ title: "Failed to update", description: error.message, variant: "destructive" });
+            toast({ title: "Nu s-a putut actualiza", description: error.message, variant: "destructive" });
         },
     });
 
@@ -164,7 +164,7 @@ export function Departments() {
             }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["departments"] });
-            toast({ title: "Department head updated", variant: "success" as any });
+            toast({ title: "Șef departament actualizat", variant: "success" as any });
         },
     });
 
@@ -176,7 +176,7 @@ export function Departments() {
             }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["departments"] });
-            toast({ title: "Post created", variant: "success" as any });
+            toast({ title: "Post creat", variant: "success" as any });
             setIsAddPostOpen(null);
             setNewPostName("");
             setNewPostUserId("");
@@ -191,7 +191,7 @@ export function Departments() {
             }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["departments"] });
-            toast({ title: "Post updated", variant: "success" as any });
+            toast({ title: "Post actualizat", variant: "success" as any });
         },
     });
 
@@ -200,7 +200,7 @@ export function Departments() {
             apiRequest(`/api/posts/${id}`, { method: "DELETE" }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["departments"] });
-            toast({ title: "Post removed", variant: "success" as any });
+            toast({ title: "Post eliminat", variant: "success" as any });
         },
     });
 
@@ -209,11 +209,11 @@ export function Departments() {
             apiRequest(`/api/departments/${id}`, { method: "DELETE" }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["departments"] });
-            toast({ title: "Department archived", variant: "success" as any });
+            toast({ title: "Departament arhivat", variant: "success" as any });
         },
         onError: (error: Error) => {
             toast({
-                title: "Cannot archive department",
+                title: "Nu se poate arhiva departamentul",
                 description: error.message,
                 variant: "destructive"
             });

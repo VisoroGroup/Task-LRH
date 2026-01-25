@@ -322,7 +322,7 @@ export function MyTasks() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
-            toast({ title: "Task created", variant: "success" as any });
+            toast({ title: "Sarcină creată", variant: "success" as any });
             setIsNewTaskOpen(false);
             // Reset all fields
             setNewTaskTitle("");
@@ -335,7 +335,7 @@ export function MyTasks() {
         },
         onError: (error: Error) => {
             toast({
-                title: "Failed to create task",
+                title: "Nu s-a putut crea sarcina",
                 description: error.message,
                 variant: "destructive"
             });
@@ -345,19 +345,19 @@ export function MyTasks() {
     const handleCreateTask = () => {
         // Validate all required fields
         if (!newTaskTitle.trim()) {
-            toast({ title: "Title is required", variant: "destructive" });
+            toast({ title: "Titlul este obligatoriu", variant: "destructive" });
             return;
         }
         if (!newTaskDate) {
-            toast({ title: "Due date is required", variant: "destructive" });
+            toast({ title: "Data limită este obligatorie", variant: "destructive" });
             return;
         }
         if (!newTaskDepartmentId) {
-            toast({ title: "Department is required", variant: "destructive" });
+            toast({ title: "Departamentul este obligatoriu", variant: "destructive" });
             return;
         }
         if (!newTaskResponsibleUserId) {
-            toast({ title: "Responsible person is required", variant: "destructive" });
+            toast({ title: "Persoana responsabilă este obligatorie", variant: "destructive" });
             return;
         }
 

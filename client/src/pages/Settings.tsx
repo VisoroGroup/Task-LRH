@@ -73,10 +73,10 @@ export function Settings() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["settings"] });
-            toast({ title: "Settings saved", variant: "success" as any });
+            toast({ title: "Setări salvate", variant: "success" as any });
         },
         onError: (error: Error) => {
-            toast({ title: "Failed to save", description: error.message, variant: "destructive" });
+            toast({ title: "Nu s-a putut salva", description: error.message, variant: "destructive" });
         },
     });
 
@@ -89,11 +89,11 @@ export function Settings() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["main-goals"] });
             queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
-            toast({ title: "Main Goal created", variant: "success" as any });
+            toast({ title: "Misiune creată", variant: "success" as any });
             setIsEditingMainGoal(false);
         },
         onError: (error: Error) => {
-            toast({ title: "Failed to create", description: error.message, variant: "destructive" });
+            toast({ title: "Nu s-a putut crea", description: error.message, variant: "destructive" });
         },
     });
 
@@ -106,11 +106,11 @@ export function Settings() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["main-goals"] });
             queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
-            toast({ title: "Main Goal updated", variant: "success" as any });
+            toast({ title: "Misiune actualizată", variant: "success" as any });
             setIsEditingMainGoal(false);
         },
         onError: (error: Error) => {
-            toast({ title: "Failed to update", description: error.message, variant: "destructive" });
+            toast({ title: "Nu s-a putut actualiza", description: error.message, variant: "destructive" });
         },
     });
 

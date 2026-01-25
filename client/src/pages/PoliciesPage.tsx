@@ -107,11 +107,11 @@ export function PoliciesPage() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["policies"] });
-            toast({ title: "Irányelv létrehozva!", variant: "success" as any });
+            toast({ title: "Politică creată!", variant: "success" as any });
             closeDialog();
         },
         onError: (error: Error) => {
-            toast({ title: "Hiba", description: error.message, variant: "destructive" });
+            toast({ title: "Eroare", description: error.message, variant: "destructive" });
         },
     });
 
@@ -125,11 +125,11 @@ export function PoliciesPage() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["policies"] });
-            toast({ title: "Irányelv frissítve!", variant: "success" as any });
+            toast({ title: "Politică actualizată!", variant: "success" as any });
             closeDialog();
         },
         onError: (error: Error) => {
-            toast({ title: "Hiba", description: error.message, variant: "destructive" });
+            toast({ title: "Eroare", description: error.message, variant: "destructive" });
         },
     });
 
@@ -140,10 +140,10 @@ export function PoliciesPage() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["policies"] });
-            toast({ title: "Irányelv törölve!", variant: "success" as any });
+            toast({ title: "Politică ștearsă!", variant: "success" as any });
         },
         onError: (error: Error) => {
-            toast({ title: "Hiba", description: error.message, variant: "destructive" });
+            toast({ title: "Eroare", description: error.message, variant: "destructive" });
         },
     });
 
@@ -229,12 +229,12 @@ export function PoliciesPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold">Irányelvek</h2>
-                    <p className="text-muted-foreground">Működési irányelvek (cég / osztály / poszt szinten)</p>
+                    <h2 className="text-2xl font-bold">Politici</h2>
+                    <p className="text-muted-foreground">Politici operaționale (la nivel de companie / departament / post)</p>
                 </div>
                 <Button onClick={() => setIsNewPolicyOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Új Irányelv
+                    Politică Nouă
                 </Button>
             </div>
 
@@ -362,12 +362,12 @@ export function PoliciesPage() {
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
-                            {editingPolicy ? "Irányelv Szerkesztése" : "Új Irányelv"}
+                            {editingPolicy ? "Editare Politică" : "Politică Nouă"}
                         </DialogTitle>
                         <DialogDescription>
                             {editingPolicy
-                                ? "Módosítsd az irányelv adatait"
-                                : "Hozz létre egy új irányelvet a szervezet számára"}
+                                ? "Modifică datele politicii"
+                                : "Creează o nouă politică pentru organizație"}
                         </DialogDescription>
                     </DialogHeader>
 
