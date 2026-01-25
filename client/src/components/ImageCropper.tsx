@@ -111,9 +111,9 @@ export function ImageCropper({ isOpen, onClose, onSave, currentImage }: ImageCro
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
             <DialogContent className="max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>Profilkép szerkesztése</DialogTitle>
+                    <DialogTitle>Editare imagine de profil</DialogTitle>
                     <DialogDescription>
-                        Tölts fel egy képet és vágd a megfelelő méretre
+                        Încărcați o imagine și decupați-o la dimensiunea potrivită
                     </DialogDescription>
                 </DialogHeader>
 
@@ -134,7 +134,7 @@ export function ImageCropper({ isOpen, onClose, onSave, currentImage }: ImageCro
                         >
                             <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
                             <p className="text-sm text-muted-foreground">
-                                Kattints a kép kiválasztásához
+                                Click pentru a selecta o imagine
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
                                 JPG, PNG - max 5MB
@@ -169,7 +169,7 @@ export function ImageCropper({ isOpen, onClose, onSave, currentImage }: ImageCro
                                 onClick={() => fileInputRef.current?.click()}
                                 className="w-full"
                             >
-                                Másik kép választása
+                                Selectează altă imagine
                             </Button>
                         </div>
                     )}
@@ -178,11 +178,11 @@ export function ImageCropper({ isOpen, onClose, onSave, currentImage }: ImageCro
                 <DialogFooter>
                     <Button variant="outline" onClick={handleClose}>
                         <X className="h-4 w-4 mr-2" />
-                        Mégse
+                        Renunță
                     </Button>
                     <Button onClick={handleSave} disabled={!completedCrop}>
                         <Check className="h-4 w-4 mr-2" />
-                        Mentés
+                        Salvează
                     </Button>
                 </DialogFooter>
             </DialogContent>

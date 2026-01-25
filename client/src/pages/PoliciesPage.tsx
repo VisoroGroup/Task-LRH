@@ -214,9 +214,9 @@ export function PoliciesPage() {
 
     const getScopeLabel = (s: "COMPANY" | "DEPARTMENT" | "POST") => {
         switch (s) {
-            case "COMPANY": return "cég-szintű";
-            case "DEPARTMENT": return "osztály-szintű";
-            case "POST": return "poszt-specifikus";
+            case "COMPANY": return "la nivel de companie";
+            case "DEPARTMENT": return "la nivel de departament";
+            case "POST": return "specific postului";
         }
     };
 
@@ -250,7 +250,7 @@ export function PoliciesPage() {
                     )}
                 >
                     <Building2 className="h-4 w-4 inline mr-2" />
-                    Cég
+                    Companie
                 </button>
                 <button
                     onClick={() => setActiveTab("DEPARTMENT")}
@@ -262,7 +262,7 @@ export function PoliciesPage() {
                     )}
                 >
                     <Briefcase className="h-4 w-4 inline mr-2" />
-                    Osztály
+                    Departament
                 </button>
                 <button
                     onClick={() => setActiveTab("POST")}
@@ -274,7 +274,7 @@ export function PoliciesPage() {
                     )}
                 >
                     <Users className="h-4 w-4 inline mr-2" />
-                    Poszt
+                    Post
                 </button>
             </div>
 
@@ -283,10 +283,10 @@ export function PoliciesPage() {
                 {filteredPolicies.length === 0 ? (
                     <Card>
                         <CardContent className="py-8 text-center text-muted-foreground">
-                            Nincs {getScopeLabel(activeTab)} irányelv.
+                            Nu există {getScopeLabel(activeTab)} directivă de funcționare.
                             <br />
                             <Button variant="link" onClick={() => setIsNewPolicyOpen(true)}>
-                                Hozz létre egyet!
+                                Crează una!
                             </Button>
                         </CardContent>
                     </Card>
