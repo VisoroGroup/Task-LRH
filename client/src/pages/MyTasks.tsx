@@ -363,7 +363,7 @@ export function MyTasks() {
 
         const parentInfo = getParentInfo();
         if (!parentInfo.parentId) {
-            toast({ title: "Please select at least an Alcél (Subgoal)", variant: "destructive" });
+            toast({ title: "Selectează cel puțin un Obiectiv", variant: "destructive" });
             return;
         }
 
@@ -705,7 +705,7 @@ export function MyTasks() {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsNewTaskOpen(false)}>
-                            Cancel
+                            Renunță
                         </Button>
                         <Button
                             onClick={handleCreateTask}
@@ -717,7 +717,7 @@ export function MyTasks() {
                                 !hierarchyPath.subgoalId
                             }
                         >
-                            Create Task
+                            Crează Sarcină
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -810,7 +810,7 @@ export function MyTasks() {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsCompleteDialogOpen(false)}>
-                            Cancel
+                            Renunță
                         </Button>
                         <Button
                             onClick={handleCompleteTask}
@@ -993,7 +993,7 @@ export function MyTasks() {
                         }
                         onClick={() => setStatusFilter(status === "ALL" ? null : status)}
                     >
-                        {status === "ALL" ? "All" : statusLabels[status]}
+                        {status === "ALL" ? "Toate" : statusLabels[status]}
                     </Button>
                 ))}
             </div>

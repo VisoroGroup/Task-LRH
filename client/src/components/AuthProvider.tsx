@@ -84,7 +84,7 @@ export function RequireAuth({
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="text-muted-foreground">Loading...</div>
+                <div className="text-muted-foreground">Se încarcă...</div>
             </div>
         );
     }

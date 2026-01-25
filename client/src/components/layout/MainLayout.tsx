@@ -27,14 +27,14 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-    { href: "/", label: "Panou director", icon: <LayoutDashboard className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
-    { href: "/my-tasks", label: "Sarcinile mele", icon: <CheckSquare className="h-5 w-5" /> },
-    { href: "/team-tasks", label: "Sarcini echipă", icon: <Building2 className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
-    { href: "/ideal-scene", label: "Imaginea ideală", icon: <Target className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
+    { href: "/", label: "Panou de Control", icon: <LayoutDashboard className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
+    { href: "/my-tasks", label: "Sarcinile Mele", icon: <CheckSquare className="h-5 w-5" /> },
+    { href: "/team-tasks", label: "Sarcinile Echipei", icon: <Building2 className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
+    { href: "/ideal-scene", label: "Stare Ideală", icon: <Target className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
     { href: "/departments", label: "Departamente", icon: <Building2 className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
-    { href: "/policies", label: "Irányelvek", icon: <FileText className="h-5 w-5" />, roles: ["CEO"] },
+    { href: "/policies", label: "Politici", icon: <FileText className="h-5 w-5" />, roles: ["CEO"] },
     { href: "/calendar", label: "Calendar", icon: <Calendar className="h-5 w-5" /> },
-    { href: "/team-settings", label: "Echipă", icon: <Settings className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
+    { href: "/team-settings", label: "Setările Echipei", icon: <Settings className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
     { href: "/settings", label: "Setări", icon: <Settings className="h-5 w-5" />, roles: ["CEO"] },
 ];
 

@@ -85,20 +85,20 @@ export function CEODashboard() {
                         <div className="text-2xl font-bold">
                             {summaryLoading ? "..." : summary?.totalActive || 0}
                         </div>
-                        <p className="text-xs text-muted-foreground">Încărcare totală</p>
+                        <p className="text-xs text-muted-foreground">Volum total de muncă</p>
                     </CardContent>
                 </Card>
 
                 <Card className="kpi-card border-red-200 dark:border-red-900">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Blocate</CardTitle>
+                        <CardTitle className="text-sm font-medium">Stagnante</CardTitle>
                         <AlertTriangle className="h-4 w-4 text-red-500" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                             {summaryLoading ? "..." : summary?.stalledTasks || 0}
                         </div>
-                        <p className="text-xs text-muted-foreground">Fără progres de 3+ zile</p>
+                        <p className="text-xs text-muted-foreground">Fără activitate de peste 3 zile</p>
                     </CardContent>
                 </Card>
 
@@ -111,7 +111,7 @@ export function CEODashboard() {
                         <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                             {summaryLoading ? "..." : summary?.overdueTasks || 0}
                         </div>
-                        <p className="text-xs text-muted-foreground">Depășite termen limită</p>
+                        <p className="text-xs text-muted-foreground">Termen depășit</p>
                     </CardContent>
                 </Card>
 
@@ -124,20 +124,20 @@ export function CEODashboard() {
                         <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                             {summaryLoading ? "..." : summary?.completedCycles || 0}
                         </div>
-                        <p className="text-xs text-muted-foreground">Cicluri cu rapoarte</p>
+                        <p className="text-xs text-muted-foreground">Cicluri de lucru cu rapoarte</p>
                     </CardContent>
                 </Card>
 
                 <Card className="kpi-card">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Medie per post</CardTitle>
+                        <CardTitle className="text-sm font-medium">Medie pe Post</CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
                             {summaryLoading ? "..." : summary?.avgTasksPerPost || 0}
                         </div>
-                        <p className="text-xs text-muted-foreground">Sarcini per persoană</p>
+                        <p className="text-xs text-muted-foreground">Sarcini pe persoană</p>
                     </CardContent>
                 </Card>
             </div>
@@ -147,7 +147,7 @@ export function CEODashboard() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Users className="h-5 w-5" />
-                        Grila stare deținători posturi
+                        Grilă Status Titulari de Post
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -158,12 +158,12 @@ export function CEODashboard() {
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b">
-                                        <th className="text-left py-3 px-4 font-medium">Deținător post</th>
-                                        <th className="text-center py-3 px-4 font-medium">TODO</th>
-                                        <th className="text-center py-3 px-4 font-medium">DOING</th>
-                                        <th className="text-center py-3 px-4 font-medium">DONE</th>
+                                        <th className="text-left py-3 px-4 font-medium">Titular de Post</th>
+                                        <th className="text-center py-3 px-4 font-medium">DE FĂCUT</th>
+                                        <th className="text-center py-3 px-4 font-medium">ÎN LUCRU</th>
+                                        <th className="text-center py-3 px-4 font-medium">FINALIZAT</th>
                                         <th className="text-center py-3 px-4 font-medium">Întârziate</th>
-                                        <th className="text-center py-3 px-4 font-medium">Stare</th>
+                                        <th className="text-center py-3 px-4 font-medium">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>

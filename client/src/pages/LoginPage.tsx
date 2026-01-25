@@ -35,7 +35,7 @@ export function LoginPage() {
                     className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 hover:from-purple-600 hover:via-pink-600 hover:to-purple-700 border-0 shadow-lg shadow-purple-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/40 hover:scale-[1.02]"
                 >
                     <LogIn className="mr-3 h-5 w-5" />
-                    Sign in with Microsoft
+                    Conectare cu Microsoft
                 </Button>
 
                 {/* Divider */}
@@ -49,20 +49,20 @@ export function LoginPage() {
                 <div className="space-y-4">
                     <Feature
                         icon={<Shield className="h-5 w-5" />}
-                        title="Role-Based Access"
-                        description="CEO, Executive & User permissions"
+                        title="Acces pe Bază de Rol"
+                        description="CEO, Executiv și Permisiuni Utilizator"
                         gradient="from-green-400 to-emerald-500"
                     />
                     <Feature
                         icon={<BarChart3 className="h-5 w-5" />}
-                        title="Real-Time Dashboard"
-                        description="Track tasks, flow status & KPIs"
+                        title="Tablou de Bord în Timp Real"
+                        description="Urmărește sarcinile, fluxul și KPI"
                         gradient="from-blue-400 to-cyan-500"
                     />
                     <Feature
                         icon={<Zap className="h-5 w-5" />}
-                        title="Goal Management"
-                        description="Imaginea Ideală - gestionarea ierarhiei"
+                        title="Gestionarea Obiectivelor"
+                        description="Stare Ideală - gestionarea ierarhiei"
                         gradient="from-yellow-400 to-orange-500"
                     />
                 </div>
