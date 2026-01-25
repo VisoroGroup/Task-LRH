@@ -1206,6 +1206,16 @@ export function registerRoutes(app: Express) {
                 status: "TODO",
             }).returning();
 
+            // Auto-sync to Outlook calendar if task has due date
+            if (dueDate && responsibleUserId) {
+                try {
+                    await syncTaskToCalendar(task.id, responsibleUserId);
+                } catch (calendarError) {
+                    // Don't fail the task creation if calendar sync fails
+                    console.log("Calendar sync skipped:", calendarError);
+                }
+            }
+
             res.status(201).json(task);
         } catch (error) {
             console.error("Error creating task:", error);
