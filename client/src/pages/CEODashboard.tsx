@@ -24,6 +24,7 @@ interface GridUser {
     userId: string;
     userName: string;
     userRole: string;
+    userAvatarUrl?: string | null;
     todoCount: number;
     doingCount: number;
     doneCount: number;
@@ -171,11 +172,19 @@ export function CEODashboard() {
                                         <tr key={user.userId} className="border-b hover:bg-accent/30">
                                             <td className="py-3 px-4">
                                                 <div className="flex items-center gap-2">
-                                                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                                        <span className="text-xs font-medium text-primary">
-                                                            {user.userName.charAt(0).toUpperCase()}
-                                                        </span>
-                                                    </div>
+                                                    {user.userAvatarUrl ? (
+                                                        <img
+                                                            src={user.userAvatarUrl}
+                                                            alt={user.userName}
+                                                            className="h-8 w-8 rounded-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                                            <span className="text-xs font-medium text-primary">
+                                                                {user.userName.charAt(0).toUpperCase()}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                     <div>
                                                         <div className="font-medium">{user.userName}</div>
                                                         <div className="text-xs text-muted-foreground">{user.userRole}</div>

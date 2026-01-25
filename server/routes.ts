@@ -1643,6 +1643,7 @@ export function registerRoutes(app: Express) {
                     userId: user.id,
                     userName: user.name,
                     userRole: user.role,
+                    userAvatarUrl: user.avatarUrl,
                     todoCount,
                     doingCount,
                     doneCount,
