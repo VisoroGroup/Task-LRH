@@ -11,6 +11,11 @@ import { startupDiagnostics, runHealthCheck } from "./healthcheck";
 
 const app = express();
 
+// Trust proxy for production (Replit, Heroku, etc.)
+if (process.env.NODE_ENV === "production") {
+    app.set("trust proxy", 1);
+}
+
 // Security middleware
 app.use(helmet({
     contentSecurityPolicy: false,
@@ -31,6 +36,7 @@ app.use(session({
         secure: process.env.NODE_ENV === "production",
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000,
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     },
 }));
 
