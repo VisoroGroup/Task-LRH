@@ -46,6 +46,9 @@ registerAuthRoutes(app);
 // Register API routes
 registerRoutes(app);
 
+// Serve uploaded files statically
+app.use("/uploads", express.static("uploads"));
+
 // Health check endpoint
 app.get("/api/health", async (req, res) => {
     const health = await runHealthCheck();

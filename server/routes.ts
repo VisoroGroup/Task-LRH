@@ -1,4 +1,7 @@
 import { Express, Request, Response } from "express";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 import { db } from "./db";
 import { eq, and, isNull, desc, sql, count, gte, lte, or } from "drizzle-orm";
 import {
@@ -32,6 +35,34 @@ async function getStalledThreshold(): Promise<number> {
     });
     return (setting?.value as { days: number })?.days || 3;
 }
+// Multer configuration for avatar uploads
+const uploadDir = path.join(process.cwd(), "uploads", "avatars");
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const avatarStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        const userId = req.params.id;
+        const ext = path.extname(file.originalname) || '.jpg';
+        cb(null, `${userId}-${Date.now()}${ext}`);
+    },
+});
+
+const uploadAvatar = multer({
+    storage: avatarStorage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only images are allowed'));
+        }
+    },
+});
 
 export function registerRoutes(app: Express) {
     // ============================================================================
@@ -1399,6 +1430,80 @@ export function registerRoutes(app: Express) {
         } catch (error) {
             console.error("Error deleting user:", error);
             res.status(500).json({ error: "Failed to delete user" });
+        }
+    });
+
+    // Upload/update user avatar
+    app.post("/api/users/:id/avatar", uploadAvatar.single('avatar'), async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+            const file = req.file;
+
+            if (!file) {
+                return res.status(400).json({ error: "No file uploaded" });
+            }
+
+            // Create the avatar URL (relative path)
+            const avatarUrl = `/uploads/avatars/${file.filename}`;
+
+            // Update user's avatar URL in database
+            const [updated] = await db.update(users)
+                .set({ avatarUrl, updatedAt: new Date() })
+                .where(eq(users.id, id))
+                .returning();
+
+            if (!updated) {
+                // Delete the uploaded file if user not found
+                fs.unlinkSync(file.path);
+                return res.status(404).json({ error: "User not found" });
+            }
+
+            // Delete old avatar file if exists
+            if (updated.avatarUrl && updated.avatarUrl.startsWith('/uploads/')) {
+                const oldFilePath = path.join(process.cwd(), updated.avatarUrl);
+                if (fs.existsSync(oldFilePath) && oldFilePath !== file.path) {
+                    try { fs.unlinkSync(oldFilePath); } catch { }
+                }
+            }
+
+            res.json({ success: true, avatarUrl });
+        } catch (error) {
+            console.error("Error uploading avatar:", error);
+            res.status(500).json({ error: "Failed to upload avatar" });
+        }
+    });
+
+    // Delete user avatar
+    app.delete("/api/users/:id/avatar", async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+
+            // Get current avatar URL
+            const user = await db.query.users.findFirst({
+                where: eq(users.id, id),
+            });
+
+            if (!user) {
+                return res.status(404).json({ error: "User not found" });
+            }
+
+            // Delete the file if exists
+            if (user.avatarUrl && user.avatarUrl.startsWith('/uploads/')) {
+                const filePath = path.join(process.cwd(), user.avatarUrl);
+                if (fs.existsSync(filePath)) {
+                    try { fs.unlinkSync(filePath); } catch { }
+                }
+            }
+
+            // Update user to remove avatar URL
+            await db.update(users)
+                .set({ avatarUrl: null, updatedAt: new Date() })
+                .where(eq(users.id, id));
+
+            res.json({ success: true });
+        } catch (error) {
+            console.error("Error deleting avatar:", error);
+            res.status(500).json({ error: "Failed to delete avatar" });
         }
     });
 

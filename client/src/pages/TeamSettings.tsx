@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiRequest, cn, formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { ImageCropper } from "@/components/ImageCropper";
 import {
     Users,
     Mail,
@@ -16,6 +17,7 @@ import {
     Copy,
     Send,
     Pencil,
+    Camera,
 } from "lucide-react";
 
 interface Invitation {
@@ -34,6 +36,7 @@ interface TeamMember {
     name: string;
     email: string;
     role: "CEO" | "EXECUTIVE" | "USER";
+    avatarUrl?: string | null;
     isActive: boolean;
     createdAt: string;
 }
@@ -58,6 +61,7 @@ export function TeamSettings() {
     const [newRole, setNewRole] = useState<"CEO" | "EXECUTIVE" | "USER">("USER");
     const [copiedToken, setCopiedToken] = useState<string | null>(null);
     const [editingUser, setEditingUser] = useState<{ id: string; name: string } | null>(null);
+    const [avatarEditingUserId, setAvatarEditingUserId] = useState<string | null>(null);
 
     // Fetch team members
     const { data: users = [] } = useQuery<TeamMember[]>({
@@ -149,6 +153,33 @@ export function TeamSettings() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["users"] });
             toast({ title: "Membru șters!" });
+        },
+        onError: (error: Error) => {
+            toast({
+                title: "Eroare",
+                description: error.message,
+                variant: "destructive",
+            });
+        },
+    });
+
+    // Upload avatar mutation
+    const uploadAvatarMutation = useMutation({
+        mutationFn: async ({ userId, blob }: { userId: string; blob: Blob }) => {
+            const formData = new FormData();
+            formData.append('avatar', blob, 'avatar.jpg');
+            const response = await fetch(`/api/users/${userId}/avatar`, {
+                method: 'POST',
+                body: formData,
+            });
+            if (!response.ok) {
+                throw new Error('Failed to upload avatar');
+            }
+            return response.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["users"] });
+            toast({ title: "Profilkép feltöltve!" });
         },
         onError: (error: Error) => {
             toast({
@@ -332,8 +363,24 @@ export function TeamSettings() {
                                     key={user.id}
                                     className="group flex items-center gap-3 p-3 rounded-lg bg-muted/50"
                                 >
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white font-bold">
-                                        {user.name.charAt(0)}
+                                    <div
+                                        className="relative w-10 h-10 rounded-full cursor-pointer group/avatar"
+                                        onClick={() => setAvatarEditingUserId(user.id)}
+                                    >
+                                        {user.avatarUrl ? (
+                                            <img
+                                                src={user.avatarUrl}
+                                                alt={user.name}
+                                                className="w-10 h-10 rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white font-bold">
+                                                {user.name.charAt(0)}
+                                            </div>
+                                        )}
+                                        <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+                                            <Camera className="h-4 w-4 text-white" />
+                                        </div>
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         {editingUser?.id === user.id ? (
@@ -404,6 +451,18 @@ export function TeamSettings() {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Avatar Image Cropper Dialog */}
+            <ImageCropper
+                isOpen={!!avatarEditingUserId}
+                onClose={() => setAvatarEditingUserId(null)}
+                onSave={(blob) => {
+                    if (avatarEditingUserId) {
+                        uploadAvatarMutation.mutate({ userId: avatarEditingUserId, blob });
+                    }
+                }}
+                currentImage={users.find(u => u.id === avatarEditingUserId)?.avatarUrl}
+            />
         </div>
     );
 }
