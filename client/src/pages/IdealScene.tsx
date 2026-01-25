@@ -98,7 +98,7 @@ export function IdealScene() {
                         <h3 className="text-xl font-semibold mb-3">Nicio misiune configurată</h3>
                         <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                             Mai întâi trebuie să setați Misiunea companiei în Setări.
-                            Aceasta este fundația pe care se construiește Imaginea Ideală.
+                            Aceasta este fundația pe care se construiește imaginea ideală.
                         </p>
                         <Link href="/settings">
                             <Button size="lg">

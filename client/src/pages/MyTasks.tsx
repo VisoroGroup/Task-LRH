@@ -471,7 +471,7 @@ export function MyTasks() {
                             variant="outline"
                             onClick={() => updateStatusMutation.mutate({ taskId: task.id, status: "DOING" })}
                         >
-                            Începe Lucru
+                            Începe lucru
                         </Button>
                     )}
                     {task.status === "DOING" && (
@@ -549,7 +549,7 @@ export function MyTasks() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold">Sarcinile Mele</h2>
+                    <h2 className="text-2xl font-bold">Sarcinile mele</h2>
                     <p className="text-muted-foreground">Pașii de acțiune atribuiți ție</p>
                 </div>
                 <Button onClick={() => setIsNewTaskOpen(true)}>
@@ -772,7 +772,7 @@ export function MyTasks() {
 
                         {/* Evidence type */}
                         <div>
-                            <label className="text-sm font-medium">Tipul Dovezii *</label>
+                            <label className="text-sm font-medium">Tipul dovezii *</label>
                             <select
                                 value={evidenceType}
                                 onChange={(e) => setEvidenceType(e.target.value)}
@@ -822,7 +822,7 @@ export function MyTasks() {
                                 (evidenceType === "URL" && !evidenceUrl.trim())
                             }
                         >
-                            ✓ Finalizează Sarcina
+                            ✓ Finalizează sarcina
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -834,7 +834,7 @@ export function MyTasks() {
                     <DialogHeader>
                         <DialogTitle className="text-xl flex items-center gap-2">
                             <FolderTree className="h-5 w-5 text-primary" />
-                            Fluxul Complet
+                            Fluxul complet
                         </DialogTitle>
                         <DialogDescription>
                             Structura completă de la misiune până la sarcina curentă
@@ -935,7 +935,7 @@ export function MyTasks() {
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2">
                                             <span className="text-xs uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-semibold">
-                                                Sarcina Curentă
+                                                Sarcina curentă
                                             </span>
                                             <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-medium">
                                                 {statusLabels[hierarchyTask.status]}
@@ -1004,10 +1004,10 @@ export function MyTasks() {
                 statusFilter ? "md:grid-cols-1 max-w-md" : "md:grid-cols-3"
             )}>
                 {(!statusFilter || statusFilter === "TODO") &&
-                    renderColumn("De Făcut", todoTasks, "bg-slate-400", "TODO")
+                    renderColumn("De făcut", todoTasks, "bg-slate-400", "TODO")
                 }
                 {(!statusFilter || statusFilter === "DOING") &&
-                    renderColumn("În Lucru", doingTasks, "bg-blue-500", "DOING")
+                    renderColumn("În lucru", doingTasks, "bg-blue-500", "DOING")
                 }
                 {(!statusFilter || statusFilter === "DONE") &&
                     renderColumn("Finalizate", doneTasks, "bg-green-500", "DONE")

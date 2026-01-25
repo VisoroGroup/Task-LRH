@@ -27,14 +27,14 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-    { href: "/", label: "Panou de Control", icon: <LayoutDashboard className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
-    { href: "/my-tasks", label: "Sarcinile Mele", icon: <CheckSquare className="h-5 w-5" /> },
-    { href: "/team-tasks", label: "Sarcinile Echipei", icon: <Building2 className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
-    { href: "/ideal-scene", label: "Stare Ideală", icon: <Target className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
+    { href: "/", label: "Panou de control", icon: <LayoutDashboard className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
+    { href: "/my-tasks", label: "Sarcinile mele", icon: <CheckSquare className="h-5 w-5" /> },
+    { href: "/team-tasks", label: "Sarcinile echipei", icon: <Building2 className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
+    { href: "/ideal-scene", label: "Stare ideală", icon: <Target className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
     { href: "/departments", label: "Departamente", icon: <Building2 className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
     { href: "/policies", label: "Politici", icon: <FileText className="h-5 w-5" />, roles: ["CEO"] },
     { href: "/calendar", label: "Calendar", icon: <Calendar className="h-5 w-5" /> },
-    { href: "/team-settings", label: "Setările Echipei", icon: <Settings className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
+    { href: "/team-settings", label: "Setările echipei", icon: <Settings className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
     { href: "/settings", label: "Setări", icon: <Settings className="h-5 w-5" />, roles: ["CEO"] },
 ];
 
@@ -72,9 +72,9 @@ export function MainLayout({ children }: MainLayoutProps) {
                 <div className="h-20 flex items-center justify-center px-4 border-b border-white/5">
                     {!collapsed ? (
                         <div className="flex items-center gap-3">
-                            <img 
-                                src="/visoro-logo.png" 
-                                alt="Visoro Group" 
+                            <img
+                                src="/visoro-logo.png"
+                                alt="Visoro Group"
                                 className="h-12 w-12 rounded-full object-contain"
                             />
                             <div>
@@ -87,9 +87,9 @@ export function MainLayout({ children }: MainLayoutProps) {
                             </div>
                         </div>
                     ) : (
-                        <img 
-                            src="/visoro-logo.png" 
-                            alt="Visoro Group" 
+                        <img
+                            src="/visoro-logo.png"
+                            alt="Visoro Group"
                             className="h-11 w-11 rounded-full object-contain"
                         />
                     )}

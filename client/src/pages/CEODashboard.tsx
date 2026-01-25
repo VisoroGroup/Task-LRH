@@ -79,7 +79,7 @@ export function CEODashboard() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                 <Card className="kpi-card">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Sarcini Active</CardTitle>
+                        <CardTitle className="text-sm font-medium">Sarcini active</CardTitle>
                         <Activity className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -159,7 +159,7 @@ export function CEODashboard() {
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b">
-                                        <th className="text-left py-3 px-4 font-medium">Titular de Post</th>
+                                        <th className="text-left py-3 px-4 font-medium">Titular de post</th>
                                         <th className="text-center py-3 px-4 font-medium">DE FĂCUT</th>
                                         <th className="text-center py-3 px-4 font-medium">ÎN LUCRU</th>
                                         <th className="text-center py-3 px-4 font-medium">FINALIZAT</th>

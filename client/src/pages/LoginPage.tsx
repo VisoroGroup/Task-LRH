@@ -18,9 +18,9 @@ export function LoginPage() {
             <div className="login-card relative z-10">
                 {/* Logo & Title */}
                 <div className="text-center mb-10">
-                    <img 
-                        src="/visoro-logo.png" 
-                        alt="Visoro Group" 
+                    <img
+                        src="/visoro-logo.png"
+                        alt="Visoro Group"
                         className="w-24 h-24 mx-auto mb-6 rounded-full object-contain shadow-lg"
                     />
                     <h1 className="text-4xl font-bold login-title mb-2">
@@ -51,20 +51,20 @@ export function LoginPage() {
                 <div className="space-y-4">
                     <Feature
                         icon={<Shield className="h-5 w-5" />}
-                        title="Acces pe Bază de Rol"
-                        description="CEO, Executiv și Permisiuni Utilizator"
+                        title="Acces pe bază de rol"
+                        description="CEO, executiv și permisiuni utilizator"
                         gradient="from-green-400 to-emerald-500"
                     />
                     <Feature
                         icon={<BarChart3 className="h-5 w-5" />}
-                        title="Tablou de Bord în Timp Real"
+                        title="Tablou de bord în timp real"
                         description="Urmărește sarcinile, fluxul și KPI"
                         gradient="from-blue-400 to-cyan-500"
                     />
                     <Feature
                         icon={<Zap className="h-5 w-5" />}
-                        title="Gestionarea Obiectivelor"
-                        description="Stare Ideală - gestionarea ierarhiei"
+                        title="Gestionarea obiectivelor"
+                        description="Stare ideală - gestionarea ierarhiei"
                         gradient="from-yellow-400 to-orange-500"
                     />
                 </div>
