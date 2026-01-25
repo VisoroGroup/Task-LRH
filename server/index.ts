@@ -7,6 +7,7 @@ import { seedDatabase } from "./seed";
 import { registerRoutes } from "./routes";
 import { registerAuthRoutes } from "./auth";
 import { setupVite, serveStatic, log } from "./vite";
+import { startupDiagnostics, runHealthCheck } from "./healthcheck";
 
 const app = express();
 
@@ -39,6 +40,13 @@ registerAuthRoutes(app);
 // Register API routes
 registerRoutes(app);
 
+// Health check endpoint
+app.get("/api/health", async (req, res) => {
+    const health = await runHealthCheck();
+    const statusCode = health.overall === "HEALTHY" ? 200 : health.overall === "DEGRADED" ? 200 : 503;
+    res.status(statusCode).json(health);
+});
+
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     console.error("Server error:", err);
@@ -52,6 +60,9 @@ const PORT = parseInt(process.env.PORT || "5000", 10);
 
 async function start() {
     try {
+        // Run startup diagnostics
+        await startupDiagnostics();
+
         // Seed the database with default data
         await seedDatabase();
 
