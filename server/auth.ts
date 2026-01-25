@@ -194,9 +194,14 @@ export function registerAuthRoutes(app: Express) {
                 }
             }
 
-            // Set session
-            req.session.userId = user.id;
-            req.session.userRole = user.role;
+            // Re-fetch user to get the latest role from database
+            const freshUser = await db.query.users.findFirst({
+                where: eq(users.id, user.id),
+            });
+
+            // Set session with fresh user data
+            req.session.userId = freshUser!.id;
+            req.session.userRole = freshUser!.role;
 
             // Redirect to home
             res.redirect("/");
