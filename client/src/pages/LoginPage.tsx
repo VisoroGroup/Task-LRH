@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { LogIn, Sparkles, Shield, Target, BarChart3, Zap } from "lucide-react";
+import { LogIn, Sparkles, Shield, BarChart3, Zap } from "lucide-react";
 
 export function LoginPage() {
     const handleLogin = () => {
@@ -18,9 +18,11 @@ export function LoginPage() {
             <div className="login-card relative z-10">
                 {/* Logo & Title */}
                 <div className="text-center mb-10">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 mb-6 shadow-lg shadow-purple-500/25">
-                        <Target className="h-10 w-10 text-white" />
-                    </div>
+                    <img 
+                        src="/visoro-logo.png" 
+                        alt="Visoro Group" 
+                        className="w-24 h-24 mx-auto mb-6 rounded-full object-contain shadow-lg"
+                    />
                     <h1 className="text-4xl font-bold login-title mb-2">
                         Visoro Task Manager
                     </h1>

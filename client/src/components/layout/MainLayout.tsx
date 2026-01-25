@@ -72,12 +72,11 @@ export function MainLayout({ children }: MainLayoutProps) {
                 <div className="h-20 flex items-center justify-center px-4 border-b border-white/5">
                     {!collapsed ? (
                         <div className="flex items-center gap-3">
-                            <div className="relative">
-                                <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl blur-lg opacity-50" />
-                                <div className="relative h-11 w-11 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
-                                    <Target className="h-6 w-6 text-white" />
-                                </div>
-                            </div>
+                            <img 
+                                src="/visoro-logo.png" 
+                                alt="Visoro Group" 
+                                className="h-12 w-12 rounded-full object-contain"
+                            />
                             <div>
                                 <span className="font-bold text-lg bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
                                     Visoro Tasks
@@ -88,12 +87,11 @@ export function MainLayout({ children }: MainLayoutProps) {
                             </div>
                         </div>
                     ) : (
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl blur-lg opacity-50" />
-                            <div className="relative h-11 w-11 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                                <Target className="h-6 w-6 text-white" />
-                            </div>
-                        </div>
+                        <img 
+                            src="/visoro-logo.png" 
+                            alt="Visoro Group" 
+                            className="h-11 w-11 rounded-full object-contain"
+                        />
                     )}
                 </div>
 
