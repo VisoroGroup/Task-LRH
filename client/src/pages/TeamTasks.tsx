@@ -40,6 +40,7 @@ interface TeamMember {
     name: string;
     email: string;
     role: string;
+    avatarUrl?: string | null;
 }
 
 interface MainGoal {
@@ -660,8 +661,12 @@ export function TeamTasks() {
                         )}
                         onClick={() => setSelectedMember(user.id)}
                     >
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
-                            {user.name.charAt(0)}
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold overflow-hidden">
+                            {user.avatarUrl ? (
+                                <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                            ) : (
+                                user.name.charAt(0)
+                            )}
                         </div>
                         <div className="text-left">
                             <div className="font-semibold">{user.name}</div>
