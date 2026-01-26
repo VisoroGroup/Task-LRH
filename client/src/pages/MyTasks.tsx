@@ -81,6 +81,13 @@ export function MyTasks() {
         instructionId: "",
     });
 
+    // Recurring task state
+    const [isRecurring, setIsRecurring] = useState(false);
+    const [recurrenceType, setRecurrenceType] = useState("WEEKLY");
+    const [recurrenceInterval, setRecurrenceInterval] = useState(1);
+    const [recurrenceDayOfWeek, setRecurrenceDayOfWeek] = useState(1); // Monday
+    const [recurrenceDayOfMonth, setRecurrenceDayOfMonth] = useState(1);
+
     // Completion report dialog state
     const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
     const [completingTaskId, setCompletingTaskId] = useState<string>("");
@@ -320,6 +327,11 @@ export function MyTasks() {
             hierarchyLevel: string;
             parentItemId: string;
             creatorId: string;
+            isRecurring?: boolean;
+            recurrenceType?: string;
+            recurrenceInterval?: number;
+            recurrenceDayOfWeek?: number | null;
+            recurrenceDayOfMonth?: number | null;
         }) => {
             return apiRequest("/api/tasks", {
                 method: "POST",
@@ -388,6 +400,12 @@ export function MyTasks() {
             hierarchyLevel: parentInfo.level,
             parentItemId: parentInfo.parentId,
             creatorId,
+            // Recurring task fields
+            isRecurring,
+            recurrenceType: isRecurring ? recurrenceType : "NONE",
+            recurrenceInterval: isRecurring ? recurrenceInterval : 1,
+            recurrenceDayOfWeek: isRecurring && recurrenceType === "WEEKLY" ? recurrenceDayOfWeek : null,
+            recurrenceDayOfMonth: isRecurring && recurrenceType === "MONTHLY" ? recurrenceDayOfMonth : null,
         });
     };
 
@@ -652,6 +670,87 @@ export function MyTasks() {
                                     onChange={(e) => setNewTaskTime(e.target.value)}
                                     className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
                                 />
+                            </div>
+
+                            {/* Recurring Task Toggle */}
+                            <div className="border-t pt-4 mt-4">
+                                <label className="flex items-center gap-3 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={isRecurring}
+                                        onChange={(e) => setIsRecurring(e.target.checked)}
+                                        className="w-5 h-5 rounded border-gray-300"
+                                    />
+                                    <span className="text-sm font-medium">🔄 Sarcină repetitivă</span>
+                                </label>
+
+                                {isRecurring && (
+                                    <div className="mt-4 space-y-3 p-3 bg-muted/50 rounded-lg">
+                                        {/* Recurrence Type */}
+                                        <div>
+                                            <label className="text-sm font-medium">Frecvență</label>
+                                            <select
+                                                value={recurrenceType}
+                                                onChange={(e) => setRecurrenceType(e.target.value)}
+                                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                            >
+                                                <option value="DAILY">Zilnic</option>
+                                                <option value="WEEKLY">Săptămânal</option>
+                                                <option value="MONTHLY">Lunar</option>
+                                                <option value="YEARLY">Anual</option>
+                                            </select>
+                                        </div>
+
+                                        {/* Interval */}
+                                        <div>
+                                            <label className="text-sm font-medium">
+                                                La fiecare {recurrenceInterval} {recurrenceType === "DAILY" ? "zi(le)" : recurrenceType === "WEEKLY" ? "săpt." : recurrenceType === "MONTHLY" ? "lună(i)" : "an(i)"}
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                value={recurrenceInterval}
+                                                onChange={(e) => setRecurrenceInterval(parseInt(e.target.value) || 1)}
+                                                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                            />
+                                        </div>
+
+                                        {/* Day of Week for WEEKLY */}
+                                        {recurrenceType === "WEEKLY" && (
+                                            <div>
+                                                <label className="text-sm font-medium">Ziua săptămânii</label>
+                                                <select
+                                                    value={recurrenceDayOfWeek}
+                                                    onChange={(e) => setRecurrenceDayOfWeek(parseInt(e.target.value))}
+                                                    className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                                >
+                                                    <option value={1}>Luni</option>
+                                                    <option value={2}>Marți</option>
+                                                    <option value={3}>Miercuri</option>
+                                                    <option value={4}>Joi</option>
+                                                    <option value={5}>Vineri</option>
+                                                    <option value={6}>Sâmbătă</option>
+                                                    <option value={0}>Duminică</option>
+                                                </select>
+                                            </div>
+                                        )}
+
+                                        {/* Day of Month for MONTHLY */}
+                                        {recurrenceType === "MONTHLY" && (
+                                            <div>
+                                                <label className="text-sm font-medium">Ziua lunii</label>
+                                                <input
+                                                    type="number"
+                                                    min={1}
+                                                    max={31}
+                                                    value={recurrenceDayOfMonth}
+                                                    onChange={(e) => setRecurrenceDayOfMonth(parseInt(e.target.value) || 1)}
+                                                    className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
 

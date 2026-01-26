@@ -5,6 +5,7 @@ import fs from "fs";
 import { Client as ObjectStorageClient } from "@replit/object-storage";
 import { db } from "./db";
 import { eq, and, isNull, desc, sql, count, gte, lte, or } from "drizzle-orm";
+import { processCompletedRecurringTask } from "./recurring";
 import {
     departments,
     users,
@@ -1387,10 +1388,21 @@ export function registerRoutes(app: Express) {
             }).returning();
 
             // Update task status to DONE
-            await db
+            const [completedTask] = await db
                 .update(tasks)
                 .set({ status: "DONE", lastUpdatedAt: new Date() })
-                .where(eq(tasks.id, id));
+                .where(eq(tasks.id, id))
+                .returning();
+
+            // If this was a recurring task, generate the next instance
+            if (completedTask.isRecurring && completedTask.recurrenceType !== "NONE") {
+                try {
+                    await processCompletedRecurringTask(id);
+                    console.log(`Generated next instance for recurring task ${id}`);
+                } catch (err) {
+                    console.error("Error generating next recurring instance:", err);
+                }
+            }
 
             res.status(201).json(report);
         } catch (error) {

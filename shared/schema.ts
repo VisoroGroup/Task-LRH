@@ -46,6 +46,15 @@ export const evidenceTypeEnum = pgEnum("evidence_type", [
 // Policy scope - company-wide, department-specific, or post-specific
 export const policyScopeEnum = pgEnum("policy_scope", ["COMPANY", "DEPARTMENT", "POST"]);
 
+// Recurrence type for recurring tasks
+export const recurrenceTypeEnum = pgEnum("recurrence_type", [
+    "NONE",      // Not recurring
+    "DAILY",     // Every X days
+    "WEEKLY",    // Every X weeks on specific day
+    "MONTHLY",   // Every X months on specific day
+    "YEARLY",    // Every X years
+]);
+
 // ============================================================================
 // SESSIONS (for authentication)
 // ============================================================================
@@ -458,6 +467,31 @@ export const tasks = pgTable(
         // Last updated - for stalled detection
         lastUpdatedAt: timestamp("last_updated_at", { withTimezone: true }).defaultNow().notNull(),
         createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+
+        // ================ RECURRING TASK FIELDS ================
+        // Is this a recurring task?
+        isRecurring: boolean("is_recurring").default(false).notNull(),
+
+        // Recurrence pattern: NONE, DAILY, WEEKLY, MONTHLY, YEARLY
+        recurrenceType: recurrenceTypeEnum("recurrence_type").default("NONE").notNull(),
+
+        // Recurrence interval (every X days/weeks/months)
+        recurrenceInterval: integer("recurrence_interval").default(1),
+
+        // Day of week for WEEKLY recurrence (0=Sunday, 1=Monday, ... 6=Saturday)
+        recurrenceDayOfWeek: integer("recurrence_day_of_week"),
+
+        // Day of month for MONTHLY recurrence (1-31)
+        recurrenceDayOfMonth: integer("recurrence_day_of_month"),
+
+        // When should recurrence end? (null = never)
+        recurrenceEndDate: timestamp("recurrence_end_date", { withTimezone: true }),
+
+        // For generated instances: reference to the template task
+        parentRecurringTaskId: varchar("parent_recurring_task_id"),
+
+        // For generated instances: the specific occurrence date
+        occurrenceDate: timestamp("occurrence_date", { withTimezone: true }),
     },
     (table) => [
         index("idx_tasks_responsible").on(table.responsibleUserId),
