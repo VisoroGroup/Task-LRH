@@ -455,23 +455,23 @@ export function registerRoutes(app: Express) {
                     subgoals: {
                         where: eq(subgoals.isActive, true),
                         with: {
-                            assignedUser: true,
+                            assignedPost: { with: { user: true } },
                             plans: {
                                 where: eq(plans.isActive, true),
                                 with: {
-                                    assignedUser: true,
+                                    assignedPost: { with: { user: true } },
                                     programs: {
                                         where: eq(programs.isActive, true),
                                         with: {
-                                            assignedUser: true,
+                                            assignedPost: { with: { user: true } },
                                             projects: {
                                                 where: eq(projects.isActive, true),
                                                 with: {
-                                                    assignedUser: true,
+                                                    assignedPost: { with: { user: true } },
                                                     instructions: {
                                                         where: eq(instructions.isActive, true),
                                                         with: {
-                                                            assignedUser: true,
+                                                            assignedPost: { with: { user: true } },
                                                         },
                                                     },
                                                 },
@@ -899,7 +899,7 @@ export function registerRoutes(app: Express) {
             const taskList = await db.query.tasks.findMany({
                 where: conditions.length > 0 ? and(...conditions) : undefined,
                 with: {
-                    responsibleUser: true,
+                    responsiblePost: { with: { user: true } },
                     department: true,
                     completionReport: true,
                 },
@@ -922,19 +922,19 @@ export function registerRoutes(app: Express) {
                         const instruction = await db.query.instructions.findFirst({
                             where: eq(instructions.id, task.parentItemId),
                             with: {
-                                assignedUser: true,
+                                assignedPost: { with: { user: true } },
                                 project: {
                                     with: {
-                                        assignedUser: true,
+                                        assignedPost: { with: { user: true } },
                                         program: {
                                             with: {
-                                                assignedUser: true,
+                                                assignedPost: { with: { user: true } },
                                                 plan: {
                                                     with: {
-                                                        assignedUser: true,
+                                                        assignedPost: { with: { user: true } },
                                                         subgoal: {
                                                             with: {
-                                                                assignedUser: true,
+                                                                assignedPost: { with: { user: true } },
                                                                 mainGoal: true,
                                                             },
                                                         },
@@ -987,16 +987,16 @@ export function registerRoutes(app: Express) {
                         const project = await db.query.projects.findFirst({
                             where: eq(projects.id, task.parentItemId),
                             with: {
-                                assignedUser: true,
+                                assignedPost: { with: { user: true } },
                                 program: {
                                     with: {
-                                        assignedUser: true,
+                                        assignedPost: { with: { user: true } },
                                         plan: {
                                             with: {
-                                                assignedUser: true,
+                                                assignedPost: { with: { user: true } },
                                                 subgoal: {
                                                     with: {
-                                                        assignedUser: true,
+                                                        assignedPost: { with: { user: true } },
                                                         mainGoal: true,
                                                     },
                                                 },
@@ -1040,13 +1040,13 @@ export function registerRoutes(app: Express) {
                         const program = await db.query.programs.findFirst({
                             where: eq(programs.id, task.parentItemId),
                             with: {
-                                assignedUser: true,
+                                assignedPost: { with: { user: true } },
                                 plan: {
                                     with: {
-                                        assignedUser: true,
+                                        assignedPost: { with: { user: true } },
                                         subgoal: {
                                             with: {
-                                                assignedUser: true,
+                                                assignedPost: { with: { user: true } },
                                                 mainGoal: true,
                                             },
                                         },
@@ -1081,10 +1081,10 @@ export function registerRoutes(app: Express) {
                         const plan = await db.query.plans.findFirst({
                             where: eq(plans.id, task.parentItemId),
                             with: {
-                                assignedUser: true,
+                                assignedPost: { with: { user: true } },
                                 subgoal: {
                                     with: {
-                                        assignedUser: true,
+                                        assignedPost: { with: { user: true } },
                                         mainGoal: true,
                                     },
                                 },
@@ -1110,7 +1110,7 @@ export function registerRoutes(app: Express) {
                         const subgoal = await db.query.subgoals.findFirst({
                             where: eq(subgoals.id, task.parentItemId),
                             with: {
-                                assignedUser: true,
+                                assignedPost: { with: { user: true } },
                                 mainGoal: true,
                             },
                         });
@@ -1146,7 +1146,7 @@ export function registerRoutes(app: Express) {
             const task = await db.query.tasks.findFirst({
                 where: eq(tasks.id, id),
                 with: {
-                    responsibleUser: true,
+                    responsiblePost: { with: { user: true } },
                     department: true,
                     completionReport: true,
                 },
