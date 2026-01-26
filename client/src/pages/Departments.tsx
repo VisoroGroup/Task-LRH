@@ -33,6 +33,7 @@ interface UserType {
     id: string;
     name: string;
     email: string;
+    avatarUrl?: string | null;
 }
 
 interface Post {
@@ -509,10 +510,26 @@ export function Departments() {
                                                     return (
                                                         <div key={post.id} className="p-3 bg-muted/50 rounded-lg space-y-2">
                                                             <div className="flex items-center justify-between">
-                                                                <div>
-                                                                    <div className="font-medium">{post.name}</div>
-                                                                    <div className="text-sm text-muted-foreground">
-                                                                        {post.user ? post.user.name : <span className="text-yellow-600">Vacant</span>}
+                                                                <div className="flex items-center gap-3">
+                                                                    {/* Avatar */}
+                                                                    {post.user && (
+                                                                        <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+                                                                            {post.user.avatarUrl ? (
+                                                                                <img
+                                                                                    src={post.user.avatarUrl}
+                                                                                    alt={post.user.name}
+                                                                                    className="w-full h-full object-cover"
+                                                                                />
+                                                                            ) : (
+                                                                                post.user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                                    <div>
+                                                                        <div className="font-medium">{post.name}</div>
+                                                                        <div className="text-sm text-muted-foreground">
+                                                                            {post.user ? post.user.name : <span className="text-yellow-600">Vacant</span>}
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                                 <div className="flex items-center gap-2">

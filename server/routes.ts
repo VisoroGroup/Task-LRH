@@ -1484,7 +1484,7 @@ export function registerRoutes(app: Express) {
         }
     });
 
-    // Upload/update user avatar
+    // Upload/update user avatar - stores as base64 in database for permanent persistence
     app.post("/api/users/:id/avatar", uploadAvatar.single('avatar'), async (req: Request, res: Response) => {
         try {
             const { id } = req.params;
@@ -1494,37 +1494,16 @@ export function registerRoutes(app: Express) {
                 return res.status(400).json({ error: "No file uploaded" });
             }
 
-            let avatarUrl: string;
+            // Read file and convert to base64 data URL
+            const fileBuffer = fs.readFileSync(file.path);
+            const base64Data = fileBuffer.toString('base64');
+            const mimeType = file.mimetype || 'image/jpeg';
+            const avatarUrl = `data:${mimeType};base64,${base64Data}`;
 
-            // Use Object Storage if available (Replit), otherwise use local filesystem
-            if (objectStorageClient) {
-                const objectName = `avatars/${id}-${Date.now()}.jpg`;
-                const fileBuffer = fs.readFileSync(file.path);
+            // Delete temp file
+            fs.unlinkSync(file.path);
 
-                // Upload to Object Storage
-                const result = await objectStorageClient.uploadFromBytes(objectName, fileBuffer);
-
-                if (result.error) {
-                    fs.unlinkSync(file.path);
-                    return res.status(500).json({ error: "Failed to upload to storage" });
-                }
-
-                // Delete temp file
-                fs.unlinkSync(file.path);
-
-                // Create URL - Object Storage serves files at this path
-                avatarUrl = `/objstorage/${objectName}`;
-            } else {
-                // Local filesystem fallback
-                avatarUrl = `/uploads/avatars/${file.filename}`;
-            }
-
-            // Get old avatar URL before update
-            const oldUser = await db.query.users.findFirst({
-                where: eq(users.id, id),
-            });
-
-            // Update user's avatar URL in database
+            // Update user's avatar in database (base64 stored directly)
             const [updated] = await db.update(users)
                 .set({ avatarUrl, updatedAt: new Date() })
                 .where(eq(users.id, id))
@@ -1534,12 +1513,7 @@ export function registerRoutes(app: Express) {
                 return res.status(404).json({ error: "User not found" });
             }
 
-            // Delete old avatar from Object Storage if exists
-            if (oldUser?.avatarUrl && oldUser.avatarUrl.startsWith('/objstorage/') && objectStorageClient) {
-                const oldObjectName = oldUser.avatarUrl.replace('/objstorage/', '');
-                try { await objectStorageClient.delete(oldObjectName); } catch { }
-            }
-
+            console.log(`Avatar uploaded for user ${id} - stored as base64 in database`);
             res.json({ success: true, avatarUrl });
         } catch (error) {
             console.error("Error uploading avatar:", error);
@@ -1547,37 +1521,20 @@ export function registerRoutes(app: Express) {
         }
     });
 
-    // Delete user avatar
+    // Delete user avatar - simply remove from database
     app.delete("/api/users/:id/avatar", async (req: Request, res: Response) => {
         try {
             const { id } = req.params;
 
-            // Get current avatar URL
-            const user = await db.query.users.findFirst({
-                where: eq(users.id, id),
-            });
+            // Update user to remove avatar
+            const [updated] = await db.update(users)
+                .set({ avatarUrl: null, updatedAt: new Date() })
+                .where(eq(users.id, id))
+                .returning();
 
-            if (!user) {
+            if (!updated) {
                 return res.status(404).json({ error: "User not found" });
             }
-
-            // Delete from Object Storage if exists
-            if (user.avatarUrl && user.avatarUrl.startsWith('/objstorage/') && objectStorageClient) {
-                const objectName = user.avatarUrl.replace('/objstorage/', '');
-                try { await objectStorageClient.delete(objectName); } catch { }
-            }
-            // Delete local file if exists
-            else if (user.avatarUrl && user.avatarUrl.startsWith('/uploads/')) {
-                const filePath = path.join(process.cwd(), user.avatarUrl);
-                if (fs.existsSync(filePath)) {
-                    try { fs.unlinkSync(filePath); } catch { }
-                }
-            }
-
-            // Update user to remove avatar URL
-            await db.update(users)
-                .set({ avatarUrl: null, updatedAt: new Date() })
-                .where(eq(users.id, id));
 
             res.json({ success: true });
         } catch (error) {
