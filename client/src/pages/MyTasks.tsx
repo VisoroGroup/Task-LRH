@@ -401,8 +401,8 @@ export function MyTasks() {
             ? `${newTaskDate}T${newTaskTime}:00`
             : `${newTaskDate}T23:59:59`;
 
-        // Use first user as creatorId for now (in production, use logged-in user)
-        const creatorId = users?.[0]?.id || "";
+        // Use logged-in user as creatorId
+        const creatorId = user?.id || "";
 
         createTaskMutation.mutate({
             title: newTaskTitle,
@@ -487,7 +487,7 @@ export function MyTasks() {
                     {task.responsiblePost && (
                         <div className="flex items-center gap-1">
                             <User className="h-3 w-3" />
-                            Responsabil: {task.responsiblePost.name}
+                            📌 {task.responsiblePost.name} {task.responsiblePost.user ? `(${task.responsiblePost.user.name})` : "(Vacant)"}
                         </div>
                     )}
                     <div>Departament: {task.department?.name}</div>
