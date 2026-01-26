@@ -45,12 +45,12 @@ interface CalendarItem {
 export function Calendar() {
     const { user } = useAuth();
 
-    // Only fetch tasks assigned to current user
+    // Only fetch tasks assigned to current user's posts
     const { data: tasks, isLoading: tasksLoading } = useQuery({
         queryKey: ["calendar-tasks", user?.id],
         queryFn: () => {
             if (!user?.id) return [];
-            return apiRequest<Task[]>(`/api/tasks?responsiblePostId=${user.id}`);
+            return apiRequest<Task[]>(`/api/tasks/my/${user.id}`);
         },
         enabled: !!user?.id,
     });

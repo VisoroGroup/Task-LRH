@@ -1138,6 +1138,52 @@ export function registerRoutes(app: Express) {
         }
     });
 
+    // Get tasks assigned to user's posts (My Tasks)
+    app.get("/api/tasks/my/:userId", async (req: Request, res: Response) => {
+        try {
+            const { userId } = req.params;
+            const { status } = req.query;
+
+            // First get all posts held by this user
+            const userPosts = await db.query.posts.findMany({
+                where: and(eq(posts.userId, userId), eq(posts.isActive, true)),
+            });
+
+            const postIds = userPosts.map(p => p.id);
+
+            if (postIds.length === 0) {
+                return res.json([]);
+            }
+
+            // Get tasks where responsiblePostId is in user's posts
+            const conditions: any[] = [sql`${tasks.responsiblePostId} IN (${sql.join(postIds.map(id => sql`${id}`), sql`, `)})`];
+            if (status) conditions.push(eq(tasks.status, status as any));
+
+            const taskList = await db.query.tasks.findMany({
+                where: and(...conditions),
+                with: {
+                    responsiblePost: { with: { user: true } },
+                    department: true,
+                    completionReport: true,
+                },
+                orderBy: [desc(tasks.createdAt)],
+            });
+
+            // Add hierarchy path info
+            const tasksWithPath = await Promise.all(taskList.map(async (task: any) => {
+                let hierarchyPath: any[] = [];
+                let mainGoalTitle: string | null = null;
+                // Simplified - just return task without full hierarchy for performance
+                return { ...task, hierarchyPath, mainGoalTitle };
+            }));
+
+            res.json(tasksWithPath);
+        } catch (error) {
+            console.error("Error fetching my tasks:", error);
+            res.status(500).json({ error: "Failed to fetch my tasks" });
+        }
+    });
+
     // Get single task with full hierarchy context
     app.get("/api/tasks/:id", async (req: Request, res: Response) => {
         try {

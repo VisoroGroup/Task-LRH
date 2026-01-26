@@ -30,7 +30,7 @@ interface Task {
     parentItemId: string;
     dueDate: string | null;
     department: { id: string; name: string };
-    responsiblePost?: { id: string; name: string; email: string };
+    responsiblePost?: { id: string; name: string; user: { id: string; name: string } | null };
     mainGoalTitle?: string | null;
     hierarchyPath?: string[];
 }

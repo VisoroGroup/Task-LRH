@@ -143,15 +143,15 @@ export function MyTasks() {
     // Get current user for filtering
     const { user } = useAuth();
 
-    // Filter tasks by current user (responsiblePostId)
+    // Filter tasks by current user's posts
     const { data: tasks, isLoading } = useQuery({
         queryKey: ["my-tasks", statusFilter, user?.id],
         queryFn: () => {
             if (!user?.id) return [];
             const params = new URLSearchParams();
-            params.append("responsiblePostId", user.id);
             if (statusFilter) params.append("status", statusFilter);
-            return apiRequest<Task[]>(`/api/tasks?${params.toString()}`);
+            const queryString = params.toString();
+            return apiRequest<Task[]>(`/api/tasks/my/${user.id}${queryString ? `?${queryString}` : ""}`);
         },
         enabled: !!user?.id,
     });
