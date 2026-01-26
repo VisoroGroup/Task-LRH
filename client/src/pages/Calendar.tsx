@@ -50,7 +50,7 @@ export function Calendar() {
         queryKey: ["calendar-tasks", user?.id],
         queryFn: () => {
             if (!user?.id) return [];
-            return apiRequest<Task[]>(`/api/tasks?responsibleUserId=${user.id}`);
+            return apiRequest<Task[]>(`/api/tasks?responsiblePostId=${user.id}`);
         },
         enabled: !!user?.id,
     });

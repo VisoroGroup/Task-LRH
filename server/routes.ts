@@ -543,7 +543,7 @@ export function registerRoutes(app: Express) {
     // Create Subgoal
     app.post("/api/ideal-scene/subgoals", async (req: Request, res: Response) => {
         try {
-            const { title, description, mainGoalId, departmentId, assignedUserId, dueDate } = req.body;
+            const { title, description, mainGoalId, departmentId, assignedPostId, dueDate } = req.body;
 
             if (!title || !mainGoalId || !departmentId || !dueDate) {
                 return res.status(400).json({ error: "Title, mainGoalId, departmentId, and dueDate are required" });
@@ -554,7 +554,7 @@ export function registerRoutes(app: Express) {
                 description,
                 mainGoalId,
                 departmentId,
-                assignedUserId: assignedUserId || null,
+                assignedPostId: assignedPostId || null,
                 dueDate: new Date(dueDate),
             }).returning();
 
@@ -568,7 +568,7 @@ export function registerRoutes(app: Express) {
     // Create Plan (Terv)
     app.post("/api/ideal-scene/plans", async (req: Request, res: Response) => {
         try {
-            let { title, description, subgoalId, departmentId, assignedUserId, dueDate } = req.body;
+            let { title, description, subgoalId, departmentId, assignedPostId, dueDate } = req.body;
 
             if (!title || !subgoalId || !dueDate) {
                 return res.status(400).json({ error: "Title, subgoalId, and dueDate are required" });
@@ -592,7 +592,7 @@ export function registerRoutes(app: Express) {
                 description,
                 subgoalId,
                 departmentId,
-                assignedUserId: assignedUserId || null,
+                assignedPostId: assignedPostId || null,
                 dueDate: new Date(dueDate),
             }).returning();
 
@@ -629,7 +629,7 @@ export function registerRoutes(app: Express) {
     // Create Program (now references planId instead of subgoalId)
     app.post("/api/ideal-scene/programs", async (req: Request, res: Response) => {
         try {
-            let { title, description, planId, departmentId, assignedUserId, dueDate } = req.body;
+            let { title, description, planId, departmentId, assignedPostId, dueDate } = req.body;
 
             if (!title || !planId || !dueDate) {
                 return res.status(400).json({ error: "Title, planId, and dueDate are required" });
@@ -646,7 +646,7 @@ export function registerRoutes(app: Express) {
                 description,
                 planId,
                 departmentId,
-                assignedUserId: assignedUserId || null,
+                assignedPostId: assignedPostId || null,
                 dueDate: new Date(dueDate),
             }).returning();
 
@@ -660,7 +660,7 @@ export function registerRoutes(app: Express) {
     // Create Project
     app.post("/api/ideal-scene/projects", async (req: Request, res: Response) => {
         try {
-            let { title, description, programId, departmentId, assignedUserId, dueDate } = req.body;
+            let { title, description, programId, departmentId, assignedPostId, dueDate } = req.body;
 
             if (!title || !programId || !dueDate) {
                 return res.status(400).json({ error: "Title, programId, and dueDate are required" });
@@ -677,7 +677,7 @@ export function registerRoutes(app: Express) {
                 description,
                 programId,
                 departmentId,
-                assignedUserId: assignedUserId || null,
+                assignedPostId: assignedPostId || null,
                 dueDate: new Date(dueDate),
             }).returning();
 
@@ -691,7 +691,7 @@ export function registerRoutes(app: Express) {
     // Create Instruction
     app.post("/api/ideal-scene/instructions", async (req: Request, res: Response) => {
         try {
-            let { title, description, projectId, departmentId, assignedUserId, dueDate } = req.body;
+            let { title, description, projectId, departmentId, assignedPostId, dueDate } = req.body;
 
             if (!title || !projectId || !dueDate) {
                 return res.status(400).json({ error: "Title, projectId, and dueDate are required" });
@@ -708,7 +708,7 @@ export function registerRoutes(app: Express) {
                 description,
                 projectId,
                 departmentId,
-                assignedUserId: assignedUserId || null,
+                assignedPostId: assignedPostId || null,
                 dueDate: new Date(dueDate),
             }).returning();
 
@@ -723,37 +723,37 @@ export function registerRoutes(app: Express) {
     app.put("/api/ideal-scene/:type/:id/owner", async (req: Request, res: Response) => {
         try {
             const { type, id } = req.params;
-            const { assignedUserId } = req.body;
+            const { assignedPostId } = req.body;
 
             let result;
             switch (type) {
                 case "subgoals":
                     [result] = await db.update(subgoals)
-                        .set({ assignedUserId: assignedUserId || null, updatedAt: new Date() })
+                        .set({ assignedPostId: assignedPostId || null, updatedAt: new Date() })
                         .where(eq(subgoals.id, id))
                         .returning();
                     break;
                 case "plans":
                     [result] = await db.update(plans)
-                        .set({ assignedUserId: assignedUserId || null, updatedAt: new Date() })
+                        .set({ assignedPostId: assignedPostId || null, updatedAt: new Date() })
                         .where(eq(plans.id, id))
                         .returning();
                     break;
                 case "programs":
                     [result] = await db.update(programs)
-                        .set({ assignedUserId: assignedUserId || null, updatedAt: new Date() })
+                        .set({ assignedPostId: assignedPostId || null, updatedAt: new Date() })
                         .where(eq(programs.id, id))
                         .returning();
                     break;
                 case "projects":
                     [result] = await db.update(projects)
-                        .set({ assignedUserId: assignedUserId || null, updatedAt: new Date() })
+                        .set({ assignedPostId: assignedPostId || null, updatedAt: new Date() })
                         .where(eq(projects.id, id))
                         .returning();
                     break;
                 case "instructions":
                     [result] = await db.update(instructions)
-                        .set({ assignedUserId: assignedUserId || null, updatedAt: new Date() })
+                        .set({ assignedPostId: assignedPostId || null, updatedAt: new Date() })
                         .where(eq(instructions.id, id))
                         .returning();
                     break;
@@ -888,12 +888,12 @@ export function registerRoutes(app: Express) {
     // Get all tasks (with filters)
     app.get("/api/tasks", async (req: Request, res: Response) => {
         try {
-            const { status, departmentId, responsibleUserId, hierarchyLevel } = req.query;
+            const { status, departmentId, responsiblePostId, hierarchyLevel } = req.query;
 
             const conditions = [];
             if (status) conditions.push(eq(tasks.status, status as any));
             if (departmentId) conditions.push(eq(tasks.departmentId, departmentId as string));
-            if (responsibleUserId) conditions.push(eq(tasks.responsibleUserId, responsibleUserId as string));
+            if (responsiblePostId) conditions.push(eq(tasks.responsiblePostId, responsiblePostId as string));
             if (hierarchyLevel) conditions.push(eq(tasks.hierarchyLevel, hierarchyLevel as any));
 
             const taskList = await db.query.tasks.findMany({
@@ -1247,7 +1247,7 @@ export function registerRoutes(app: Express) {
         try {
             const {
                 title,
-                responsibleUserId,
+                responsiblePostId,
                 dueDate,
                 departmentId,
                 hierarchyLevel,
@@ -1256,9 +1256,9 @@ export function registerRoutes(app: Express) {
             } = req.body;
 
             // Validate required fields
-            if (!title || !responsibleUserId || !departmentId || !hierarchyLevel || !parentItemId || !creatorId) {
+            if (!title || !responsiblePostId || !departmentId || !hierarchyLevel || !parentItemId || !creatorId) {
                 return res.status(400).json({
-                    error: "Missing required fields: title, responsibleUserId, departmentId, hierarchyLevel, parentItemId, creatorId"
+                    error: "Missing required fields: title, responsiblePostId, departmentId, hierarchyLevel, parentItemId, creatorId"
                 });
             }
 
@@ -1280,7 +1280,7 @@ export function registerRoutes(app: Express) {
 
             const [task] = await db.insert(tasks).values({
                 title,
-                responsibleUserId,
+                responsiblePostId,
                 departmentId,
                 hierarchyLevel,
                 parentItemId,
@@ -1290,9 +1290,9 @@ export function registerRoutes(app: Express) {
             }).returning();
 
             // Auto-sync to Outlook calendar if task has due date
-            if (dueDate && responsibleUserId) {
+            if (dueDate && responsiblePostId) {
                 try {
-                    await syncTaskToCalendar(task.id, responsibleUserId);
+                    await syncTaskToCalendar(task.id, responsiblePostId);
                 } catch (calendarError) {
                     // Don't fail the task creation if calendar sync fails
                     console.log("Calendar sync skipped:", calendarError);
@@ -1600,12 +1600,12 @@ export function registerRoutes(app: Express) {
             // Average tasks per post holder
             const userTaskCounts = await db
                 .select({
-                    userId: tasks.responsibleUserId,
+                    userId: tasks.responsiblePostId,
                     taskCount: count()
                 })
                 .from(tasks)
                 .where(or(eq(tasks.status, "TODO"), eq(tasks.status, "DOING")))
-                .groupBy(tasks.responsibleUserId);
+                .groupBy(tasks.responsiblePostId);
 
             const avgTasksPerPost = userTaskCounts.length > 0
                 ? userTaskCounts.reduce((sum, u) => sum + Number(u.taskCount), 0) / userTaskCounts.length
@@ -1638,25 +1638,25 @@ export function registerRoutes(app: Express) {
 
             const grid = await Promise.all(userList.map(async (user) => {
                 const userTasks = await db.query.tasks.findMany({
-                    where: eq(tasks.responsibleUserId, user.id),
+                    where: eq(tasks.responsiblePostId, user.id),
                 });
 
                 // Count hierarchy items assigned to this user
                 const [subgoalCount] = await db.select({ count: sql<number>`count(*)` })
                     .from(subgoals)
-                    .where(and(eq(subgoals.assignedUserId, user.id), eq(subgoals.isActive, true)));
+                    .where(and(eq(subgoals.assignedPostId, user.id), eq(subgoals.isActive, true)));
                 const [planCount] = await db.select({ count: sql<number>`count(*)` })
                     .from(plans)
-                    .where(and(eq(plans.assignedUserId, user.id), eq(plans.isActive, true)));
+                    .where(and(eq(plans.assignedPostId, user.id), eq(plans.isActive, true)));
                 const [programCount] = await db.select({ count: sql<number>`count(*)` })
                     .from(programs)
-                    .where(and(eq(programs.assignedUserId, user.id), eq(programs.isActive, true)));
+                    .where(and(eq(programs.assignedPostId, user.id), eq(programs.isActive, true)));
                 const [projectCount] = await db.select({ count: sql<number>`count(*)` })
                     .from(projects)
-                    .where(and(eq(projects.assignedUserId, user.id), eq(projects.isActive, true)));
+                    .where(and(eq(projects.assignedPostId, user.id), eq(projects.isActive, true)));
                 const [instructionCount] = await db.select({ count: sql<number>`count(*)` })
                     .from(instructions)
-                    .where(and(eq(instructions.assignedUserId, user.id), eq(instructions.isActive, true)));
+                    .where(and(eq(instructions.assignedPostId, user.id), eq(instructions.isActive, true)));
 
                 const hierarchyCount = Number(subgoalCount.count || 0) +
                     Number(planCount.count || 0) +
@@ -1714,7 +1714,7 @@ export function registerRoutes(app: Express) {
             const { userId } = req.params;
             const { status } = req.query;
 
-            const conditions = [eq(tasks.responsibleUserId, userId)];
+            const conditions = [eq(tasks.responsiblePostId, userId)];
             if (status) {
                 conditions.push(eq(tasks.status, status as any));
             }

@@ -131,13 +131,13 @@ export function MyTasks() {
     // Get current user for filtering
     const { user } = useAuth();
 
-    // Filter tasks by current user (responsibleUserId)
+    // Filter tasks by current user (responsiblePostId)
     const { data: tasks, isLoading } = useQuery({
         queryKey: ["my-tasks", statusFilter, user?.id],
         queryFn: () => {
             if (!user?.id) return [];
             const params = new URLSearchParams();
-            params.append("responsibleUserId", user.id);
+            params.append("responsiblePostId", user.id);
             if (statusFilter) params.append("status", statusFilter);
             return apiRequest<Task[]>(`/api/tasks?${params.toString()}`);
         },
@@ -323,7 +323,7 @@ export function MyTasks() {
             title: string;
             dueDate: string;
             departmentId: string;
-            responsibleUserId: string;
+            responsiblePostId: string;
             hierarchyLevel: string;
             parentItemId: string;
             creatorId: string;
@@ -396,7 +396,7 @@ export function MyTasks() {
             title: newTaskTitle,
             dueDate,
             departmentId: newTaskDepartmentId,
-            responsibleUserId: newTaskResponsibleUserId,
+            responsiblePostId: newTaskResponsibleUserId,
             hierarchyLevel: parentInfo.level,
             parentItemId: parentInfo.parentId,
             creatorId,

@@ -234,7 +234,7 @@ export const subgoals = pgTable(
         description: text("description"),
         mainGoalId: varchar("main_goal_id").references(() => mainGoals.id).notNull(),
         departmentId: varchar("department_id").references(() => departments.id).notNull(),
-        assignedUserId: varchar("assigned_user_id").references(() => users.id),
+        assignedPostId: varchar("assigned_post_id").references(() => posts.id),
         dueDate: timestamp("due_date", { withTimezone: true }).notNull(),
         isActive: boolean("is_active").default(true).notNull(),
         createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -255,9 +255,9 @@ export const subgoalsRelations = relations(subgoals, ({ one, many }) => ({
         fields: [subgoals.departmentId],
         references: [departments.id],
     }),
-    assignedUser: one(users, {
-        fields: [subgoals.assignedUserId],
-        references: [users.id],
+    assignedPost: one(posts, {
+        fields: [subgoals.assignedPostId],
+        references: [posts.id],
     }),
     plans: many(plans),
     tasks: many(tasks, { relationName: "subgoalTasks" }),
@@ -275,7 +275,7 @@ export const plans = pgTable(
         description: text("description"),
         subgoalId: varchar("subgoal_id").references(() => subgoals.id).notNull(),
         departmentId: varchar("department_id").references(() => departments.id).notNull(),
-        assignedUserId: varchar("assigned_user_id").references(() => users.id),
+        assignedPostId: varchar("assigned_post_id").references(() => posts.id),
         dueDate: timestamp("due_date", { withTimezone: true }).notNull(),
         isActive: boolean("is_active").default(true).notNull(),
         createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -296,9 +296,9 @@ export const plansRelations = relations(plans, ({ one, many }) => ({
         fields: [plans.departmentId],
         references: [departments.id],
     }),
-    assignedUser: one(users, {
-        fields: [plans.assignedUserId],
-        references: [users.id],
+    assignedPost: one(posts, {
+        fields: [plans.assignedPostId],
+        references: [posts.id],
     }),
     programs: many(programs),
     tasks: many(tasks, { relationName: "planTasks" }),
@@ -316,7 +316,7 @@ export const programs = pgTable(
         description: text("description"),
         planId: varchar("plan_id").references(() => plans.id).notNull(),
         departmentId: varchar("department_id").references(() => departments.id).notNull(),
-        assignedUserId: varchar("assigned_user_id").references(() => users.id),
+        assignedPostId: varchar("assigned_post_id").references(() => posts.id),
         dueDate: timestamp("due_date", { withTimezone: true }).notNull(),
         isActive: boolean("is_active").default(true).notNull(),
         createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -337,9 +337,9 @@ export const programsRelations = relations(programs, ({ one, many }) => ({
         fields: [programs.departmentId],
         references: [departments.id],
     }),
-    assignedUser: one(users, {
-        fields: [programs.assignedUserId],
-        references: [users.id],
+    assignedPost: one(posts, {
+        fields: [programs.assignedPostId],
+        references: [posts.id],
     }),
     projects: many(projects),
     tasks: many(tasks, { relationName: "programTasks" }),
@@ -357,7 +357,7 @@ export const projects = pgTable(
         description: text("description"),
         programId: varchar("program_id").references(() => programs.id).notNull(),
         departmentId: varchar("department_id").references(() => departments.id).notNull(),
-        assignedUserId: varchar("assigned_user_id").references(() => users.id),
+        assignedPostId: varchar("assigned_post_id").references(() => posts.id),
         dueDate: timestamp("due_date", { withTimezone: true }).notNull(),
         isActive: boolean("is_active").default(true).notNull(),
         createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -378,9 +378,9 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
         fields: [projects.departmentId],
         references: [departments.id],
     }),
-    assignedUser: one(users, {
-        fields: [projects.assignedUserId],
-        references: [users.id],
+    assignedPost: one(posts, {
+        fields: [projects.assignedPostId],
+        references: [posts.id],
     }),
     instructions: many(instructions),
     tasks: many(tasks, { relationName: "projectTasks" }),
@@ -398,7 +398,7 @@ export const instructions = pgTable(
         description: text("description"),
         projectId: varchar("project_id").references(() => projects.id).notNull(),
         departmentId: varchar("department_id").references(() => departments.id).notNull(),
-        assignedUserId: varchar("assigned_user_id").references(() => users.id),
+        assignedPostId: varchar("assigned_post_id").references(() => posts.id),
         dueDate: timestamp("due_date", { withTimezone: true }).notNull(),
         isActive: boolean("is_active").default(true).notNull(),
         createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -419,9 +419,9 @@ export const instructionsRelations = relations(instructions, ({ one, many }) => 
         fields: [instructions.departmentId],
         references: [departments.id],
     }),
-    assignedUser: one(users, {
-        fields: [instructions.assignedUserId],
-        references: [users.id],
+    assignedPost: one(posts, {
+        fields: [instructions.assignedPostId],
+        references: [posts.id],
     }),
     tasks: many(tasks, { relationName: "instructionTasks" }),
 }));
@@ -436,9 +436,9 @@ export const tasks = pgTable(
         id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
         title: varchar("title").notNull(),
 
-        // Exactly ONE responsible person - never multiple
-        responsibleUserId: varchar("responsible_user_id")
-            .references(() => users.id)
+        // Exactly ONE responsible POST - work is assigned to posts, not persons
+        responsiblePostId: varchar("responsible_post_id")
+            .references(() => posts.id)
             .notNull(),
 
         // Only 3 statuses: TODO, DOING, DONE
@@ -494,7 +494,7 @@ export const tasks = pgTable(
         occurrenceDate: timestamp("occurrence_date", { withTimezone: true }),
     },
     (table) => [
-        index("idx_tasks_responsible").on(table.responsibleUserId),
+        index("idx_tasks_responsible_post").on(table.responsiblePostId),
         index("idx_tasks_status").on(table.status),
         index("idx_tasks_department").on(table.departmentId),
         index("idx_tasks_hierarchy").on(table.hierarchyLevel, table.parentItemId),
@@ -504,9 +504,9 @@ export const tasks = pgTable(
 );
 
 export const tasksRelations = relations(tasks, ({ one }) => ({
-    responsibleUser: one(users, {
-        fields: [tasks.responsibleUserId],
-        references: [users.id],
+    responsiblePost: one(posts, {
+        fields: [tasks.responsiblePostId],
+        references: [posts.id],
     }),
     creator: one(users, {
         fields: [tasks.creatorId],

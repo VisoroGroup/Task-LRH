@@ -54,7 +54,7 @@ interface Subgoal {
     id: string;
     title: string;
     departmentId: string;
-    assignedUserId?: string | null;
+    assignedPostId?: string | null;
     assignedUser?: { id: string; name: string };
     plans?: Plan[];
 }
@@ -62,7 +62,7 @@ interface Subgoal {
 interface Plan {
     id: string;
     title: string;
-    assignedUserId?: string | null;
+    assignedPostId?: string | null;
     assignedUser?: { id: string; name: string };
     programs?: Program[];
 }
@@ -70,7 +70,7 @@ interface Plan {
 interface Program {
     id: string;
     title: string;
-    assignedUserId?: string | null;
+    assignedPostId?: string | null;
     assignedUser?: { id: string; name: string };
     projects?: Project[];
 }
@@ -78,7 +78,7 @@ interface Program {
 interface Project {
     id: string;
     title: string;
-    assignedUserId?: string | null;
+    assignedPostId?: string | null;
     assignedUser?: { id: string; name: string };
     instructions?: Instruction[];
 }
@@ -86,7 +86,7 @@ interface Project {
 interface Instruction {
     id: string;
     title: string;
-    assignedUserId?: string | null;
+    assignedPostId?: string | null;
     assignedUser?: { id: string; name: string };
 }
 
@@ -475,7 +475,7 @@ export function TeamTasks() {
         mutationFn: async ({ type, id, userId }: { type: string; id: string; userId: string | null }) => {
             return apiRequest(`/api/ideal-scene/${type}/${id}/owner`, {
                 method: "PUT",
-                body: JSON.stringify({ assignedUserId: userId }),
+                body: JSON.stringify({ assignedPostId: userId }),
             });
         },
         onSuccess: () => {
@@ -582,15 +582,15 @@ export function TeamTasks() {
         let hierarchyCount = 0;
         idealScene.forEach(mainGoal => {
             mainGoal.subgoals?.forEach(subgoal => {
-                if (subgoal.assignedUserId === userId) hierarchyCount++;
+                if (subgoal.assignedPostId === userId) hierarchyCount++;
                 subgoal.plans?.forEach(plan => {
-                    if (plan.assignedUserId === userId) hierarchyCount++;
+                    if (plan.assignedPostId === userId) hierarchyCount++;
                     plan.programs?.forEach(program => {
-                        if (program.assignedUserId === userId) hierarchyCount++;
+                        if (program.assignedPostId === userId) hierarchyCount++;
                         program.projects?.forEach(project => {
-                            if (project.assignedUserId === userId) hierarchyCount++;
+                            if (project.assignedPostId === userId) hierarchyCount++;
                             project.instructions?.forEach(instruction => {
-                                if (instruction.assignedUserId === userId) hierarchyCount++;
+                                if (instruction.assignedPostId === userId) hierarchyCount++;
                             });
                         });
                     });
