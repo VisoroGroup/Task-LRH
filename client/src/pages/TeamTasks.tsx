@@ -30,7 +30,7 @@ interface Task {
     parentItemId: string;
     dueDate: string | null;
     department: { id: string; name: string };
-    responsibleUser?: { id: string; name: string; email: string };
+    responsiblePost?: { id: string; name: string; email: string };
     mainGoalTitle?: string | null;
     hierarchyPath?: string[];
 }
@@ -139,10 +139,10 @@ function TaskCard({ task }: { task: Task }) {
                     </div>
                     <h4 className="font-medium text-sm truncate">{task.title}</h4>
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                        {task.responsibleUser && (
+                        {task.responsiblePost && (
                             <span className="flex items-center gap-1">
                                 <User className="h-3 w-3" />
-                                {task.responsibleUser.name}
+                                {task.responsiblePost.name}
                             </span>
                         )}
                         {task.dueDate && (
@@ -561,7 +561,7 @@ export function TeamTasks() {
 
     // Filter tasks
     const filteredTasks = tasks.filter(task => {
-        if (selectedMember && task.responsibleUser?.id !== selectedMember) return false;
+        if (selectedMember && task.responsiblePost?.id !== selectedMember) return false;
         if (selectedDepartment && task.department?.id !== selectedDepartment) return false;
         return true;
     });
@@ -576,7 +576,7 @@ export function TeamTasks() {
     // Count tasks + hierarchy items per user
     const getTaskCountForUser = (userId: string) => {
         // Count actual tasks
-        const taskCount = tasks.filter(task => task.responsibleUser?.id === userId).length;
+        const taskCount = tasks.filter(task => task.responsiblePost?.id === userId).length;
 
         // Count hierarchy items assigned to this user
         let hierarchyCount = 0;

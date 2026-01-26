@@ -45,18 +45,30 @@ interface Task {
     completionReport: any;
     hierarchyPath?: HierarchyItem[];
     mainGoalTitle?: string | null;
-    responsibleUser?: { id: string; name: string; email: string };
+    responsiblePost?: {
+        id: string;
+        name: string;
+        user: { id: string; name: string } | null;
+    };
 }
 
 interface Department {
     id: string;
     name: string;
+    posts: Post[];
 }
 
 interface UserType {
     id: string;
     name: string;
     email: string;
+}
+
+interface Post {
+    id: string;
+    name: string;
+    userId: string | null;
+    user: { id: string; name: string } | null;
 }
 
 export function MyTasks() {
@@ -70,7 +82,7 @@ export function MyTasks() {
 
     // New required fields
     const [newTaskDepartmentId, setNewTaskDepartmentId] = useState("");
-    const [newTaskResponsibleUserId, setNewTaskResponsibleUserId] = useState("");
+    const [newTaskResponsiblePostId, setNewTaskResponsiblePostId] = useState("");
 
     // Hierarchy selection state (unified for tree selector)
     const [hierarchyPath, setHierarchyPath] = useState({
@@ -347,7 +359,7 @@ export function MyTasks() {
             setNewTaskDate("");
             setNewTaskTime("");
             setNewTaskDepartmentId("");
-            setNewTaskResponsibleUserId("");
+            setNewTaskResponsiblePostId("");
             // Reset hierarchy path
             setHierarchyPath({ subgoalId: "", planId: "", programId: "", projectId: "", instructionId: "" });
         },
@@ -374,7 +386,7 @@ export function MyTasks() {
             toast({ title: "Departamentul este obligatoriu", variant: "destructive" });
             return;
         }
-        if (!newTaskResponsibleUserId) {
+        if (!newTaskResponsiblePostId) {
             toast({ title: "Persoana responsabilă este obligatorie", variant: "destructive" });
             return;
         }
@@ -396,7 +408,7 @@ export function MyTasks() {
             title: newTaskTitle,
             dueDate,
             departmentId: newTaskDepartmentId,
-            responsiblePostId: newTaskResponsibleUserId,
+            responsiblePostId: newTaskResponsiblePostId,
             hierarchyLevel: parentInfo.level,
             parentItemId: parentInfo.parentId,
             creatorId,
@@ -472,10 +484,10 @@ export function MyTasks() {
                 )}
 
                 <div className="text-xs text-muted-foreground space-y-1">
-                    {task.responsibleUser && (
+                    {task.responsiblePost && (
                         <div className="flex items-center gap-1">
                             <User className="h-3 w-3" />
-                            Responsabil: {task.responsibleUser.name}
+                            Responsabil: {task.responsiblePost.name}
                         </div>
                     )}
                     <div>Departament: {task.department?.name}</div>
@@ -628,20 +640,23 @@ export function MyTasks() {
                                 </select>
                             </div>
 
-                            {/* Responsible Person */}
+                            {/* Responsible Post */}
                             <div>
                                 <label className="text-sm font-medium flex items-center gap-2">
                                     <User className="h-4 w-4" />
-                                    Persoana responsabilă *
+                                    Postul responsabil *
                                 </label>
                                 <select
-                                    value={newTaskResponsibleUserId}
-                                    onChange={(e) => setNewTaskResponsibleUserId(e.target.value)}
+                                    value={newTaskResponsiblePostId}
+                                    onChange={(e) => setNewTaskResponsiblePostId(e.target.value)}
                                     className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                    disabled={!newTaskDepartmentId}
                                 >
-                                    <option value="">Selectează persoana...</option>
-                                    {users?.map(user => (
-                                        <option key={user.id} value={user.id}>{user.name}</option>
+                                    <option value="">{newTaskDepartmentId ? "Selectează postul..." : "Întâi selectează departament"}</option>
+                                    {departments?.find(d => d.id === newTaskDepartmentId)?.posts?.map(post => (
+                                        <option key={post.id} value={post.id}>
+                                            📌 {post.name} {post.user ? `(${post.user.name})` : "(Vacant)"}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
@@ -818,7 +833,7 @@ export function MyTasks() {
                                 !newTaskTitle.trim() ||
                                 !newTaskDate ||
                                 !newTaskDepartmentId ||
-                                !newTaskResponsibleUserId ||
+                                !newTaskResponsiblePostId ||
                                 !hierarchyPath.subgoalId
                             }
                         >
@@ -1055,11 +1070,11 @@ export function MyTasks() {
 
                             {/* Task Details */}
                             <div className="mt-4 p-4 bg-muted/50 rounded-xl space-y-2 text-sm">
-                                {hierarchyTask.responsibleUser && (
+                                {hierarchyTask.responsiblePost && (
                                     <div className="flex items-center gap-2">
                                         <User className="h-4 w-4 text-muted-foreground" />
                                         <span className="text-muted-foreground">Responsabil:</span>
-                                        <span className="font-medium">{hierarchyTask.responsibleUser.name}</span>
+                                        <span className="font-medium">{hierarchyTask.responsiblePost.name}</span>
                                     </div>
                                 )}
                                 <div className="flex items-center gap-2">
