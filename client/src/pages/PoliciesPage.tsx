@@ -72,6 +72,9 @@ export function PoliciesPage() {
     const [selectedPostIds, setSelectedPostIds] = useState<string[]>([]);
     const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>([]);
 
+    // Expanded policy state for collapsible cards
+    const [expandedPolicyId, setExpandedPolicyId] = useState<string | null>(null);
+
     // Fetch policies
     const { data: policies, isLoading } = useQuery({
         queryKey: ["policies"],
@@ -292,14 +295,26 @@ export function PoliciesPage() {
                     </Card>
                 ) : (
                     filteredPolicies.map(policy => (
-                        <Card key={policy.id} className="hover:shadow-md transition-shadow">
+                        <Card
+                            key={policy.id}
+                            className={cn(
+                                "hover:shadow-md transition-all cursor-pointer",
+                                expandedPolicyId === policy.id && "ring-2 ring-primary/50"
+                            )}
+                            onClick={() => setExpandedPolicyId(expandedPolicyId === policy.id ? null : policy.id)}
+                        >
                             <CardHeader className="pb-2">
                                 <div className="flex items-start justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <FileText className="h-5 w-5 text-primary" />
-                                        <CardTitle className="text-lg">{policy.title}</CardTitle>
+                                    <div className="flex items-center gap-2 flex-1">
+                                        <FileText className="h-5 w-5 text-primary flex-shrink-0" />
+                                        <div className="flex-1">
+                                            <CardTitle className="text-lg">{policy.title}</CardTitle>
+                                            <div className="text-xs text-muted-foreground mt-1">
+                                                Létrehozta: {policy.createdBy?.name} • {new Date(policy.createdAt).toLocaleDateString()}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="flex gap-1">
+                                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                                         <Button
                                             variant="ghost"
                                             size="icon"
@@ -317,41 +332,39 @@ export function PoliciesPage() {
                                     </div>
                                 </div>
                             </CardHeader>
-                            <CardContent>
-                                <p className="text-sm text-muted-foreground whitespace-pre-wrap mb-3">
-                                    {policy.content}
-                                </p>
-                                {/* Show assigned posts for POST scope */}
-                                {policy.scope === "POST" && policy.policyPosts?.length > 0 && (
-                                    <div className="flex flex-wrap gap-2 mt-2">
-                                        {policy.policyPosts.map(pp => (
-                                            <span
-                                                key={pp.id}
-                                                className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full"
-                                            >
-                                                {pp.post.name} ({pp.post.department?.name})
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
-                                {/* Show assigned departments for DEPARTMENT scope */}
-                                {policy.scope === "DEPARTMENT" && policy.policyDepartments && policy.policyDepartments.length > 0 && (
-                                    <div className="flex flex-wrap gap-2 mt-2">
-                                        {policy.policyDepartments.map(pd => (
-                                            <span
-                                                key={pd.id}
-                                                className="px-2 py-1 bg-blue-500/10 text-blue-500 text-xs rounded-full"
-                                            >
-                                                {pd.department.name}
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
-                                <div className="text-xs text-muted-foreground mt-3">
-                                    Létrehozta: {policy.createdBy?.name} •{" "}
-                                    {new Date(policy.createdAt).toLocaleDateString()}
-                                </div>
-                            </CardContent>
+                            {expandedPolicyId === policy.id && (
+                                <CardContent className="pt-0 border-t mt-2">
+                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap mb-3 pt-3">
+                                        {policy.content}
+                                    </p>
+                                    {/* Show assigned posts for POST scope */}
+                                    {policy.scope === "POST" && policy.policyPosts?.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                            {policy.policyPosts.map(pp => (
+                                                <span
+                                                    key={pp.id}
+                                                    className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full"
+                                                >
+                                                    {pp.post.name} ({pp.post.department?.name})
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {/* Show assigned departments for DEPARTMENT scope */}
+                                    {policy.scope === "DEPARTMENT" && policy.policyDepartments && policy.policyDepartments.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                            {policy.policyDepartments.map(pd => (
+                                                <span
+                                                    key={pd.id}
+                                                    className="px-2 py-1 bg-blue-500/10 text-blue-500 text-xs rounded-full"
+                                                >
+                                                    {pd.department.name}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            )}
                         </Card>
                     ))
                 )}
