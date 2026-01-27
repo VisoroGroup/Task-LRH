@@ -92,6 +92,10 @@ export function Departments() {
     const [expandedPostPolicies, setExpandedPostPolicies] = useState<string | null>(null);
     const [selectedPolicy, setSelectedPolicy] = useState<Policy | null>(null);
 
+    // Edit post state
+    const [editingPostId, setEditingPostId] = useState<string | null>(null);
+    const [editingPostName, setEditingPostName] = useState("");
+
     const { data: departments, isLoading } = useQuery({
         queryKey: ["departments"],
         queryFn: () => apiRequest<Department[]>("/api/departments"),
@@ -185,14 +189,16 @@ export function Departments() {
     });
 
     const updatePostMutation = useMutation({
-        mutationFn: ({ id, userId }: { id: string; userId: string | null }) =>
+        mutationFn: ({ id, name, userId }: { id: string; name?: string; userId?: string | null }) =>
             apiRequest(`/api/posts/${id}`, {
                 method: "PUT",
-                body: JSON.stringify({ userId }),
+                body: JSON.stringify({ name, userId }),
             }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["departments"] });
             toast({ title: "Post actualizat", variant: "success" as any });
+            setEditingPostId(null);
+            setEditingPostName("");
         },
     });
 
@@ -526,7 +532,59 @@ export function Departments() {
                                                                         </div>
                                                                     )}
                                                                     <div>
-                                                                        <div className="font-medium">{post.name}</div>
+                                                                        {editingPostId === post.id ? (
+                                                                            <div className="flex items-center gap-2">
+                                                                                <input
+                                                                                    type="text"
+                                                                                    value={editingPostName}
+                                                                                    onChange={(e) => setEditingPostName(e.target.value)}
+                                                                                    className="px-2 py-1 border rounded text-sm bg-background"
+                                                                                    autoFocus
+                                                                                    onKeyDown={(e) => {
+                                                                                        if (e.key === "Enter" && editingPostName.trim()) {
+                                                                                            updatePostMutation.mutate({ id: post.id, name: editingPostName.trim() });
+                                                                                        } else if (e.key === "Escape") {
+                                                                                            setEditingPostId(null);
+                                                                                        }
+                                                                                    }}
+                                                                                />
+                                                                                <Button
+                                                                                    size="sm"
+                                                                                    variant="ghost"
+                                                                                    className="h-7 w-7 p-0 text-primary"
+                                                                                    onClick={() => {
+                                                                                        if (editingPostName.trim()) {
+                                                                                            updatePostMutation.mutate({ id: post.id, name: editingPostName.trim() });
+                                                                                        }
+                                                                                    }}
+                                                                                >
+                                                                                    ✓
+                                                                                </Button>
+                                                                                <Button
+                                                                                    size="sm"
+                                                                                    variant="ghost"
+                                                                                    className="h-7 w-7 p-0"
+                                                                                    onClick={() => setEditingPostId(null)}
+                                                                                >
+                                                                                    ✕
+                                                                                </Button>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="flex items-center gap-2">
+                                                                                <div className="font-medium">{post.name}</div>
+                                                                                <Button
+                                                                                    size="sm"
+                                                                                    variant="ghost"
+                                                                                    className="h-6 w-6 p-0 opacity-50 hover:opacity-100"
+                                                                                    onClick={() => {
+                                                                                        setEditingPostId(post.id);
+                                                                                        setEditingPostName(post.name);
+                                                                                    }}
+                                                                                >
+                                                                                    <Edit2 className="h-3 w-3" />
+                                                                                </Button>
+                                                                            </div>
+                                                                        )}
                                                                         <div className="text-sm text-muted-foreground">
                                                                             {post.user ? post.user.name : <span className="text-yellow-600">Vacant</span>}
                                                                         </div>
