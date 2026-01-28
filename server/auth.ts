@@ -144,18 +144,35 @@ export function registerAuthRoutes(app: Express) {
             const name = profile.displayName || email;
             const microsoftId = profile.id;
 
+            // Try to fetch user's profile photo from Microsoft
+            let avatarDataUrl: string | null = null;
+            try {
+                const photoResponse = await fetch("https://graph.microsoft.com/v1.0/me/photo/$value", {
+                    headers: { Authorization: `Bearer ${tokens.access_token}` },
+                });
+                if (photoResponse.ok) {
+                    const photoBuffer = await photoResponse.arrayBuffer();
+                    const base64Photo = Buffer.from(photoBuffer).toString("base64");
+                    const contentType = photoResponse.headers.get("content-type") || "image/jpeg";
+                    avatarDataUrl = `data:${contentType};base64,${base64Photo}`;
+                }
+            } catch (e) {
+                console.log("Could not fetch Microsoft profile photo, using null");
+            }
+
             // Find or create user
             let user = await db.query.users.findFirst({
                 where: eq(users.microsoftId, microsoftId),
             });
 
             if (user) {
-                // Update existing user's tokens
+                // Update existing user's tokens (preserve existing avatar if new one not available)
                 await db.update(users)
                     .set({
                         microsoftAccessToken: tokens.access_token,
                         microsoftRefreshToken: tokens.refresh_token || user.microsoftRefreshToken,
                         microsoftTokenExpiry: new Date(Date.now() + tokens.expires_in * 1000),
+                        avatarUrl: avatarDataUrl || user.avatarUrl, // Only update if we got a new photo
                         updatedAt: new Date(),
                     })
                     .where(eq(users.id, user.id));
@@ -168,14 +185,14 @@ export function registerAuthRoutes(app: Express) {
                 });
 
                 if (user) {
-                    // Link existing user to Microsoft account and save tokens
+                    // Link existing user to Microsoft account and save tokens + avatar
                     await db.update(users)
                         .set({
                             microsoftId,
                             microsoftAccessToken: tokens.access_token,
                             microsoftRefreshToken: tokens.refresh_token,
                             microsoftTokenExpiry: new Date(Date.now() + tokens.expires_in * 1000),
-                            avatarUrl: null,
+                            avatarUrl: avatarDataUrl || user.avatarUrl, // Keep existing if no new photo
                             updatedAt: new Date()
                         })
                         .where(eq(users.id, user.id));
@@ -188,6 +205,7 @@ export function registerAuthRoutes(app: Express) {
                         microsoftAccessToken: tokens.access_token,
                         microsoftRefreshToken: tokens.refresh_token,
                         microsoftTokenExpiry: new Date(Date.now() + tokens.expires_in * 1000),
+                        avatarUrl: avatarDataUrl,
                         role: "USER", // Default role, admin can upgrade later
                     }).returning();
                     user = newUser;
