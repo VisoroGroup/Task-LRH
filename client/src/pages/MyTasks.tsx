@@ -240,7 +240,7 @@ export function MyTasks() {
 
     // Mutations for creating hierarchy items inline (called from HierarchyTreeSelector)
     const createSubgoalMutation = useMutation({
-        mutationFn: async (data: { title: string; mainGoalId: string; departmentId: string }) => {
+        mutationFn: async (data: { title: string; mainGoalId: string; departmentId: string; dueDate: string }) => {
             return apiRequest("/api/ideal-scene/subgoals", {
                 method: "POST",
                 body: JSON.stringify(data),
@@ -257,7 +257,7 @@ export function MyTasks() {
     });
 
     const createPlanMutation = useMutation({
-        mutationFn: async (data: { title: string; subgoalId: string; departmentId: string }) => {
+        mutationFn: async (data: { title: string; subgoalId: string; departmentId: string; dueDate: string }) => {
             return apiRequest("/api/ideal-scene/plans", {
                 method: "POST",
                 body: JSON.stringify(data),
@@ -274,7 +274,7 @@ export function MyTasks() {
     });
 
     const createProgramMutation = useMutation({
-        mutationFn: async (data: { title: string; planId: string; departmentId: string }) => {
+        mutationFn: async (data: { title: string; planId: string; departmentId: string; dueDate: string }) => {
             return apiRequest("/api/ideal-scene/programs", {
                 method: "POST",
                 body: JSON.stringify(data),
@@ -291,7 +291,7 @@ export function MyTasks() {
     });
 
     const createProjectMutation = useMutation({
-        mutationFn: async (data: { title: string; programId: string; departmentId: string }) => {
+        mutationFn: async (data: { title: string; programId: string; departmentId: string; dueDate: string }) => {
             return apiRequest("/api/ideal-scene/projects", {
                 method: "POST",
                 body: JSON.stringify(data),
@@ -308,7 +308,7 @@ export function MyTasks() {
     });
 
     const createInstructionMutation = useMutation({
-        mutationFn: async (data: { title: string; projectId: string; departmentId: string }) => {
+        mutationFn: async (data: { title: string; projectId: string; departmentId: string; dueDate: string }) => {
             return apiRequest("/api/ideal-scene/instructions", {
                 method: "POST",
                 body: JSON.stringify(data),
@@ -787,6 +787,7 @@ export function MyTasks() {
                                             title,
                                             mainGoalId: mainGoal.id,
                                             departmentId: newTaskDepartmentId,
+                                            dueDate: newTaskDate,
                                         });
                                     } else {
                                         toast({ title: "Eroare: Nu există Misiune!", variant: "destructive" });
@@ -797,6 +798,7 @@ export function MyTasks() {
                                         title,
                                         subgoalId,
                                         departmentId: newTaskDepartmentId,
+                                        dueDate: newTaskDate,
                                     });
                                 }}
                                 onCreateProgram={(title, planId) => {
@@ -804,6 +806,7 @@ export function MyTasks() {
                                         title,
                                         planId,
                                         departmentId: newTaskDepartmentId,
+                                        dueDate: newTaskDate,
                                     });
                                 }}
                                 onCreateProject={(title, programId) => {
@@ -811,6 +814,7 @@ export function MyTasks() {
                                         title,
                                         programId,
                                         departmentId: newTaskDepartmentId,
+                                        dueDate: newTaskDate,
                                     });
                                 }}
                                 onCreateInstruction={(title, projectId) => {
@@ -818,6 +822,7 @@ export function MyTasks() {
                                         title,
                                         projectId,
                                         departmentId: newTaskDepartmentId,
+                                        dueDate: newTaskDate,
                                     });
                                 }}
                             />
