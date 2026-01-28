@@ -10,6 +10,7 @@ import {
     Clock,
     Users,
     X,
+    Target,
 } from "lucide-react";
 
 interface DashboardSummary {
@@ -69,12 +70,43 @@ export function CEODashboard() {
         enabled: !!selectedUser,
     });
 
+    // Fetch mission from ideal-scene
+    const { data: idealScene } = useQuery({
+        queryKey: ["ideal-scene"],
+        queryFn: () => apiRequest<{ id: string; title: string; description: string | null }[]>("/api/ideal-scene"),
+    });
+    const mainGoal = idealScene?.[0];
+
     const handleCellClick = (userId: string, userName: string, status?: string) => {
         setSelectedUser({ userId, userName, status });
     };
 
     return (
         <div className="space-y-6">
+            {/* Mission Banner */}
+            {mainGoal && (
+                <Card className="bg-gradient-to-r from-violet-600 to-purple-600 text-white border-0">
+                    <CardContent className="py-4">
+                        <div className="flex items-center gap-3">
+                            <Target className="h-8 w-8" />
+                            <div>
+                                <div className="text-xs uppercase tracking-wider opacity-80 mb-1">
+                                    Misiunea companiei
+                                </div>
+                                <div className="text-xl font-bold">
+                                    {mainGoal.title}
+                                </div>
+                                {mainGoal.description && (
+                                    <div className="text-sm opacity-90 mt-1">
+                                        {mainGoal.description}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
             {/* KPI Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                 <Card className="kpi-card">
