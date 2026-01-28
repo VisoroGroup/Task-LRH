@@ -444,12 +444,13 @@ export function registerRoutes(app: Express) {
         try {
             const departmentId = req.query.departmentId as string | undefined;
 
-            const whereClause = departmentId
-                ? eq(mainGoals.departmentId, departmentId)
-                : undefined;
+            // Build where clause properly - only use and() if departmentId is provided
+            const whereCondition = departmentId
+                ? and(eq(mainGoals.departmentId, departmentId), eq(mainGoals.isActive, true))
+                : eq(mainGoals.isActive, true);
 
             const goals = await db.query.mainGoals.findMany({
-                where: and(whereClause, eq(mainGoals.isActive, true)),
+                where: whereCondition,
                 with: {
                     department: true,
                     subgoals: {
@@ -489,7 +490,11 @@ export function registerRoutes(app: Express) {
             res.json(goals);
         } catch (error) {
             console.error("Error fetching ideal scene:", error);
-            res.status(500).json({ error: "Failed to fetch ideal scene" });
+            // Log detailed error for debugging
+            const errorMessage = error instanceof Error ? error.message : "Unknown error";
+            const errorStack = error instanceof Error ? error.stack : "";
+            console.error("Ideal scene error details:", { errorMessage, errorStack });
+            res.status(500).json({ error: "Failed to fetch ideal scene", details: errorMessage });
         }
     });
 
