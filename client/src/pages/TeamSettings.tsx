@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { apiRequest, cn, formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { ImageCropper } from "@/components/ImageCropper";
@@ -18,6 +19,7 @@ import {
     Send,
     Pencil,
     Camera,
+    AlertTriangle,
 } from "lucide-react";
 
 interface Invitation {
@@ -37,6 +39,7 @@ interface TeamMember {
     email: string;
     role: "CEO" | "EXECUTIVE" | "USER";
     avatarUrl?: string | null;
+    supervisorId?: string | null;
     isActive: boolean;
     createdAt: string;
 }
@@ -62,6 +65,7 @@ export function TeamSettings() {
     const [copiedToken, setCopiedToken] = useState<string | null>(null);
     const [editingUser, setEditingUser] = useState<{ id: string; name: string } | null>(null);
     const [avatarEditingUserId, setAvatarEditingUserId] = useState<string | null>(null);
+    const [deleteConfirmUser, setDeleteConfirmUser] = useState<TeamMember | null>(null);
 
     // Fetch team members
     const { data: users = [] } = useQuery<TeamMember[]>({
@@ -187,6 +191,20 @@ export function TeamSettings() {
                 description: error.message,
                 variant: "destructive",
             });
+        },
+    });
+
+    // Update supervisor mutation
+    const updateSupervisorMutation = useMutation({
+        mutationFn: async ({ userId, supervisorId }: { userId: string; supervisorId: string | null }) => {
+            return apiRequest(`/api/users/${userId}/supervisor`, {
+                method: "PUT",
+                body: JSON.stringify({ supervisorId }),
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["users"] });
+            toast({ title: "Felettes frissítve!" });
         },
     });
 
@@ -433,15 +451,24 @@ export function TeamSettings() {
                                         <option value="EXECUTIVE">Executiv</option>
                                         <option value="CEO">CEO</option>
                                     </select>
+                                    <select
+                                        value={user.supervisorId || ""}
+                                        onChange={(e) => updateSupervisorMutation.mutate({
+                                            userId: user.id,
+                                            supervisorId: e.target.value || null,
+                                        })}
+                                        className="px-2 py-1 rounded text-xs font-medium border bg-background text-foreground min-w-[120px]"
+                                    >
+                                        <option value="">— Fără șef —</option>
+                                        {users.filter(u => u.id !== user.id).map(u => (
+                                            <option key={u.id} value={u.id}>{u.name}</option>
+                                        ))}
+                                    </select>
                                     <Button
                                         size="sm"
                                         variant="ghost"
                                         className="h-7 w-7 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                                        onClick={() => {
-                                            if (confirm(`Sigur vrei să ștergi pe ${user.name}?`)) {
-                                                deleteUserMutation.mutate(user.id);
-                                            }
-                                        }}
+                                        onClick={() => setDeleteConfirmUser(user)}
                                     >
                                         <Trash2 className="h-4 w-4" />
                                     </Button>
@@ -463,6 +490,43 @@ export function TeamSettings() {
                 }}
                 currentImage={users.find(u => u.id === avatarEditingUserId)?.avatarUrl}
             />
+
+            {/* Delete User Confirmation Dialog */}
+            <Dialog open={!!deleteConfirmUser} onOpenChange={() => setDeleteConfirmUser(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-red-500" />
+                            Confirmare ștergere utilizator
+                        </DialogTitle>
+                        <DialogDescription className="space-y-2">
+                            <p>
+                                Sigur vrei să ștergi utilizatorul <strong>{deleteConfirmUser?.name}</strong>?
+                            </p>
+                            <p className="text-red-500 font-medium">
+                                Această acțiune nu poate fi anulată!
+                            </p>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button variant="ghost" onClick={() => setDeleteConfirmUser(null)}>
+                            Anulare
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={() => {
+                                if (deleteConfirmUser) {
+                                    deleteUserMutation.mutate(deleteConfirmUser.id);
+                                    setDeleteConfirmUser(null);
+                                }
+                            }}
+                            disabled={deleteUserMutation.isPending}
+                        >
+                            {deleteUserMutation.isPending ? "Se șterge..." : "Șterge utilizatorul"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
