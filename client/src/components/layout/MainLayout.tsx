@@ -1,8 +1,7 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { cn, apiRequest } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/AuthProvider";
-import { useQuery } from "@tanstack/react-query";
 import {
     LayoutDashboard,
     CheckSquare,
@@ -50,13 +49,6 @@ export function MainLayout({ children }: MainLayoutProps) {
     const visibleNavItems = navItems.filter(
         (item) => !item.roles || hasRole(...item.roles)
     );
-
-    // Fetch main goal for mission banner
-    const { data: mainGoals } = useQuery<Array<{ id: string; title: string; description: string | null }>>({
-        queryKey: ["ideal-scene"],
-        queryFn: () => apiRequest("/api/ideal-scene"),
-    });
-    const mainGoal = mainGoals?.[0];
 
     return (
         <div className="min-h-screen flex">
@@ -205,23 +197,6 @@ export function MainLayout({ children }: MainLayoutProps) {
                         </div>
                     </div>
                 </header>
-
-                {/* Mission Banner - always visible */}
-                {mainGoal && mainGoal.description && (
-                    <div className="bg-gradient-to-r from-violet-600/20 via-purple-600/20 to-pink-600/20 border-b border-purple-500/20 backdrop-blur-lg">
-                        <div className="px-8 py-3 flex items-center gap-3">
-                            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-purple-500/20">
-                                <Target className="h-4 w-4 text-white" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <span className="text-xs font-semibold text-purple-300 uppercase tracking-wider">Misiune</span>
-                                <div className="text-sm font-medium text-white">
-                                    {mainGoal.description}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
 
                 {/* Page content with fade-in animation */}
                 <div className="p-8 animate-in">
