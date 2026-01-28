@@ -30,7 +30,7 @@ import {
     insertCompletionReportSchema,
     insertPolicySchema,
 } from "@shared/schema";
-import { sendRecurringTaskCompletedEmail } from "./email";
+import { sendRecurringTaskCompletedEmail, sendHierarchyCompletionEmail, HierarchyChainItem } from "./email";
 import { syncTaskToCalendar, syncAllTasksToCalendar, hasCalendarConnected } from "./calendar";
 
 // Helper to get stalled threshold from settings
@@ -2628,6 +2628,169 @@ export function registerRoutes(app: Express) {
         } catch (error) {
             console.error("Error updating supervisor:", error);
             res.status(500).json({ error: "Failed to update supervisor" });
+        }
+    });
+
+    // =========================================================================
+    // HIERARCHY ITEM COMPLETION
+    // =========================================================================
+
+    // Mark a hierarchy item as completed and notify all users in the chain
+    app.post("/api/ideal-scene/:type/:id/complete", async (req: Request, res: Response) => {
+        try {
+            const { type, id } = req.params;
+            const completedById = req.body.userId;
+
+            if (!completedById) {
+                return res.status(400).json({ error: "userId is required" });
+            }
+
+            const completedByUser = await db.query.users.findFirst({
+                where: eq(users.id, completedById),
+            });
+
+            if (!completedByUser) {
+                return res.status(404).json({ error: "User not found" });
+            }
+
+            // Get the item and update it
+            let itemTitle = "";
+            const now = new Date();
+
+            // Type-safe table mapping using typeof
+            type HierarchyTable = typeof subgoals | typeof plans | typeof programs | typeof projects | typeof instructions;
+            const tableMap: Record<string, HierarchyTable> = {
+                subgoals: subgoals,
+                plans: plans,
+                programs: programs,
+                projects: projects,
+                instructions: instructions,
+            };
+
+            const table = tableMap[type];
+            if (!table) {
+                return res.status(400).json({ error: "Invalid type" });
+            }
+
+            // Update the item with completion info
+            const [updated] = await db.update(table)
+                .set({ completedAt: now, completedById, updatedAt: now })
+                .where(eq(table.id, id))
+                .returning();
+
+            if (!updated) {
+                return res.status(404).json({ error: "Item not found" });
+            }
+
+            itemTitle = (updated as { title: string }).title;
+
+            // Build the hierarchy chain by traversing up
+            const hierarchyChain: HierarchyChainItem[] = [];
+            const recipientEmails: string[] = [];
+
+            // Build chain based on type
+            if (type === "subgoals") {
+                const sg = await db.query.subgoals.findFirst({
+                    where: eq(subgoals.id, id),
+                    with: { mainGoal: true, assignedPost: { with: { user: true } } },
+                });
+                if (sg) {
+                    hierarchyChain.push({
+                        level: "mainGoal",
+                        levelLabel: "Misiune",
+                        title: sg.mainGoal?.description || sg.mainGoal?.title || "Misiune",
+                        isCompleted: false,
+                    });
+                    hierarchyChain.push({
+                        level: "subgoal",
+                        levelLabel: "Obiectiv",
+                        title: sg.title,
+                        assignedUserName: sg.assignedPost?.user?.name,
+                        assignedUserEmail: sg.assignedPost?.user?.email,
+                        isCompleted: !!sg.completedAt,
+                        isCompletedItem: true,
+                    });
+                    if (sg.assignedPost?.user?.email) recipientEmails.push(sg.assignedPost.user.email);
+                }
+            } else if (type === "plans") {
+                const pl = await db.query.plans.findFirst({
+                    where: eq(plans.id, id),
+                    with: { subgoal: { with: { mainGoal: true, assignedPost: { with: { user: true } } } }, assignedPost: { with: { user: true } } },
+                });
+                if (pl) {
+                    hierarchyChain.push({ level: "mainGoal", levelLabel: "Misiune", title: pl.subgoal?.mainGoal?.description || "Misiune", isCompleted: false });
+                    hierarchyChain.push({ level: "subgoal", levelLabel: "Obiectiv", title: pl.subgoal?.title || "", assignedUserName: pl.subgoal?.assignedPost?.user?.name, assignedUserEmail: pl.subgoal?.assignedPost?.user?.email, isCompleted: !!pl.subgoal?.completedAt });
+                    hierarchyChain.push({ level: "plan", levelLabel: "Plan", title: pl.title, assignedUserName: pl.assignedPost?.user?.name, assignedUserEmail: pl.assignedPost?.user?.email, isCompleted: !!pl.completedAt, isCompletedItem: true });
+                    if (pl.subgoal?.assignedPost?.user?.email) recipientEmails.push(pl.subgoal.assignedPost.user.email);
+                    if (pl.assignedPost?.user?.email) recipientEmails.push(pl.assignedPost.user.email);
+                }
+            } else if (type === "programs") {
+                const pr = await db.query.programs.findFirst({
+                    where: eq(programs.id, id),
+                    with: { plan: { with: { subgoal: { with: { mainGoal: true, assignedPost: { with: { user: true } } } }, assignedPost: { with: { user: true } } } }, assignedPost: { with: { user: true } } },
+                });
+                if (pr) {
+                    hierarchyChain.push({ level: "mainGoal", levelLabel: "Misiune", title: pr.plan?.subgoal?.mainGoal?.description || "Misiune", isCompleted: false });
+                    hierarchyChain.push({ level: "subgoal", levelLabel: "Obiectiv", title: pr.plan?.subgoal?.title || "", assignedUserName: pr.plan?.subgoal?.assignedPost?.user?.name, isCompleted: !!pr.plan?.subgoal?.completedAt });
+                    hierarchyChain.push({ level: "plan", levelLabel: "Plan", title: pr.plan?.title || "", assignedUserName: pr.plan?.assignedPost?.user?.name, isCompleted: !!pr.plan?.completedAt });
+                    hierarchyChain.push({ level: "program", levelLabel: "Program", title: pr.title, assignedUserName: pr.assignedPost?.user?.name, assignedUserEmail: pr.assignedPost?.user?.email, isCompleted: !!pr.completedAt, isCompletedItem: true });
+                    if (pr.plan?.subgoal?.assignedPost?.user?.email) recipientEmails.push(pr.plan.subgoal.assignedPost.user.email);
+                    if (pr.plan?.assignedPost?.user?.email) recipientEmails.push(pr.plan.assignedPost.user.email);
+                    if (pr.assignedPost?.user?.email) recipientEmails.push(pr.assignedPost.user.email);
+                }
+            } else if (type === "projects") {
+                const pj = await db.query.projects.findFirst({
+                    where: eq(projects.id, id),
+                    with: { program: { with: { plan: { with: { subgoal: { with: { mainGoal: true, assignedPost: { with: { user: true } } } }, assignedPost: { with: { user: true } } } }, assignedPost: { with: { user: true } } } }, assignedPost: { with: { user: true } } },
+                });
+                if (pj) {
+                    hierarchyChain.push({ level: "mainGoal", levelLabel: "Misiune", title: pj.program?.plan?.subgoal?.mainGoal?.description || "Misiune", isCompleted: false });
+                    hierarchyChain.push({ level: "subgoal", levelLabel: "Obiectiv", title: pj.program?.plan?.subgoal?.title || "", assignedUserName: pj.program?.plan?.subgoal?.assignedPost?.user?.name, isCompleted: !!pj.program?.plan?.subgoal?.completedAt });
+                    hierarchyChain.push({ level: "plan", levelLabel: "Plan", title: pj.program?.plan?.title || "", assignedUserName: pj.program?.plan?.assignedPost?.user?.name, isCompleted: !!pj.program?.plan?.completedAt });
+                    hierarchyChain.push({ level: "program", levelLabel: "Program", title: pj.program?.title || "", assignedUserName: pj.program?.assignedPost?.user?.name, isCompleted: !!pj.program?.completedAt });
+                    hierarchyChain.push({ level: "project", levelLabel: "Proiect", title: pj.title, assignedUserName: pj.assignedPost?.user?.name, assignedUserEmail: pj.assignedPost?.user?.email, isCompleted: !!pj.completedAt, isCompletedItem: true });
+                    if (pj.program?.plan?.subgoal?.assignedPost?.user?.email) recipientEmails.push(pj.program.plan.subgoal.assignedPost.user.email);
+                    if (pj.program?.plan?.assignedPost?.user?.email) recipientEmails.push(pj.program.plan.assignedPost.user.email);
+                    if (pj.program?.assignedPost?.user?.email) recipientEmails.push(pj.program.assignedPost.user.email);
+                    if (pj.assignedPost?.user?.email) recipientEmails.push(pj.assignedPost.user.email);
+                }
+            } else if (type === "instructions") {
+                const inst = await db.query.instructions.findFirst({
+                    where: eq(instructions.id, id),
+                    with: { project: { with: { program: { with: { plan: { with: { subgoal: { with: { mainGoal: true, assignedPost: { with: { user: true } } } }, assignedPost: { with: { user: true } } } }, assignedPost: { with: { user: true } } } }, assignedPost: { with: { user: true } } } }, assignedPost: { with: { user: true } } },
+                });
+                if (inst) {
+                    hierarchyChain.push({ level: "mainGoal", levelLabel: "Misiune", title: inst.project?.program?.plan?.subgoal?.mainGoal?.description || "Misiune", isCompleted: false });
+                    hierarchyChain.push({ level: "subgoal", levelLabel: "Obiectiv", title: inst.project?.program?.plan?.subgoal?.title || "", assignedUserName: inst.project?.program?.plan?.subgoal?.assignedPost?.user?.name, isCompleted: !!inst.project?.program?.plan?.subgoal?.completedAt });
+                    hierarchyChain.push({ level: "plan", levelLabel: "Plan", title: inst.project?.program?.plan?.title || "", assignedUserName: inst.project?.program?.plan?.assignedPost?.user?.name, isCompleted: !!inst.project?.program?.plan?.completedAt });
+                    hierarchyChain.push({ level: "program", levelLabel: "Program", title: inst.project?.program?.title || "", assignedUserName: inst.project?.program?.assignedPost?.user?.name, isCompleted: !!inst.project?.program?.completedAt });
+                    hierarchyChain.push({ level: "project", levelLabel: "Proiect", title: inst.project?.title || "", assignedUserName: inst.project?.assignedPost?.user?.name, isCompleted: !!inst.project?.completedAt });
+                    hierarchyChain.push({ level: "instruction", levelLabel: "De făcut", title: inst.title, assignedUserName: inst.assignedPost?.user?.name, assignedUserEmail: inst.assignedPost?.user?.email, isCompleted: !!inst.completedAt, isCompletedItem: true });
+                    if (inst.project?.program?.plan?.subgoal?.assignedPost?.user?.email) recipientEmails.push(inst.project.program.plan.subgoal.assignedPost.user.email);
+                    if (inst.project?.program?.plan?.assignedPost?.user?.email) recipientEmails.push(inst.project.program.plan.assignedPost.user.email);
+                    if (inst.project?.program?.assignedPost?.user?.email) recipientEmails.push(inst.project.program.assignedPost.user.email);
+                    if (inst.project?.assignedPost?.user?.email) recipientEmails.push(inst.project.assignedPost.user.email);
+                    if (inst.assignedPost?.user?.email) recipientEmails.push(inst.assignedPost.user.email);
+                }
+            }
+
+            // Remove duplicates and the user who completed it (they don't need notification)
+            const uniqueEmails = [...new Set(recipientEmails)].filter(e => e !== completedByUser.email);
+
+            // Send emails to all users in the chain
+            if (uniqueEmails.length > 0) {
+                sendHierarchyCompletionEmail(
+                    completedByUser,
+                    { title: itemTitle, level: type },
+                    hierarchyChain,
+                    uniqueEmails
+                ).catch(err => console.error("Failed to send hierarchy completion emails:", err));
+            }
+
+            res.json({ success: true, updated, notifiedCount: uniqueEmails.length });
+        } catch (error) {
+            console.error("Error completing hierarchy item:", error);
+            res.status(500).json({ error: "Failed to complete hierarchy item" });
         }
     });
 }

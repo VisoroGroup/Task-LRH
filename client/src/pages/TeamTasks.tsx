@@ -3,6 +3,8 @@ import { useState } from "react";
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/components/AuthProvider";
+import { useToast } from "@/hooks/use-toast";
 import { apiRequest, cn } from "@/lib/utils";
 import {
     Target,
@@ -17,6 +19,9 @@ import {
     X,
     Edit2,
     Trash2,
+    CheckCircle2,
+    Circle,
+    Loader2,
 } from "lucide-react";
 
 interface TeamMember {
@@ -40,6 +45,7 @@ interface Subgoal {
     departmentId: string;
     assignedPostId?: string | null;
     assignedUser?: { id: string; name: string };
+    completedAt?: string | null;
     plans?: Plan[];
 }
 
@@ -48,6 +54,7 @@ interface Plan {
     title: string;
     assignedPostId?: string | null;
     assignedUser?: { id: string; name: string };
+    completedAt?: string | null;
     programs?: Program[];
 }
 
@@ -56,6 +63,7 @@ interface Program {
     title: string;
     assignedPostId?: string | null;
     assignedUser?: { id: string; name: string };
+    completedAt?: string | null;
     projects?: Project[];
 }
 
@@ -64,6 +72,7 @@ interface Project {
     title: string;
     assignedPostId?: string | null;
     assignedUser?: { id: string; name: string };
+    completedAt?: string | null;
     instructions?: Instruction[];
 }
 
@@ -72,6 +81,7 @@ interface Instruction {
     title: string;
     assignedPostId?: string | null;
     assignedUser?: { id: string; name: string };
+    completedAt?: string | null;
 }
 
 interface Department {
@@ -139,7 +149,9 @@ function VerticalNode({
     childLevel,
     onEdit,
     onDelete,
-    isLast = false,
+    completedAt,
+    onComplete,
+    isLoading,
 }: {
     title: string;
     level: "mainGoal" | "subgoal" | "plan" | "program" | "project" | "instruction";
@@ -153,7 +165,9 @@ function VerticalNode({
     childLevel?: "subgoal" | "plan" | "program" | "project" | "instruction";
     onEdit?: (newTitle: string) => void;
     onDelete?: () => void;
-    isLast?: boolean;
+    completedAt?: string | null;
+    onComplete?: () => void;
+    isLoading?: boolean;
 }) {
     const [isExpanded, setIsExpanded] = useState(level === "mainGoal");
     const [isEditing, setIsEditing] = useState(false);
@@ -333,6 +347,32 @@ function VerticalNode({
                                 <Trash2 className="h-4 w-4 text-red-400" />
                             </button>
                         )}
+
+                        {/* Complete checkbox */}
+                        {level !== "mainGoal" && onComplete && (
+                            <button
+                                className={cn(
+                                    "p-1.5 rounded-lg transition-all",
+                                    completedAt
+                                        ? "bg-green-500/20 hover:bg-green-500/30"
+                                        : "hover:bg-green-500/10"
+                                )}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (!completedAt && !isLoading) onComplete();
+                                }}
+                                title={completedAt ? "Finalizat" : isLoading ? "Feldolgozás..." : "Marchează ca finalizat"}
+                                disabled={!!completedAt || isLoading}
+                            >
+                                {isLoading ? (
+                                    <Loader2 className="h-4 w-4 text-green-500 animate-spin" />
+                                ) : completedAt ? (
+                                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                ) : (
+                                    <Circle className="h-4 w-4 text-muted-foreground hover:text-green-500" />
+                                )}
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -486,6 +526,32 @@ export function TeamTasks() {
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
     });
 
+    const { user } = useAuth();
+    const { toast } = useToast();
+
+    const completeHierarchyMutation = useMutation({
+        mutationFn: async ({ type, id }: { type: string; id: string }) => {
+            return apiRequest(`/api/ideal-scene/${type}/${id}/complete`, {
+                method: "POST",
+                body: JSON.stringify({ userId: user?.id }),
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
+            toast({
+                title: "✅ Finalizat!",
+                description: "Elementul a fost marcat ca finalizat.",
+            });
+        },
+        onError: (error: Error) => {
+            toast({
+                title: "Eroare",
+                description: error.message || "Nu s-a putut finaliza elementul.",
+                variant: "destructive",
+            });
+        },
+    });
+
     const handleOwnerChange = (itemType: string, itemId: string, userId: string | null) => {
         updateOwnerMutation.mutate({ type: itemType, id: itemId, userId });
     };
@@ -590,7 +656,7 @@ export function TeamTasks() {
                                     {mainGoal.subgoals
                                         ?.filter(s => !selectedDepartment || s.departmentId === selectedDepartment)
                                         .filter(s => filterByMember(s.assignedUser))
-                                        .map((subgoal, idx, arr) => (
+                                        .map((subgoal) => (
                                             <VerticalNode
                                                 key={subgoal.id}
                                                 title={subgoal.title}
@@ -604,9 +670,11 @@ export function TeamTasks() {
                                                 childLevel="plan"
                                                 onEdit={(t) => updateHierarchyMutation.mutate({ type: "subgoals", id: subgoal.id, title: t })}
                                                 onDelete={() => deleteHierarchyMutation.mutate({ type: "subgoals", id: subgoal.id })}
-                                                isLast={idx === arr.length - 1}
+                                                completedAt={subgoal.completedAt}
+                                                onComplete={() => completeHierarchyMutation.mutate({ type: "subgoals", id: subgoal.id })}
+                                                isLoading={completeHierarchyMutation.isPending}
                                             >
-                                                {subgoal.plans?.filter(p => filterByMember(p.assignedUser)).map((plan, idx2, arr2) => (
+                                                {subgoal.plans?.filter(p => filterByMember(p.assignedUser)).map((plan) => (
                                                     <VerticalNode
                                                         key={plan.id}
                                                         title={plan.title}
@@ -620,9 +688,11 @@ export function TeamTasks() {
                                                         childLevel="program"
                                                         onEdit={(t) => updateHierarchyMutation.mutate({ type: "plans", id: plan.id, title: t })}
                                                         onDelete={() => deleteHierarchyMutation.mutate({ type: "plans", id: plan.id })}
-                                                        isLast={idx2 === arr2.length - 1}
+                                                        completedAt={plan.completedAt}
+                                                        onComplete={() => completeHierarchyMutation.mutate({ type: "plans", id: plan.id })}
+                                                        isLoading={completeHierarchyMutation.isPending}
                                                     >
-                                                        {plan.programs?.filter(pr => filterByMember(pr.assignedUser)).map((program, idx3, arr3) => (
+                                                        {plan.programs?.filter(pr => filterByMember(pr.assignedUser)).map((program) => (
                                                             <VerticalNode
                                                                 key={program.id}
                                                                 title={program.title}
@@ -636,9 +706,11 @@ export function TeamTasks() {
                                                                 childLevel="project"
                                                                 onEdit={(t) => updateHierarchyMutation.mutate({ type: "programs", id: program.id, title: t })}
                                                                 onDelete={() => deleteHierarchyMutation.mutate({ type: "programs", id: program.id })}
-                                                                isLast={idx3 === arr3.length - 1}
+                                                                completedAt={program.completedAt}
+                                                                onComplete={() => completeHierarchyMutation.mutate({ type: "programs", id: program.id })}
+                                                                isLoading={completeHierarchyMutation.isPending}
                                                             >
-                                                                {program.projects?.filter(pj => filterByMember(pj.assignedUser)).map((project, idx4, arr4) => (
+                                                                {program.projects?.filter(pj => filterByMember(pj.assignedUser)).map((project) => (
                                                                     <VerticalNode
                                                                         key={project.id}
                                                                         title={project.title}
@@ -652,9 +724,11 @@ export function TeamTasks() {
                                                                         childLevel="instruction"
                                                                         onEdit={(t) => updateHierarchyMutation.mutate({ type: "projects", id: project.id, title: t })}
                                                                         onDelete={() => deleteHierarchyMutation.mutate({ type: "projects", id: project.id })}
-                                                                        isLast={idx4 === arr4.length - 1}
+                                                                        completedAt={project.completedAt}
+                                                                        onComplete={() => completeHierarchyMutation.mutate({ type: "projects", id: project.id })}
+                                                                        isLoading={completeHierarchyMutation.isPending}
                                                                     >
-                                                                        {project.instructions?.filter(i => filterByMember(i.assignedUser)).map((instruction, idx5, arr5) => (
+                                                                        {project.instructions?.filter(i => filterByMember(i.assignedUser)).map((instruction) => (
                                                                             <VerticalNode
                                                                                 key={instruction.id}
                                                                                 title={instruction.title}
@@ -666,7 +740,9 @@ export function TeamTasks() {
                                                                                 onOwnerChange={handleOwnerChange}
                                                                                 onEdit={(t) => updateHierarchyMutation.mutate({ type: "instructions", id: instruction.id, title: t })}
                                                                                 onDelete={() => deleteHierarchyMutation.mutate({ type: "instructions", id: instruction.id })}
-                                                                                isLast={idx5 === arr5.length - 1}
+                                                                                completedAt={instruction.completedAt}
+                                                                                onComplete={() => completeHierarchyMutation.mutate({ type: "instructions", id: instruction.id })}
+                                                                                isLoading={completeHierarchyMutation.isPending}
                                                                             />
                                                                         ))}
                                                                     </VerticalNode>
