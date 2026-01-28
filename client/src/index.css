@@ -368,31 +368,46 @@ aside a.active::before {
 }
 
 /* ============================================================================
-   HIERARCHY LEVELS - Color Coded
+   HIERARCHY LEVELS - Color Coded (LRH Admin Scale)
    ============================================================================ */
 
-.hierarchy-subgoal {
+/* Obiectiv (Subgoal) - Violet */
+.hierarchy-subgoal,
+.hierarchy-obiectiv {
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
   color: #a78bfa;
   border: 1px solid rgba(139, 92, 246, 0.3);
 }
 
-.hierarchy-program {
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(34, 211, 238, 0.2) 100%);
-  color: #22d3ee;
-  border: 1px solid rgba(6, 182, 212, 0.3);
+/* Terv (Plan) - Blue */
+.hierarchy-plan,
+.hierarchy-terv {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
-.hierarchy-project {
+/* Program - Emerald */
+.hierarchy-program {
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(52, 211, 153, 0.2) 100%);
   color: #34d399;
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
-.hierarchy-instruction {
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(252, 211, 77, 0.2) 100%);
-  color: #fcd34d;
-  border: 1px solid rgba(251, 191, 36, 0.3);
+/* Projekt (Project) - Amber */
+.hierarchy-project,
+.hierarchy-projekt {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(251, 191, 36, 0.2) 100%);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* De făcut (Instruction) - Red */
+.hierarchy-instruction,
+.hierarchy-defacut {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(248, 113, 113, 0.2) 100%);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 /* ============================================================================

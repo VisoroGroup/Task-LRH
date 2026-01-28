@@ -249,7 +249,7 @@ export function MyTasks() {
         onSuccess: (result: any) => {
             queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
             setHierarchyPath(prev => ({ ...prev, subgoalId: result.id, planId: "", programId: "", projectId: "", instructionId: "" }));
-            toast({ title: "Subobiectiv creat!", variant: "success" as any });
+            toast({ title: "Obiectiv creat!", variant: "success" as any });
         },
         onError: (error: Error) => {
             toast({ title: "A apărut o eroare", description: error.message, variant: "destructive" });
@@ -317,7 +317,7 @@ export function MyTasks() {
         onSuccess: (result: any) => {
             queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
             setHierarchyPath(prev => ({ ...prev, instructionId: result.id }));
-            toast({ title: "Instrucțiune creată!", variant: "success" as any });
+            toast({ title: "De făcut creat!", variant: "success" as any });
         },
         onError: (error: Error) => {
             toast({ title: "Hiba történt", description: error.message, variant: "destructive" });
@@ -585,8 +585,8 @@ export function MyTasks() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold">Sarcinile mele</h2>
-                    <p className="text-muted-foreground">Pașii de acțiune atribuiți ție</p>
+                    <h2 className="text-2xl font-bold">Sarcini Visoro</h2>
+                    <p className="text-muted-foreground">Creează și gestionează sarcinile echipei</p>
                 </div>
                 <Button onClick={() => setIsNewTaskOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
@@ -986,11 +986,11 @@ export function MyTasks() {
                                 <div className="space-y-3 pl-6 border-l-2 border-dashed border-primary/30 ml-6">
                                     {hierarchyTask.hierarchyPath.map((item, idx) => {
                                         const levelInfo = [
-                                            { name: "Subobiectiv", icon: "🎯", color: "violet", bg: "from-violet-500/10 to-violet-500/5" },
+                                            { name: "Obiectiv", icon: "🎯", color: "violet", bg: "from-violet-500/10 to-violet-500/5" },
                                             { name: "Plan", icon: "📋", color: "indigo", bg: "from-indigo-500/10 to-indigo-500/5" },
                                             { name: "Program", icon: "📊", color: "blue", bg: "from-blue-500/10 to-blue-500/5" },
                                             { name: "Proiect", icon: "📁", color: "cyan", bg: "from-cyan-500/10 to-cyan-500/5" },
-                                            { name: "Instrucțiune", icon: "📝", color: "teal", bg: "from-teal-500/10 to-teal-500/5" },
+                                            { name: "De făcut", icon: "📝", color: "teal", bg: "from-teal-500/10 to-teal-500/5" },
                                         ][idx] || { name: "Nivel", icon: "📌", color: "gray", bg: "from-gray-500/10 to-gray-500/5" };
 
                                         return (

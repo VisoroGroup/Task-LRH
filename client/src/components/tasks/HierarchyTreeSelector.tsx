@@ -38,7 +38,7 @@ interface HierarchyTreeSelectorProps {
 // Level configuration with vibrant gradients and icons
 const LEVELS = [
     {
-        name: "Subobiectiv",
+        name: "Obiectiv",
         icon: Target,
         gradient: "from-violet-500 to-purple-600",
         bgGradient: "from-violet-500/20 to-purple-600/20",
@@ -78,7 +78,7 @@ const LEVELS = [
         badge: "bg-amber-500/20 text-amber-400",
     },
     {
-        name: "Instrucțiune",
+        name: "De făcut",
         icon: ListChecks,
         gradient: "from-rose-500 to-pink-500",
         bgGradient: "from-rose-500/20 to-pink-500/20",
@@ -89,7 +89,7 @@ const LEVELS = [
     },
 ];
 
-const CHILD_LABELS = ["Plan", "Program", "Proiect", "Instrucțiune"];
+const CHILD_LABELS = ["Plan", "Program", "Proiect", "De făcut"];
 
 // Premium Tree Node Component
 function TreeNode({
@@ -419,7 +419,7 @@ export function HierarchyTreeSelector({
                     onClick={() => setCreatingAt({ level: "subgoal", parentId: "" })}
                 >
                     <Plus className="h-4 w-4 mr-2" />
-                    + Subobiectiv nou
+                    + Obiectiv nou
                 </Button>
             </div>
 
@@ -442,10 +442,10 @@ export function HierarchyTreeSelector({
                         <Plus className="h-8 w-8 text-violet-500" />
                     </div>
                     <p className="text-lg font-medium text-muted-foreground mb-2">
-                        Nu există subobiective pentru acest departament
+                        Nu există obiective pentru acest departament
                     </p>
                     <p className="text-sm text-muted-foreground">
-                        Click pe "Subobiectiv nou" pentru a crea unul
+                        Click pe "Obiectiv nou" pentru a crea unul
                     </p>
                 </div>
             ) : (

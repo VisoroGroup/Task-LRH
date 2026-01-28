@@ -400,6 +400,8 @@ export const instructions = pgTable(
         departmentId: varchar("department_id").references(() => departments.id).notNull(),
         assignedPostId: varchar("assigned_post_id").references(() => posts.id),
         dueDate: timestamp("due_date", { withTimezone: true }).notNull(),
+        // Status for De făcut workflow
+        status: taskStatusEnum("status").default("TODO").notNull(),
         isActive: boolean("is_active").default(true).notNull(),
         createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -407,6 +409,7 @@ export const instructions = pgTable(
     (table) => [
         index("idx_instructions_project").on(table.projectId),
         index("idx_instructions_department").on(table.departmentId),
+        index("idx_instructions_status").on(table.status),
     ]
 );
 

@@ -59,11 +59,11 @@ export function daysSince(date: Date | string): number {
 
 // Hierarchy level display names (Romanian)
 export const hierarchyLabels: Record<string, string> = {
-    SUBGOAL: "Subobiectiv",
+    SUBGOAL: "Obiectiv",
     PLAN: "Plan",
     PROGRAM: "Program",
     PROJECT: "Proiect",
-    INSTRUCTION: "Instrucțiune",
+    INSTRUCTION: "De făcut",
 };
 
 // Status display names (Romanian)
