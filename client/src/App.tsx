@@ -13,6 +13,7 @@ import { Calendar } from "@/pages/Calendar";
 import { Settings } from "@/pages/Settings";
 import { LoginPage } from "@/pages/LoginPage";
 import { PoliciesPage } from "@/pages/PoliciesPage";
+import { RecurringTasks } from "@/pages/RecurringTasks";
 
 // Wrapper component for invitation page with token param
 function InvitePage() {
@@ -46,6 +47,7 @@ function AppRoutes() {
 
           {/* All authenticated users */}
           <Route path="/my-tasks" component={MyTasks} />
+          <Route path="/recurring-tasks" component={RecurringTasks} />
           <Route path="/team-tasks">
             <RequireAuth roles={["CEO", "EXECUTIVE"]}>
               <TeamTasks />

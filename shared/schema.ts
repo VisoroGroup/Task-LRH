@@ -82,8 +82,9 @@ export const users = pgTable("users", {
     microsoftAccessToken: text("microsoft_access_token"), // For Graph API calls
     microsoftRefreshToken: text("microsoft_refresh_token"), // To refresh access token
     microsoftTokenExpiry: timestamp("microsoft_token_expiry", { withTimezone: true }), // Token expiration
-    avatarUrl: varchar("avatar_url"), // Profile picture from Microsoft
+    avatarUrl: text("avatar_url"), // Profile picture (base64 or URL)
     role: userRoleEnum("role").default("USER").notNull(),
+    supervisorId: varchar("supervisor_id"), // Who is this user's supervisor (FK added in migration)
     isActive: boolean("is_active").default(true).notNull(),
     isPending: boolean("is_pending").default(false).notNull(), // True when user is invited but hasn't accepted yet
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -692,6 +693,83 @@ export const policyDepartmentsRelations = relations(policyDepartments, ({ one })
 }));
 
 // ============================================================================
+// RECURRING TASKS (Ismétlődő teendők)
+// ============================================================================
+
+export const recurringTasksRecurrenceEnum = pgEnum("recurring_task_recurrence", [
+    "DAILY",     // Every day
+    "WEEKLY",    // On specific days of the week
+    "IRREGULAR", // Non-regular but repeating
+]);
+
+export const recurringTasks = pgTable(
+    "recurring_tasks",
+    {
+        id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+        title: varchar("title", { length: 500 }).notNull(),
+        description: text("description"),
+        departmentId: varchar("department_id").references(() => departments.id).notNull(),
+        assignedUserId: varchar("assigned_user_id").references(() => users.id).notNull(),
+        recurrenceType: recurringTasksRecurrenceEnum("recurrence_type").notNull(),
+        recurrenceDays: jsonb("recurrence_days").$type<number[]>(), // For WEEKLY: [1,5] means Monday and Friday (0=Sun, 1=Mon...)
+        createdById: varchar("created_by_id").references(() => users.id).notNull(),
+        isActive: boolean("is_active").default(true).notNull(),
+        createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    },
+    (table) => [
+        index("idx_recurring_tasks_department").on(table.departmentId),
+        index("idx_recurring_tasks_assigned").on(table.assignedUserId),
+        index("idx_recurring_tasks_active").on(table.isActive),
+    ]
+);
+
+export const recurringTasksRelations = relations(recurringTasks, ({ one, many }) => ({
+    department: one(departments, {
+        fields: [recurringTasks.departmentId],
+        references: [departments.id],
+    }),
+    assignedUser: one(users, {
+        fields: [recurringTasks.assignedUserId],
+        references: [users.id],
+    }),
+    createdBy: one(users, {
+        fields: [recurringTasks.createdById],
+        references: [users.id],
+        relationName: "recurringTaskCreator",
+    }),
+    completions: many(recurringTaskCompletions),
+}));
+
+// Completions log - each time a recurring task is checked off
+export const recurringTaskCompletions = pgTable(
+    "recurring_task_completions",
+    {
+        id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+        recurringTaskId: varchar("recurring_task_id").references(() => recurringTasks.id).notNull(),
+        completedById: varchar("completed_by_id").references(() => users.id).notNull(),
+        periodDate: timestamp("period_date", { withTimezone: true }).notNull(), // Which day this completion is for
+        completedAt: timestamp("completed_at", { withTimezone: true }).defaultNow().notNull(),
+        notes: text("notes"), // Optional notes when completing
+    },
+    (table) => [
+        index("idx_recurring_completions_task").on(table.recurringTaskId),
+        index("idx_recurring_completions_date").on(table.periodDate),
+    ]
+);
+
+export const recurringTaskCompletionsRelations = relations(recurringTaskCompletions, ({ one }) => ({
+    recurringTask: one(recurringTasks, {
+        fields: [recurringTaskCompletions.recurringTaskId],
+        references: [recurringTasks.id],
+    }),
+    completedBy: one(users, {
+        fields: [recurringTaskCompletions.completedById],
+        references: [users.id],
+    }),
+}));
+
+// ============================================================================
 // ZOD SCHEMAS FOR VALIDATION
 // ============================================================================
 
@@ -777,8 +855,15 @@ export type InsertPolicyPost = typeof policyPosts.$inferInsert;
 export type PolicyDepartment = typeof policyDepartments.$inferSelect;
 export type InsertPolicyDepartment = typeof policyDepartments.$inferInsert;
 
+export type RecurringTask = typeof recurringTasks.$inferSelect;
+export type InsertRecurringTask = typeof recurringTasks.$inferInsert;
+
+export type RecurringTaskCompletion = typeof recurringTaskCompletions.$inferSelect;
+export type InsertRecurringTaskCompletion = typeof recurringTaskCompletions.$inferInsert;
+
 export type TaskStatus = "TODO" | "DOING" | "DONE";
 export type HierarchyLevel = "SUBGOAL" | "PLAN" | "PROGRAM" | "PROJECT" | "INSTRUCTION";
 export type UserRole = "CEO" | "EXECUTIVE" | "USER";
 export type EvidenceType = "FILE" | "IMAGE" | "URL" | "DOCUMENT" | "RECEIPT" | "SIGNED_NOTE";
 export type PolicyScope = "COMPANY" | "DEPARTMENT" | "POST";
+export type RecurringTaskRecurrence = "DAILY" | "WEEKLY" | "IRREGULAR";

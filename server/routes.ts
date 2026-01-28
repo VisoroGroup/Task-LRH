@@ -23,11 +23,14 @@ import {
     policies,
     policyPosts,
     policyDepartments,
+    recurringTasks,
+    recurringTaskCompletions,
     insertDepartmentSchema,
     insertTaskSchema,
     insertCompletionReportSchema,
     insertPolicySchema,
 } from "@shared/schema";
+import { sendRecurringTaskCompletedEmail } from "./email";
 import { syncTaskToCalendar, syncAllTasksToCalendar, hasCalendarConnected } from "./calendar";
 
 // Helper to get stalled threshold from settings
@@ -2413,5 +2416,218 @@ export function registerRoutes(app: Express) {
             failed: result.failed,
             message: `${result.synced} sarcini sincronizate cu calendarul Outlook.`
         });
+    });
+
+    // ============================================================================
+    // RECURRING TASKS API
+    // ============================================================================
+
+    // Get all recurring tasks (with completion status for current period)
+    app.get("/api/recurring-tasks", async (req: Request, res: Response) => {
+        try {
+            const userId = (req.session as any)?.userId;
+            const userRole = (req.session as any)?.userRole;
+
+            const allTasks = await db.query.recurringTasks.findMany({
+                where: eq(recurringTasks.isActive, true),
+                with: {
+                    department: true,
+                    assignedUser: true,
+                    createdBy: true,
+                    completions: true,
+                },
+                orderBy: [desc(recurringTasks.createdAt)],
+            });
+
+            // For non-CEO/EXECUTIVE, filter to only show their own tasks
+            let filteredTasks = allTasks;
+            if (userRole === "USER") {
+                filteredTasks = allTasks.filter(t => t.assignedUserId === userId);
+            }
+
+            // Calculate completion status for current period
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const tasksWithStatus = filteredTasks.map(task => {
+                // Check if completed today (for DAILY) or this week (for WEEKLY)
+                let isCompletedForPeriod = false;
+                let periodStart = new Date(today);
+
+                if (task.recurrenceType === "DAILY") {
+                    isCompletedForPeriod = task.completions.some((c: any) => {
+                        const completedDate = new Date(c.periodDate);
+                        completedDate.setHours(0, 0, 0, 0);
+                        return completedDate.getTime() === today.getTime();
+                    });
+                } else if (task.recurrenceType === "WEEKLY") {
+                    // Get start of this week (Monday)
+                    const dayOfWeek = today.getDay();
+                    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+                    periodStart.setDate(today.getDate() + diff);
+
+                    isCompletedForPeriod = task.completions.some((c: any) => {
+                        const completedDate = new Date(c.periodDate);
+                        completedDate.setHours(0, 0, 0, 0);
+                        return completedDate.getTime() >= periodStart.getTime();
+                    });
+                } else if (task.recurrenceType === "IRREGULAR") {
+                    // For irregular, check if completed today
+                    isCompletedForPeriod = task.completions.some((c: any) => {
+                        const completedDate = new Date(c.periodDate);
+                        completedDate.setHours(0, 0, 0, 0);
+                        return completedDate.getTime() === today.getTime();
+                    });
+                }
+
+                return {
+                    ...task,
+                    isCompletedForPeriod,
+                    periodStart,
+                };
+            });
+
+            res.json(tasksWithStatus);
+        } catch (error) {
+            console.error("Error fetching recurring tasks:", error);
+            res.status(500).json({ error: "Failed to fetch recurring tasks" });
+        }
+    });
+
+    // Create new recurring task (CEO/EXECUTIVE only)
+    app.post("/api/recurring-tasks", async (req: Request, res: Response) => {
+        try {
+            const userId = (req.session as any)?.userId;
+            const { title, description, departmentId, assignedUserId, recurrenceType, recurrenceDays } = req.body;
+
+            if (!title || !departmentId || !assignedUserId || !recurrenceType) {
+                return res.status(400).json({ error: "Title, department, assigned user, and recurrence type are required" });
+            }
+
+            const [newTask] = await db.insert(recurringTasks).values({
+                title,
+                description,
+                departmentId,
+                assignedUserId,
+                recurrenceType,
+                recurrenceDays: recurrenceDays || null,
+                createdById: userId,
+            }).returning();
+
+            // Fetch with relations
+            const taskWithRelations = await db.query.recurringTasks.findFirst({
+                where: eq(recurringTasks.id, newTask.id),
+                with: {
+                    department: true,
+                    assignedUser: true,
+                    createdBy: true,
+                    completions: true,
+                },
+            });
+
+            res.json(taskWithRelations);
+        } catch (error) {
+            console.error("Error creating recurring task:", error);
+            res.status(500).json({ error: "Failed to create recurring task" });
+        }
+    });
+
+    // Complete a recurring task for current period
+    app.post("/api/recurring-tasks/:id/complete", async (req: Request, res: Response) => {
+        try {
+            const userId = (req.session as any)?.userId;
+            const { id } = req.params;
+            const { notes } = req.body;
+
+            // Get the task
+            const task = await db.query.recurringTasks.findFirst({
+                where: eq(recurringTasks.id, id),
+                with: {
+                    department: {
+                        with: {
+                            departmentHead: true,
+                        },
+                    },
+                    assignedUser: true,
+                },
+            });
+
+            if (!task) {
+                return res.status(404).json({ error: "Recurring task not found" });
+            }
+
+            // Check if user is authorized (only assigned user can complete)
+            if (task.assignedUserId !== userId) {
+                return res.status(403).json({ error: "Only the assigned user can complete this task" });
+            }
+
+            // Create completion record
+            const today = new Date();
+            today.setHours(12, 0, 0, 0); // Noon to avoid timezone issues
+
+            const [completion] = await db.insert(recurringTaskCompletions).values({
+                recurringTaskId: id,
+                completedById: userId,
+                periodDate: today,
+                notes,
+            }).returning();
+
+            // Send email notification to department head
+            if (task.department?.departmentHead?.email) {
+                await sendRecurringTaskCompletedEmail(
+                    userId,
+                    task.title,
+                    task.department.departmentHead.email
+                );
+            }
+
+            res.json({ success: true, completion });
+        } catch (error) {
+            console.error("Error completing recurring task:", error);
+            res.status(500).json({ error: "Failed to complete recurring task" });
+        }
+    });
+
+    // Delete (deactivate) recurring task
+    app.delete("/api/recurring-tasks/:id", async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+
+            const [updated] = await db.update(recurringTasks)
+                .set({ isActive: false, updatedAt: new Date() })
+                .where(eq(recurringTasks.id, id))
+                .returning();
+
+            if (!updated) {
+                return res.status(404).json({ error: "Recurring task not found" });
+            }
+
+            res.json({ success: true });
+        } catch (error) {
+            console.error("Error deleting recurring task:", error);
+            res.status(500).json({ error: "Failed to delete recurring task" });
+        }
+    });
+
+    // Update user's supervisor
+    app.put("/api/users/:id/supervisor", async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+            const { supervisorId } = req.body;
+
+            const [updated] = await db.update(users)
+                .set({ supervisorId, updatedAt: new Date() })
+                .where(eq(users.id, id))
+                .returning();
+
+            if (!updated) {
+                return res.status(404).json({ error: "User not found" });
+            }
+
+            res.json(updated);
+        } catch (error) {
+            console.error("Error updating supervisor:", error);
+            res.status(500).json({ error: "Failed to update supervisor" });
+        }
     });
 }
