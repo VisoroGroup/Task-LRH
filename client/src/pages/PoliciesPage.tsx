@@ -232,8 +232,8 @@ export function PoliciesPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold">Politici</h2>
-                    <p className="text-muted-foreground">Politici operaționale (la nivel de companie / departament / post)</p>
+                    <h2 className="text-2xl font-bold">Directive de funcționare</h2>
+                    <p className="text-muted-foreground">Directive operaționale (la nivel de companie / departament / post)</p>
                 </div>
                 <Button onClick={() => setIsNewPolicyOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />

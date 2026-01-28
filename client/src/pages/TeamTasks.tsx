@@ -206,19 +206,19 @@ function HierarchyNode({
 
     const levelLabels = {
         mainGoal: "Misiune",
-        subgoal: "Subobiectiv",
+        subgoal: "Obiectiv",
         plan: "Plan",
         program: "Program",
         project: "Proiect",
-        instruction: "Instrucțiune",
+        instruction: "De făcut",
     };
 
     const childLevelLabels: Record<string, string> = {
-        subgoal: "Subobiectiv",
+        subgoal: "Obiectiv",
         plan: "Plan",
         program: "Program",
         project: "Proiect",
-        instruction: "Instrucțiune",
+        instruction: "De făcut",
     };
 
     const handleAddChild = () => {
