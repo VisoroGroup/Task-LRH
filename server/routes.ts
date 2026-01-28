@@ -449,6 +449,7 @@ export function registerRoutes(app: Express) {
                 ? and(eq(mainGoals.departmentId, departmentId), eq(mainGoals.isActive, true))
                 : eq(mainGoals.isActive, true);
 
+            // Simplified query without deep nested user relations to avoid PostgreSQL subquery issues
             const goals = await db.query.mainGoals.findMany({
                 where: whereCondition,
                 with: {
@@ -456,23 +457,23 @@ export function registerRoutes(app: Express) {
                     subgoals: {
                         where: eq(subgoals.isActive, true),
                         with: {
-                            assignedPost: { with: { user: true } },
+                            assignedPost: true, // Just post, no nested user
                             plans: {
                                 where: eq(plans.isActive, true),
                                 with: {
-                                    assignedPost: { with: { user: true } },
+                                    assignedPost: true,
                                     programs: {
                                         where: eq(programs.isActive, true),
                                         with: {
-                                            assignedPost: { with: { user: true } },
+                                            assignedPost: true,
                                             projects: {
                                                 where: eq(projects.isActive, true),
                                                 with: {
-                                                    assignedPost: { with: { user: true } },
+                                                    assignedPost: true,
                                                     instructions: {
                                                         where: eq(instructions.isActive, true),
                                                         with: {
-                                                            assignedPost: { with: { user: true } },
+                                                            assignedPost: true,
                                                         },
                                                     },
                                                 },
@@ -490,7 +491,6 @@ export function registerRoutes(app: Express) {
             res.json(goals);
         } catch (error) {
             console.error("Error fetching ideal scene:", error);
-            // Log detailed error for debugging
             const errorMessage = error instanceof Error ? error.message : "Unknown error";
             const errorStack = error instanceof Error ? error.stack : "";
             console.error("Ideal scene error details:", { errorMessage, errorStack });
