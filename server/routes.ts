@@ -460,23 +460,33 @@ export function registerRoutes(app: Express) {
                     subgoals: {
                         where: eq(subgoals.isActive, true),
                         with: {
-                            assignedPost: true, // Just post, no nested user
+                            assignedPost: {
+                                with: { user: true }
+                            },
                             plans: {
                                 where: eq(plans.isActive, true),
                                 with: {
-                                    assignedPost: true,
+                                    assignedPost: {
+                                        with: { user: true }
+                                    },
                                     programs: {
                                         where: eq(programs.isActive, true),
                                         with: {
-                                            assignedPost: true,
+                                            assignedPost: {
+                                                with: { user: true }
+                                            },
                                             projects: {
                                                 where: eq(projects.isActive, true),
                                                 with: {
-                                                    assignedPost: true,
+                                                    assignedPost: {
+                                                        with: { user: true }
+                                                    },
                                                     instructions: {
                                                         where: eq(instructions.isActive, true),
                                                         with: {
-                                                            assignedPost: true,
+                                                            assignedPost: {
+                                                                with: { user: true }
+                                                            },
                                                         },
                                                     },
                                                 },
@@ -491,7 +501,42 @@ export function registerRoutes(app: Express) {
                 orderBy: [mainGoals.createdAt],
             });
 
-            res.json(goals);
+            // Transform response to add assignedUser from assignedPost.user
+            const transformedGoals = goals.map((goal: any) => ({
+                ...goal,
+                subgoals: goal.subgoals?.map((subgoal: any) => ({
+                    ...subgoal,
+                    assignedUser: subgoal.assignedPost?.user
+                        ? { id: subgoal.assignedPost.user.id, name: subgoal.assignedPost.user.name }
+                        : null,
+                    plans: subgoal.plans?.map((plan: any) => ({
+                        ...plan,
+                        assignedUser: plan.assignedPost?.user
+                            ? { id: plan.assignedPost.user.id, name: plan.assignedPost.user.name }
+                            : null,
+                        programs: plan.programs?.map((program: any) => ({
+                            ...program,
+                            assignedUser: program.assignedPost?.user
+                                ? { id: program.assignedPost.user.id, name: program.assignedPost.user.name }
+                                : null,
+                            projects: program.projects?.map((project: any) => ({
+                                ...project,
+                                assignedUser: project.assignedPost?.user
+                                    ? { id: project.assignedPost.user.id, name: project.assignedPost.user.name }
+                                    : null,
+                                instructions: project.instructions?.map((instruction: any) => ({
+                                    ...instruction,
+                                    assignedUser: instruction.assignedPost?.user
+                                        ? { id: instruction.assignedPost.user.id, name: instruction.assignedPost.user.name }
+                                        : null,
+                                })),
+                            })),
+                        })),
+                    })),
+                })),
+            }));
+
+            res.json(transformedGoals);
         } catch (error) {
             console.error("Error fetching ideal scene:", error);
             const errorMessage = error instanceof Error ? error.message : "Unknown error";
