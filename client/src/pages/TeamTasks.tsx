@@ -267,7 +267,7 @@ function TeamMemberColumn({
     );
 }
 
-export default function TeamTasks() {
+export function TeamTasks() {
     const queryClient = useQueryClient();
     const { user } = useAuth();
     const { toast } = useToast();
@@ -277,27 +277,27 @@ export default function TeamTasks() {
     // Fetch hierarchy data
     const { data: hierarchy = [], isLoading } = useQuery<MainGoal[]>({
         queryKey: ["ideal-scene"],
-        queryFn: async () => {
+        queryFn: async (): Promise<MainGoal[]> => {
             const res = await apiRequest("/api/ideal-scene");
-            return res;
+            return res as MainGoal[];
         },
     });
 
     // Fetch users
     const { data: users = [] } = useQuery<TeamMember[]>({
         queryKey: ["users"],
-        queryFn: async () => {
+        queryFn: async (): Promise<TeamMember[]> => {
             const res = await apiRequest("/api/users");
-            return res;
+            return res as TeamMember[];
         },
     });
 
     // Fetch departments
     const { data: departments = [] } = useQuery<Department[]>({
         queryKey: ["departments"],
-        queryFn: async () => {
+        queryFn: async (): Promise<Department[]> => {
             const res = await apiRequest("/api/departments");
-            return res;
+            return res as Department[];
         },
     });
 
