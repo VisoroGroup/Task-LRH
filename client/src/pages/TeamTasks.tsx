@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, cn } from "@/lib/utils";
@@ -12,16 +11,10 @@ import {
     Layers,
     FolderKanban,
     ListChecks,
-    Users,
-    ChevronDown,
-    ChevronRight,
-    Plus,
-    X,
-    Edit2,
-    Trash2,
     CheckCircle2,
     Circle,
     Loader2,
+    User,
 } from "lucide-react";
 
 interface TeamMember {
@@ -30,6 +23,14 @@ interface TeamMember {
     email: string;
     role: string;
     avatarUrl?: string | null;
+}
+
+interface HierarchyItem {
+    id: string;
+    title: string;
+    type: "subgoal" | "plan" | "program" | "project" | "instruction";
+    completedAt?: string | null;
+    assignedUser?: { id: string; name: string } | null;
 }
 
 interface MainGoal {
@@ -43,8 +44,7 @@ interface Subgoal {
     id: string;
     title: string;
     departmentId: string;
-    assignedPostId?: string | null;
-    assignedUser?: { id: string; name: string };
+    assignedUser?: { id: string; name: string } | null;
     completedAt?: string | null;
     plans?: Plan[];
 }
@@ -52,8 +52,7 @@ interface Subgoal {
 interface Plan {
     id: string;
     title: string;
-    assignedPostId?: string | null;
-    assignedUser?: { id: string; name: string };
+    assignedUser?: { id: string; name: string } | null;
     completedAt?: string | null;
     programs?: Program[];
 }
@@ -61,8 +60,7 @@ interface Plan {
 interface Program {
     id: string;
     title: string;
-    assignedPostId?: string | null;
-    assignedUser?: { id: string; name: string };
+    assignedUser?: { id: string; name: string } | null;
     completedAt?: string | null;
     projects?: Project[];
 }
@@ -70,8 +68,7 @@ interface Program {
 interface Project {
     id: string;
     title: string;
-    assignedPostId?: string | null;
-    assignedUser?: { id: string; name: string };
+    assignedUser?: { id: string; name: string } | null;
     completedAt?: string | null;
     instructions?: Instruction[];
 }
@@ -79,8 +76,7 @@ interface Project {
 interface Instruction {
     id: string;
     title: string;
-    assignedPostId?: string | null;
-    assignedUser?: { id: string; name: string };
+    assignedUser?: { id: string; name: string } | null;
     completedAt?: string | null;
 }
 
@@ -89,448 +85,226 @@ interface Department {
     name: string;
 }
 
-// Hierarchy level styling
+// Level config for styling
 const LEVEL_CONFIG = {
-    mainGoal: {
-        icon: Target,
-        color: "text-white",
-        bg: "bg-gradient-to-br from-violet-600 via-purple-600 to-pink-600",
-        border: "border-violet-500/50",
-        label: "Misiune"
-    },
     subgoal: {
         icon: Target,
         color: "text-violet-400",
-        bg: "bg-violet-500/10 hover:bg-violet-500/20",
-        border: "border-violet-500/30 hover:border-violet-500/50",
+        bg: "bg-violet-500/20",
+        border: "border-violet-500/50",
         label: "Obiectiv"
     },
     plan: {
         icon: FileText,
         color: "text-blue-400",
-        bg: "bg-blue-500/10 hover:bg-blue-500/20",
-        border: "border-blue-500/30 hover:border-blue-500/50",
+        bg: "bg-blue-500/20",
+        border: "border-blue-500/50",
         label: "Plan"
     },
     program: {
         icon: Layers,
         color: "text-emerald-400",
-        bg: "bg-emerald-500/10 hover:bg-emerald-500/20",
-        border: "border-emerald-500/30 hover:border-emerald-500/50",
+        bg: "bg-emerald-500/20",
+        border: "border-emerald-500/50",
         label: "Program"
     },
     project: {
         icon: FolderKanban,
         color: "text-amber-400",
-        bg: "bg-amber-500/10 hover:bg-amber-500/20",
-        border: "border-amber-500/30 hover:border-amber-500/50",
+        bg: "bg-amber-500/20",
+        border: "border-amber-500/50",
         label: "Proiect"
     },
     instruction: {
         icon: ListChecks,
         color: "text-rose-400",
-        bg: "bg-rose-500/10 hover:bg-rose-500/20",
-        border: "border-rose-500/30 hover:border-rose-500/50",
+        bg: "bg-rose-500/20",
+        border: "border-rose-500/50",
         label: "De făcut"
     },
 };
 
-// Vertical hierarchy node with connecting lines
-function VerticalNode({
-    title,
-    level,
-    children,
-    assignedUser,
-    itemId,
-    itemType,
-    users,
-    onOwnerChange,
-    onAddChild,
-    childLevel,
-    onEdit,
-    onDelete,
-    completedAt,
+// Single item card in the column
+function HierarchyItemCard({
+    item,
     onComplete,
     isLoading,
 }: {
-    title: string;
-    level: "mainGoal" | "subgoal" | "plan" | "program" | "project" | "instruction";
-    children?: React.ReactNode;
-    assignedUser?: { id: string; name: string } | null;
-    itemId?: string;
-    itemType?: string;
-    users?: TeamMember[];
-    onOwnerChange?: (itemType: string, itemId: string, userId: string | null) => void;
-    onAddChild?: (title: string, dueDate: string) => void;
-    childLevel?: "subgoal" | "plan" | "program" | "project" | "instruction";
-    onEdit?: (newTitle: string) => void;
-    onDelete?: () => void;
-    completedAt?: string | null;
-    onComplete?: () => void;
-    isLoading?: boolean;
+    item: HierarchyItem;
+    onComplete: () => void;
+    isLoading: boolean;
 }) {
-    const [isExpanded, setIsExpanded] = useState(level === "mainGoal");
-    const [isEditing, setIsEditing] = useState(false);
-    const [isAdding, setIsAdding] = useState(false);
-    const [editTitle, setEditTitle] = useState(title);
-    const [newItemTitle, setNewItemTitle] = useState("");
-    const [newItemDueDate, setNewItemDueDate] = useState("");
-
-    const config = LEVEL_CONFIG[level];
+    const config = LEVEL_CONFIG[item.type];
     const Icon = config.icon;
-    const hasChildren = children && React.Children.count(children) > 0;
-
-    const handleAdd = () => {
-        if (newItemTitle.trim() && newItemDueDate && onAddChild) {
-            onAddChild(newItemTitle.trim(), newItemDueDate);
-            setNewItemTitle("");
-            setNewItemDueDate("");
-            setIsAdding(false);
-        }
-    };
-
-    const childLabels: Record<string, string> = {
-        subgoal: "Obiectiv",
-        plan: "Plan",
-        program: "Program",
-        project: "Proiect",
-        instruction: "De făcut",
-    };
 
     return (
-        <div className="relative">
-            {/* Vertical connecting line from parent */}
-            {level !== "mainGoal" && (
-                <div
-                    className="absolute left-6 -top-3 w-0.5 h-3 bg-gradient-to-b from-border/50 to-transparent"
-                />
+        <div
+            className={cn(
+                "group relative rounded-xl border p-3 transition-all hover:scale-[1.02]",
+                config.bg,
+                config.border,
+                item.completedAt && "opacity-60"
             )}
+        >
+            <div className="flex items-start gap-3">
+                {/* Completion checkbox */}
+                <button
+                    className={cn(
+                        "flex-shrink-0 p-1 rounded-lg transition-all mt-0.5",
+                        item.completedAt
+                            ? "bg-green-500/30"
+                            : "hover:bg-green-500/20"
+                    )}
+                    onClick={onComplete}
+                    disabled={!!item.completedAt || isLoading}
+                    title={item.completedAt ? "Finalizat" : "Marchează ca finalizat"}
+                >
+                    {isLoading ? (
+                        <Loader2 className="h-4 w-4 text-green-500 animate-spin" />
+                    ) : item.completedAt ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    ) : (
+                        <Circle className="h-4 w-4 text-muted-foreground group-hover:text-green-500" />
+                    )}
+                </button>
 
-            {/* Node card */}
-            <div
-                className={cn(
-                    "relative group rounded-xl border-2 transition-all duration-300",
-                    level === "mainGoal"
-                        ? "p-6 shadow-2xl shadow-purple-500/20"
-                        : "p-4",
-                    config.bg,
-                    config.border,
-                    "cursor-pointer"
-                )}
-                onClick={() => setIsExpanded(!isExpanded)}
-            >
-                <div className="flex items-start gap-4">
-                    {/* Expand/collapse button */}
-                    <button className="flex-shrink-0 mt-1">
-                        {hasChildren || onAddChild ? (
-                            isExpanded
-                                ? <ChevronDown className={cn("h-5 w-5", level === "mainGoal" ? "text-white/70" : "text-muted-foreground")} />
-                                : <ChevronRight className={cn("h-5 w-5", level === "mainGoal" ? "text-white/70" : "text-muted-foreground")} />
-                        ) : (
-                            <span className="w-5" />
-                        )}
-                    </button>
-
-                    {/* Icon */}
-                    <div className={cn(
-                        "flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center",
-                        level === "mainGoal" ? "bg-white/20" : "bg-background/50"
-                    )}>
-                        <Icon className={cn("h-6 w-6", config.color)} />
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                        {isEditing && onEdit ? (
-                            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                                <input
-                                    type="text"
-                                    value={editTitle}
-                                    onChange={(e) => setEditTitle(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter") { onEdit(editTitle); setIsEditing(false); }
-                                        else if (e.key === "Escape") { setEditTitle(title); setIsEditing(false); }
-                                    }}
-                                    className="flex-1 bg-background border rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                    autoFocus
-                                />
-                                <Button size="sm" onClick={() => { onEdit(editTitle); setIsEditing(false); }}>
-                                    ✓
-                                </Button>
-                            </div>
-                        ) : (
-                            <h3 className={cn(
-                                "font-bold",
-                                level === "mainGoal" ? "text-xl text-white" : "text-lg"
-                            )}>
-                                {title}
-                            </h3>
-                        )}
-
-                        <div className="flex items-center gap-2 mt-1">
-                            <span className={cn(
-                                "text-sm font-medium",
-                                level === "mainGoal" ? "text-white/60" : "text-muted-foreground"
-                            )}>
-                                {config.label}
-                            </span>
-
-                            {level !== "mainGoal" && assignedUser && (
-                                <>
-                                    <span className="text-muted-foreground">•</span>
-                                    <div className="flex items-center gap-1.5">
-                                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white text-xs">
-                                            {assignedUser.name.charAt(0)}
-                                        </div>
-                                        <span className="text-sm font-medium text-primary">{assignedUser.name}</span>
-                                    </div>
-                                </>
-                            )}
-
-                            {level !== "mainGoal" && !assignedUser && (
-                                <>
-                                    <span className="text-muted-foreground">•</span>
-                                    <span className="text-sm text-yellow-500">Fără responsabil</span>
-                                </>
-                            )}
+                <div className="flex-1 min-w-0">
+                    {/* Level badge */}
+                    <div className="flex items-center gap-2 mb-1">
+                        <div className={cn("p-1 rounded", config.bg)}>
+                            <Icon className={cn("h-3 w-3", config.color)} />
                         </div>
+                        <span className={cn("text-xs font-medium", config.color)}>
+                            {config.label}
+                        </span>
                     </div>
 
-                    {/* Actions - visible on hover */}
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                        {/* Owner selector */}
-                        {level !== "mainGoal" && itemId && itemType && users && onOwnerChange && (
-                            <select
-                                value={assignedUser?.id || ""}
-                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onOwnerChange(itemType, itemId, e.target.value || null)}
-                                className="px-2 py-1 rounded-lg text-xs font-medium border bg-background"
-                            >
-                                <option value="">— Responsabil —</option>
-                                {users.map(u => (
-                                    <option key={u.id} value={u.id}>{u.name}</option>
-                                ))}
-                            </select>
-                        )}
-
-                        {/* Add child */}
-                        {onAddChild && childLevel && (
-                            <button
-                                className="p-1.5 rounded-lg hover:bg-white/10"
-                                onClick={(e) => { e.stopPropagation(); setIsExpanded(true); setIsAdding(true); }}
-                                title={`Adaugă ${childLabels[childLevel]}`}
-                            >
-                                <Plus className="h-4 w-4 text-primary" />
-                            </button>
-                        )}
-
-                        {/* Edit */}
-                        {level !== "mainGoal" && onEdit && !isEditing && (
-                            <button
-                                className="p-1.5 rounded-lg hover:bg-white/10"
-                                onClick={(e) => { e.stopPropagation(); setEditTitle(title); setIsEditing(true); }}
-                                title="Editează"
-                            >
-                                <Edit2 className="h-4 w-4 text-muted-foreground" />
-                            </button>
-                        )}
-
-                        {/* Delete */}
-                        {level !== "mainGoal" && onDelete && (
-                            <button
-                                className="p-1.5 rounded-lg hover:bg-red-500/10"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (confirm("Sigur doriți să ștergeți?")) onDelete();
-                                }}
-                                title="Șterge"
-                            >
-                                <Trash2 className="h-4 w-4 text-red-400" />
-                            </button>
-                        )}
-
-                        {/* Complete checkbox */}
-                        {level !== "mainGoal" && onComplete && (
-                            <button
-                                className={cn(
-                                    "p-1.5 rounded-lg transition-all",
-                                    completedAt
-                                        ? "bg-green-500/20 hover:bg-green-500/30"
-                                        : "hover:bg-green-500/10"
-                                )}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (!completedAt && !isLoading) onComplete();
-                                }}
-                                title={completedAt ? "Finalizat" : isLoading ? "Feldolgozás..." : "Marchează ca finalizat"}
-                                disabled={!!completedAt || isLoading}
-                            >
-                                {isLoading ? (
-                                    <Loader2 className="h-4 w-4 text-green-500 animate-spin" />
-                                ) : completedAt ? (
-                                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                                ) : (
-                                    <Circle className="h-4 w-4 text-muted-foreground hover:text-green-500" />
-                                )}
-                            </button>
-                        )}
-                    </div>
+                    {/* Title */}
+                    <p className={cn(
+                        "text-sm font-medium text-foreground line-clamp-2",
+                        item.completedAt && "line-through"
+                    )}>
+                        {item.title}
+                    </p>
                 </div>
             </div>
-
-            {/* Children container with vertical line */}
-            {isExpanded && (hasChildren || isAdding) && (
-                <div className="relative mt-3 ml-6 pl-6 border-l-2 border-dashed border-border/40">
-                    {/* Add new item form */}
-                    {isAdding && onAddChild && childLevel && (
-                        <div
-                            className="mb-3 p-4 bg-card rounded-xl border-2 border-primary/30 shadow-lg"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="flex flex-wrap items-center gap-3">
-                                <input
-                                    type="text"
-                                    placeholder={`Nume ${childLabels[childLevel].toLowerCase()}...`}
-                                    value={newItemTitle}
-                                    onChange={(e) => setNewItemTitle(e.target.value)}
-                                    className="flex-1 min-w-[200px] bg-background border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                    autoFocus
-                                />
-                                <div className="flex items-center gap-2">
-                                    <label className="text-sm text-muted-foreground">Termen:</label>
-                                    <input
-                                        type="date"
-                                        value={newItemDueDate}
-                                        onChange={(e) => setNewItemDueDate(e.target.value)}
-                                        className="bg-background border rounded-lg px-3 py-2 text-sm"
-                                    />
-                                </div>
-                                <Button size="sm" onClick={handleAdd} disabled={!newItemTitle.trim() || !newItemDueDate}>
-                                    Adaugă
-                                </Button>
-                                <button
-                                    className="p-2 hover:bg-white/10 rounded-lg"
-                                    onClick={() => { setIsAdding(false); setNewItemTitle(""); setNewItemDueDate(""); }}
-                                >
-                                    <X className="h-4 w-4" />
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Children */}
-                    <div className="space-y-3">
-                        {children}
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
 
-export function TeamTasks() {
-    const [selectedMember, setSelectedMember] = useState<string | null>(null);
-    const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
+// Team member column
+function TeamMemberColumn({
+    member,
+    items,
+    onComplete,
+    completingItemId,
+}: {
+    member: TeamMember;
+    items: HierarchyItem[];
+    onComplete: (type: string, id: string) => void;
+    completingItemId: string | null;
+}) {
+    const completedCount = items.filter(i => i.completedAt).length;
+    const totalCount = items.length;
+    const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+
+    return (
+        <div className="flex-shrink-0 w-72 flex flex-col bg-card/50 backdrop-blur rounded-2xl border border-border/50 overflow-hidden">
+            {/* Header */}
+            <div className="p-4 border-b border-border/50 bg-gradient-to-br from-background to-card">
+                <div className="flex items-center gap-3">
+                    {member.avatarUrl ? (
+                        <img
+                            src={member.avatarUrl}
+                            alt={member.name}
+                            className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/30"
+                        />
+                    ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center ring-2 ring-primary/30">
+                            <span className="text-white font-bold text-sm">
+                                {member.name.charAt(0).toUpperCase()}
+                            </span>
+                        </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground truncate">
+                            {member.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                            {completedCount}/{totalCount} finalizate
+                        </p>
+                    </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="mt-3 h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div
+                        className="h-full bg-gradient-to-r from-green-500 to-emerald-400 transition-all duration-300"
+                        style={{ width: `${progress}%` }}
+                    />
+                </div>
+            </div>
+
+            {/* Items list */}
+            <div className="flex-1 p-3 space-y-2 overflow-y-auto max-h-[calc(100vh-300px)]">
+                {items.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground text-sm">
+                        <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        Nicio sarcină atribuită
+                    </div>
+                ) : (
+                    items.map((item) => (
+                        <HierarchyItemCard
+                            key={`${item.type}-${item.id}`}
+                            item={item}
+                            onComplete={() => onComplete(item.type + "s", item.id)}
+                            isLoading={completingItemId === item.id}
+                        />
+                    ))
+                )}
+            </div>
+        </div>
+    );
+}
+
+export default function TeamTasks() {
     const queryClient = useQueryClient();
-
-    // Fetch data
-    const { data: users = [] } = useQuery<TeamMember[]>({
-        queryKey: ["users"],
-        queryFn: () => apiRequest("/api/users"),
-    });
-
-    const { data: idealScene = [], isLoading } = useQuery<MainGoal[]>({
-        queryKey: ["ideal-scene"],
-        queryFn: () => apiRequest("/api/ideal-scene"),
-    });
-
-    const { data: departments = [] } = useQuery<Department[]>({
-        queryKey: ["departments"],
-        queryFn: () => apiRequest("/api/departments"),
-    });
-
-    // Mutations
-    const updateOwnerMutation = useMutation({
-        mutationFn: async ({ type, id, userId }: { type: string; id: string; userId: string | null }) => {
-            return apiRequest(`/api/ideal-scene/${type}/${id}/owner`, {
-                method: "PUT",
-                body: JSON.stringify({ assignedPostId: userId }),
-            });
-        },
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
-    });
-
-    const createSubgoalMutation = useMutation({
-        mutationFn: async ({ mainGoalId, title, departmentId, dueDate }: { mainGoalId: string; title: string; departmentId: string; dueDate: string }) => {
-            return apiRequest("/api/ideal-scene/subgoals", {
-                method: "POST",
-                body: JSON.stringify({ mainGoalId, title, departmentId, dueDate }),
-            });
-        },
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
-    });
-
-    const createPlanMutation = useMutation({
-        mutationFn: async ({ subgoalId, title, dueDate, departmentId }: { subgoalId: string; title: string; dueDate: string; departmentId: string }) => {
-            return apiRequest("/api/ideal-scene/plans", {
-                method: "POST",
-                body: JSON.stringify({ subgoalId, title, dueDate, departmentId }),
-            });
-        },
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
-    });
-
-    const createProgramMutation = useMutation({
-        mutationFn: async ({ planId, title, dueDate }: { planId: string; title: string; dueDate: string }) => {
-            return apiRequest("/api/ideal-scene/programs", {
-                method: "POST",
-                body: JSON.stringify({ planId, title, dueDate }),
-            });
-        },
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
-    });
-
-    const createProjectMutation = useMutation({
-        mutationFn: async ({ programId, title, dueDate }: { programId: string; title: string; dueDate: string }) => {
-            return apiRequest("/api/ideal-scene/projects", {
-                method: "POST",
-                body: JSON.stringify({ programId, title, dueDate }),
-            });
-        },
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
-    });
-
-    const createInstructionMutation = useMutation({
-        mutationFn: async ({ projectId, title, dueDate }: { projectId: string; title: string; dueDate: string }) => {
-            return apiRequest("/api/ideal-scene/instructions", {
-                method: "POST",
-                body: JSON.stringify({ projectId, title, dueDate }),
-            });
-        },
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
-    });
-
-    const updateHierarchyMutation = useMutation({
-        mutationFn: async ({ type, id, title }: { type: string; id: string; title: string }) => {
-            return apiRequest(`/api/ideal-scene/${type}/${id}`, {
-                method: "PUT",
-                body: JSON.stringify({ title }),
-            });
-        },
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
-    });
-
-    const deleteHierarchyMutation = useMutation({
-        mutationFn: async ({ type, id }: { type: string; id: string }) => {
-            return apiRequest(`/api/ideal-scene/${type}/${id}`, { method: "DELETE" });
-        },
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ideal-scene"] }),
-    });
-
     const { user } = useAuth();
     const { toast } = useToast();
+    const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
+    const [completingItemId, setCompletingItemId] = useState<string | null>(null);
 
+    // Fetch hierarchy data
+    const { data: hierarchy = [], isLoading } = useQuery<MainGoal[]>({
+        queryKey: ["ideal-scene"],
+        queryFn: async () => {
+            const res = await apiRequest("/api/ideal-scene");
+            return res;
+        },
+    });
+
+    // Fetch users
+    const { data: users = [] } = useQuery<TeamMember[]>({
+        queryKey: ["users"],
+        queryFn: async () => {
+            const res = await apiRequest("/api/users");
+            return res;
+        },
+    });
+
+    // Fetch departments
+    const { data: departments = [] } = useQuery<Department[]>({
+        queryKey: ["departments"],
+        queryFn: async () => {
+            const res = await apiRequest("/api/departments");
+            return res;
+        },
+    });
+
+    // Complete hierarchy item mutation
     const completeHierarchyMutation = useMutation({
         mutationFn: async ({ type, id }: { type: string; id: string }) => {
+            setCompletingItemId(id);
             return apiRequest(`/api/ideal-scene/${type}/${id}/complete`, {
                 method: "POST",
                 body: JSON.stringify({ userId: user?.id }),
@@ -542,6 +316,7 @@ export function TeamTasks() {
                 title: "✅ Finalizat!",
                 description: "Elementul a fost marcat ca finalizat.",
             });
+            setCompletingItemId(null);
         },
         onError: (error: Error) => {
             toast({
@@ -549,33 +324,122 @@ export function TeamTasks() {
                 description: error.message || "Nu s-a putut finaliza elementul.",
                 variant: "destructive",
             });
+            setCompletingItemId(null);
         },
     });
 
-    const handleOwnerChange = (itemType: string, itemId: string, userId: string | null) => {
-        updateOwnerMutation.mutate({ type: itemType, id: itemId, userId });
-    };
+    // Collect all hierarchy items and group by user
+    const itemsByUser = React.useMemo(() => {
+        const result: Map<string, HierarchyItem[]> = new Map();
 
-    // Filter hierarchy based on selected member
-    const filterByMember = (user: { id: string; name: string } | null | undefined) => {
-        if (!selectedMember) return true;
-        return user?.id === selectedMember;
-    };
+        // Initialize with all users
+        users.forEach(u => result.set(u.id, []));
+
+        // Collect items from hierarchy
+        hierarchy.forEach((mainGoal) => {
+            mainGoal.subgoals?.forEach((subgoal) => {
+                // Filter by department if selected
+                if (selectedDepartment && subgoal.departmentId !== selectedDepartment) return;
+
+                if (subgoal.assignedUser) {
+                    const items = result.get(subgoal.assignedUser.id) || [];
+                    items.push({
+                        id: subgoal.id,
+                        title: subgoal.title,
+                        type: "subgoal",
+                        completedAt: subgoal.completedAt,
+                        assignedUser: subgoal.assignedUser,
+                    });
+                    result.set(subgoal.assignedUser.id, items);
+                }
+
+                subgoal.plans?.forEach((plan) => {
+                    if (plan.assignedUser) {
+                        const items = result.get(plan.assignedUser.id) || [];
+                        items.push({
+                            id: plan.id,
+                            title: plan.title,
+                            type: "plan",
+                            completedAt: plan.completedAt,
+                            assignedUser: plan.assignedUser,
+                        });
+                        result.set(plan.assignedUser.id, items);
+                    }
+
+                    plan.programs?.forEach((program) => {
+                        if (program.assignedUser) {
+                            const items = result.get(program.assignedUser.id) || [];
+                            items.push({
+                                id: program.id,
+                                title: program.title,
+                                type: "program",
+                                completedAt: program.completedAt,
+                                assignedUser: program.assignedUser,
+                            });
+                            result.set(program.assignedUser.id, items);
+                        }
+
+                        program.projects?.forEach((project) => {
+                            if (project.assignedUser) {
+                                const items = result.get(project.assignedUser.id) || [];
+                                items.push({
+                                    id: project.id,
+                                    title: project.title,
+                                    type: "project",
+                                    completedAt: project.completedAt,
+                                    assignedUser: project.assignedUser,
+                                });
+                                result.set(project.assignedUser.id, items);
+                            }
+
+                            project.instructions?.forEach((instruction) => {
+                                if (instruction.assignedUser) {
+                                    const items = result.get(instruction.assignedUser.id) || [];
+                                    items.push({
+                                        id: instruction.id,
+                                        title: instruction.title,
+                                        type: "instruction",
+                                        completedAt: instruction.completedAt,
+                                        assignedUser: instruction.assignedUser,
+                                    });
+                                    result.set(instruction.assignedUser.id, items);
+                                }
+                            });
+                        });
+                    });
+                });
+            });
+        });
+
+        return result;
+    }, [hierarchy, users, selectedDepartment]);
+
+    // Get users who have items assigned
+    const usersWithItems = React.useMemo(() => {
+        return users.filter(u => {
+            const items = itemsByUser.get(u.id) || [];
+            return items.length > 0;
+        });
+    }, [users, itemsByUser]);
 
     if (isLoading) {
-        return <div className="flex items-center justify-center h-64 text-muted-foreground">Se încarcă...</div>;
+        return (
+            <div className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
     }
 
     return (
-        <div className="space-y-6">
+        <div className="h-full flex flex-col gap-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-shrink-0">
                 <div>
                     <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-pink-400">
                         Sarcinile echipei
                     </h1>
                     <p className="text-lg text-muted-foreground mt-1">
-                        Structura organizațională în format vizual
+                        Fiecare coleg cu sarcinile sale
                     </p>
                 </div>
 
@@ -591,174 +455,32 @@ export function TeamTasks() {
                 </select>
             </div>
 
-            {/* Team member filter */}
-            <div className="flex flex-wrap gap-2 p-4 rounded-2xl bg-card/30 backdrop-blur border">
-                <button
-                    className={cn(
-                        "flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all",
-                        selectedMember === null
-                            ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg"
-                            : "bg-white/5 hover:bg-white/10 text-muted-foreground"
-                    )}
-                    onClick={() => setSelectedMember(null)}
-                >
-                    <Users className="h-4 w-4" />
-                    <span>Toți</span>
-                </button>
-
-                {users.map(user => (
-                    <button
-                        key={user.id}
-                        className={cn(
-                            "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all",
-                            selectedMember === user.id
-                                ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg"
-                                : "bg-white/5 hover:bg-white/10 text-muted-foreground"
-                        )}
-                        onClick={() => setSelectedMember(user.id)}
-                    >
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white text-xs overflow-hidden">
-                            {user.avatarUrl ? (
-                                <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                                user.name.charAt(0)
-                            )}
-                        </div>
-                        <span>{user.name}</span>
-                    </button>
-                ))}
-            </div>
-
-            {/* Vertical hierarchy tree */}
-            <Card className="border-2 overflow-hidden">
-                <CardContent className="p-8">
-                    {idealScene.length === 0 ? (
-                        <div className="text-center py-16 text-muted-foreground">
-                            <Target className="h-16 w-16 mx-auto mb-4 opacity-20" />
-                            <p className="text-xl font-medium">Nu există obiective definite</p>
-                            <p className="text-sm mt-2">Adaugă un obiectiv principal din pagina "Imaginea ideală"</p>
-                        </div>
+            {/* Team columns - horizontal scroll */}
+            <div className="flex-1 overflow-x-auto pb-4">
+                <div className="flex gap-4 min-w-max">
+                    {usersWithItems.length === 0 ? (
+                        <Card className="w-full">
+                            <CardContent className="py-12 text-center text-muted-foreground">
+                                <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                                <p>Nu există sarcini atribuite.</p>
+                                <p className="text-sm mt-1">
+                                    Atribuiți responsabili în Ideal Scene pentru a vedea sarcinile aici.
+                                </p>
+                            </CardContent>
+                        </Card>
                     ) : (
-                        <div className="space-y-6">
-                            {idealScene.map((mainGoal) => (
-                                <VerticalNode
-                                    key={mainGoal.id}
-                                    title={mainGoal.description || "Misiune"}
-                                    level="mainGoal"
-                                    onAddChild={(title, dueDate) => {
-                                        const firstDept = departments[0];
-                                        if (firstDept) {
-                                            createSubgoalMutation.mutate({ mainGoalId: mainGoal.id, title, departmentId: firstDept.id, dueDate });
-                                        }
-                                    }}
-                                    childLevel="subgoal"
-                                >
-                                    {mainGoal.subgoals
-                                        ?.filter(s => !selectedDepartment || s.departmentId === selectedDepartment)
-                                        .filter(s => filterByMember(s.assignedUser))
-                                        .map((subgoal) => (
-                                            <VerticalNode
-                                                key={subgoal.id}
-                                                title={subgoal.title}
-                                                level="subgoal"
-                                                assignedUser={subgoal.assignedUser}
-                                                itemId={subgoal.id}
-                                                itemType="subgoals"
-                                                users={users}
-                                                onOwnerChange={handleOwnerChange}
-                                                onAddChild={(title, dueDate) => createPlanMutation.mutate({ subgoalId: subgoal.id, title, dueDate, departmentId: subgoal.departmentId })}
-                                                childLevel="plan"
-                                                onEdit={(t) => updateHierarchyMutation.mutate({ type: "subgoals", id: subgoal.id, title: t })}
-                                                onDelete={() => deleteHierarchyMutation.mutate({ type: "subgoals", id: subgoal.id })}
-                                                completedAt={subgoal.completedAt}
-                                                onComplete={() => completeHierarchyMutation.mutate({ type: "subgoals", id: subgoal.id })}
-                                                isLoading={completeHierarchyMutation.isPending}
-                                            >
-                                                {subgoal.plans?.filter(p => filterByMember(p.assignedUser)).map((plan) => (
-                                                    <VerticalNode
-                                                        key={plan.id}
-                                                        title={plan.title}
-                                                        level="plan"
-                                                        assignedUser={plan.assignedUser}
-                                                        itemId={plan.id}
-                                                        itemType="plans"
-                                                        users={users}
-                                                        onOwnerChange={handleOwnerChange}
-                                                        onAddChild={(title, dueDate) => createProgramMutation.mutate({ planId: plan.id, title, dueDate })}
-                                                        childLevel="program"
-                                                        onEdit={(t) => updateHierarchyMutation.mutate({ type: "plans", id: plan.id, title: t })}
-                                                        onDelete={() => deleteHierarchyMutation.mutate({ type: "plans", id: plan.id })}
-                                                        completedAt={plan.completedAt}
-                                                        onComplete={() => completeHierarchyMutation.mutate({ type: "plans", id: plan.id })}
-                                                        isLoading={completeHierarchyMutation.isPending}
-                                                    >
-                                                        {plan.programs?.filter(pr => filterByMember(pr.assignedUser)).map((program) => (
-                                                            <VerticalNode
-                                                                key={program.id}
-                                                                title={program.title}
-                                                                level="program"
-                                                                assignedUser={program.assignedUser}
-                                                                itemId={program.id}
-                                                                itemType="programs"
-                                                                users={users}
-                                                                onOwnerChange={handleOwnerChange}
-                                                                onAddChild={(title, dueDate) => createProjectMutation.mutate({ programId: program.id, title, dueDate })}
-                                                                childLevel="project"
-                                                                onEdit={(t) => updateHierarchyMutation.mutate({ type: "programs", id: program.id, title: t })}
-                                                                onDelete={() => deleteHierarchyMutation.mutate({ type: "programs", id: program.id })}
-                                                                completedAt={program.completedAt}
-                                                                onComplete={() => completeHierarchyMutation.mutate({ type: "programs", id: program.id })}
-                                                                isLoading={completeHierarchyMutation.isPending}
-                                                            >
-                                                                {program.projects?.filter(pj => filterByMember(pj.assignedUser)).map((project) => (
-                                                                    <VerticalNode
-                                                                        key={project.id}
-                                                                        title={project.title}
-                                                                        level="project"
-                                                                        assignedUser={project.assignedUser}
-                                                                        itemId={project.id}
-                                                                        itemType="projects"
-                                                                        users={users}
-                                                                        onOwnerChange={handleOwnerChange}
-                                                                        onAddChild={(title, dueDate) => createInstructionMutation.mutate({ projectId: project.id, title, dueDate })}
-                                                                        childLevel="instruction"
-                                                                        onEdit={(t) => updateHierarchyMutation.mutate({ type: "projects", id: project.id, title: t })}
-                                                                        onDelete={() => deleteHierarchyMutation.mutate({ type: "projects", id: project.id })}
-                                                                        completedAt={project.completedAt}
-                                                                        onComplete={() => completeHierarchyMutation.mutate({ type: "projects", id: project.id })}
-                                                                        isLoading={completeHierarchyMutation.isPending}
-                                                                    >
-                                                                        {project.instructions?.filter(i => filterByMember(i.assignedUser)).map((instruction) => (
-                                                                            <VerticalNode
-                                                                                key={instruction.id}
-                                                                                title={instruction.title}
-                                                                                level="instruction"
-                                                                                assignedUser={instruction.assignedUser}
-                                                                                itemId={instruction.id}
-                                                                                itemType="instructions"
-                                                                                users={users}
-                                                                                onOwnerChange={handleOwnerChange}
-                                                                                onEdit={(t) => updateHierarchyMutation.mutate({ type: "instructions", id: instruction.id, title: t })}
-                                                                                onDelete={() => deleteHierarchyMutation.mutate({ type: "instructions", id: instruction.id })}
-                                                                                completedAt={instruction.completedAt}
-                                                                                onComplete={() => completeHierarchyMutation.mutate({ type: "instructions", id: instruction.id })}
-                                                                                isLoading={completeHierarchyMutation.isPending}
-                                                                            />
-                                                                        ))}
-                                                                    </VerticalNode>
-                                                                ))}
-                                                            </VerticalNode>
-                                                        ))}
-                                                    </VerticalNode>
-                                                ))}
-                                            </VerticalNode>
-                                        ))}
-                                </VerticalNode>
-                            ))}
-                        </div>
+                        usersWithItems.map((member) => (
+                            <TeamMemberColumn
+                                key={member.id}
+                                member={member}
+                                items={itemsByUser.get(member.id) || []}
+                                onComplete={(type, id) => completeHierarchyMutation.mutate({ type, id })}
+                                completingItemId={completingItemId}
+                            />
+                        ))
                     )}
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         </div>
     );
 }
