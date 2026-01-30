@@ -1641,6 +1641,60 @@ export function registerRoutes(app: Express) {
     // CEO DASHBOARD
     // ============================================================================
 
+    // DEBUG ENDPOINT - shows full task data with post and user info
+    app.get("/api/debug/tasks", async (req: Request, res: Response) => {
+        try {
+            // Get all active tasks with their post and post's user
+            const activeTasks = await db.query.tasks.findMany({
+                where: or(eq(tasks.status, "TODO"), eq(tasks.status, "DOING")),
+                with: {
+                    responsiblePost: {
+                        with: { user: true }
+                    },
+                    department: true,
+                },
+            });
+
+            // Get all posts with their users
+            const allPosts = await db.query.posts.findMany({
+                where: eq(posts.isActive, true),
+                with: { user: true },
+            });
+
+            // Build debug info
+            const debugInfo = {
+                totalActiveTasks: activeTasks.length,
+                tasks: activeTasks.map((t: any) => ({
+                    id: t.id,
+                    title: t.title,
+                    status: t.status,
+                    responsiblePostId: t.responsiblePostId,
+                    postExists: t.responsiblePost ? true : false,
+                    postName: t.responsiblePost?.name || "NO POST FOUND",
+                    postIsActive: t.responsiblePost?.isActive,
+                    postUserId: t.responsiblePost?.userId,
+                    postUserName: t.responsiblePost?.user?.name || "NO USER ON POST",
+                    departmentName: t.department?.name,
+                })),
+                postsWithUsers: allPosts.filter((p: any) => p.userId).map((p: any) => ({
+                    postId: p.id,
+                    postName: p.name,
+                    userId: p.userId,
+                    userName: p.user?.name,
+                })),
+                postsWithoutUsers: allPosts.filter((p: any) => !p.userId).map((p: any) => ({
+                    postId: p.id,
+                    postName: p.name,
+                })),
+            };
+
+            res.json(debugInfo);
+        } catch (error) {
+            console.error("Debug endpoint error:", error);
+            res.status(500).json({ error: "Debug failed", details: String(error) });
+        }
+    });
+
     // Summary indicators (KPI cards)
     app.get("/api/dashboard/summary", async (req: Request, res: Response) => {
         try {
