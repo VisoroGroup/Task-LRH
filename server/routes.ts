@@ -1728,11 +1728,15 @@ export function registerRoutes(app: Express) {
 
             // Create lookup maps
             const postsByUserId = new Map<string, string[]>();
+            const unassignedPostIds: string[] = [];
             allPosts.forEach((p: any) => {
                 if (p.userId) {
                     const existing = postsByUserId.get(p.userId) || [];
                     existing.push(p.id);
                     postsByUserId.set(p.userId, existing);
+                } else {
+                    // Posts without a user assigned
+                    unassignedPostIds.push(p.id);
                 }
             });
 
@@ -1787,6 +1791,36 @@ export function registerRoutes(app: Express) {
                     flowStatus,
                 };
             });
+
+            // Add "Unassigned" row for tasks/items on posts without users
+            const unassignedPostIdSet = new Set(unassignedPostIds);
+            const unassignedTasks = allTasks.filter((t: any) => t.responsiblePostId && unassignedPostIdSet.has(t.responsiblePostId));
+            const unassignedHierarchyCount =
+                allSubgoals.filter((s: any) => s.assignedPostId && unassignedPostIdSet.has(s.assignedPostId)).length +
+                allPlans.filter((p: any) => p.assignedPostId && unassignedPostIdSet.has(p.assignedPostId)).length +
+                allPrograms.filter((p: any) => p.assignedPostId && unassignedPostIdSet.has(p.assignedPostId)).length +
+                allProjects.filter((p: any) => p.assignedPostId && unassignedPostIdSet.has(p.assignedPostId)).length +
+                allInstructions.filter((i: any) => i.assignedPostId && unassignedPostIdSet.has(i.assignedPostId)).length;
+
+            const unassignedTodoCount = unassignedTasks.filter((t: any) => t.status === "TODO").length + unassignedHierarchyCount;
+            const unassignedDoingCount = unassignedTasks.filter((t: any) => t.status === "DOING").length;
+            const unassignedDoneCount = unassignedTasks.filter((t: any) => t.status === "DONE").length;
+
+            // Only add unassigned row if there are items
+            if (unassignedTodoCount > 0 || unassignedDoingCount > 0) {
+                grid.push({
+                    userId: "unassigned",
+                    userName: "⚠️ Neatribuit (post fără titular)",
+                    userRole: "unassigned",
+                    userAvatarUrl: null,
+                    todoCount: unassignedTodoCount,
+                    doingCount: unassignedDoingCount,
+                    doneCount: unassignedDoneCount,
+                    overdueCount: 0,
+                    stalledCount: 0,
+                    flowStatus: "stalled" as const,
+                });
+            }
 
             res.json(grid);
         } catch (error) {
