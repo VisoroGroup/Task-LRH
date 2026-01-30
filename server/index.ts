@@ -11,6 +11,14 @@ import { startupDiagnostics, runHealthCheck } from "./healthcheck";
 
 const app = express();
 
+// DEBUG: Ultra-minimal ping endpoint BEFORE any middleware
+// This tests if Express is receiving requests at all
+app.get("/ping", (req, res) => {
+    res.status(200).send("pong");
+});
+
+console.log("[DEBUG] Express app created, /ping endpoint registered");
+
 // Trust proxy for production (Replit, Heroku, etc.)
 if (process.env.NODE_ENV === "production") {
     app.set("trust proxy", 1);
