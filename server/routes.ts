@@ -4,7 +4,7 @@ import path from "path";
 import fs from "fs";
 import { Client as ObjectStorageClient } from "@replit/object-storage";
 import { db } from "./db";
-import { eq, and, isNull, desc, sql, count, gte, lte, or } from "drizzle-orm";
+import { eq, and, isNull, desc, sql, count, gte, lte, or, inArray } from "drizzle-orm";
 import { processCompletedRecurringTask } from "./recurring";
 import {
     departments,
@@ -1735,37 +1735,50 @@ export function registerRoutes(app: Express) {
                 where: eq(users.isActive, true),
             });
 
-            const grid = await Promise.all(userList.map(async (user) => {
-                const userTasks = await db.query.tasks.findMany({
-                    where: eq(tasks.responsiblePostId, user.id),
+            const grid = await Promise.all(userList.map(async (user: any) => {
+                // First, find all posts assigned to this user
+                const userPosts = await db.query.posts.findMany({
+                    where: and(eq(posts.userId, user.id), eq(posts.isActive, true)),
                 });
+                const userPostIds = userPosts.map((p: any) => p.id);
 
-                // Count hierarchy items assigned to this user
-                const [subgoalCount] = await db.select({ count: sql<number>`count(*)` })
-                    .from(subgoals)
-                    .where(and(eq(subgoals.assignedPostId, user.id), eq(subgoals.isActive, true)));
-                const [planCount] = await db.select({ count: sql<number>`count(*)` })
-                    .from(plans)
-                    .where(and(eq(plans.assignedPostId, user.id), eq(plans.isActive, true)));
-                const [programCount] = await db.select({ count: sql<number>`count(*)` })
-                    .from(programs)
-                    .where(and(eq(programs.assignedPostId, user.id), eq(programs.isActive, true)));
-                const [projectCount] = await db.select({ count: sql<number>`count(*)` })
-                    .from(projects)
-                    .where(and(eq(projects.assignedPostId, user.id), eq(projects.isActive, true)));
-                const [instructionCount] = await db.select({ count: sql<number>`count(*)` })
-                    .from(instructions)
-                    .where(and(eq(instructions.assignedPostId, user.id), eq(instructions.isActive, true)));
+                // Get tasks assigned to any of user's posts
+                let userTasks: any[] = [];
+                if (userPostIds.length > 0) {
+                    userTasks = await db.query.tasks.findMany({
+                        where: inArray(tasks.responsiblePostId, userPostIds),
+                    });
+                }
 
-                const hierarchyCount = Number(subgoalCount.count || 0) +
-                    Number(planCount.count || 0) +
-                    Number(programCount.count || 0) +
-                    Number(projectCount.count || 0) +
-                    Number(instructionCount.count || 0);
+                // Count hierarchy items assigned to user's posts
+                let hierarchyCount = 0;
+                if (userPostIds.length > 0) {
+                    const [subgoalCount] = await db.select({ count: sql<number>`count(*)` })
+                        .from(subgoals)
+                        .where(and(inArray(subgoals.assignedPostId, userPostIds), eq(subgoals.isActive, true)));
+                    const [planCount] = await db.select({ count: sql<number>`count(*)` })
+                        .from(plans)
+                        .where(and(inArray(plans.assignedPostId, userPostIds), eq(plans.isActive, true)));
+                    const [programCount] = await db.select({ count: sql<number>`count(*)` })
+                        .from(programs)
+                        .where(and(inArray(programs.assignedPostId, userPostIds), eq(programs.isActive, true)));
+                    const [projectCount] = await db.select({ count: sql<number>`count(*)` })
+                        .from(projects)
+                        .where(and(inArray(projects.assignedPostId, userPostIds), eq(projects.isActive, true)));
+                    const [instructionCount] = await db.select({ count: sql<number>`count(*)` })
+                        .from(instructions)
+                        .where(and(inArray(instructions.assignedPostId, userPostIds), eq(instructions.isActive, true)));
 
-                const todoCount = userTasks.filter(t => t.status === "TODO").length + hierarchyCount;
-                const doingCount = userTasks.filter(t => t.status === "DOING").length;
-                const doneCount = userTasks.filter(t => t.status === "DONE").length;
+                    hierarchyCount = Number(subgoalCount.count || 0) +
+                        Number(planCount.count || 0) +
+                        Number(programCount.count || 0) +
+                        Number(projectCount.count || 0) +
+                        Number(instructionCount.count || 0);
+                }
+
+                const todoCount = userTasks.filter((t: any) => t.status === "TODO").length + hierarchyCount;
+                const doingCount = userTasks.filter((t: any) => t.status === "DOING").length;
+                const doneCount = userTasks.filter((t: any) => t.status === "DONE").length;
 
                 const overdueCount = userTasks.filter(t =>
                     (t.status === "TODO" || t.status === "DOING") &&
@@ -1813,7 +1826,17 @@ export function registerRoutes(app: Express) {
             const { userId } = req.params;
             const { status } = req.query;
 
-            const conditions = [eq(tasks.responsiblePostId, userId)];
+            // First find user's posts
+            const userPosts = await db.query.posts.findMany({
+                where: and(eq(posts.userId, userId), eq(posts.isActive, true)),
+            });
+            const userPostIds = userPosts.map((p: any) => p.id);
+
+            if (userPostIds.length === 0) {
+                return res.json([]);
+            }
+
+            const conditions: any[] = [inArray(tasks.responsiblePostId, userPostIds)];
             if (status) {
                 conditions.push(eq(tasks.status, status as any));
             }

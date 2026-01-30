@@ -312,6 +312,31 @@ export function PoliciesPage() {
                                             <div className="text-xs text-muted-foreground mt-1">
                                                 Létrehozta: {policy.createdBy?.name} • {new Date(policy.createdAt).toLocaleDateString()}
                                             </div>
+                                            {/* Always show department/post badges */}
+                                            {policy.scope === "DEPARTMENT" && policy.policyDepartments && policy.policyDepartments.length > 0 && (
+                                                <div className="flex flex-wrap gap-1 mt-2">
+                                                    {policy.policyDepartments.map(pd => (
+                                                        <span
+                                                            key={pd.id}
+                                                            className="px-2 py-0.5 bg-blue-500/10 text-blue-500 text-xs rounded-full"
+                                                        >
+                                                            {pd.department.name}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            {policy.scope === "POST" && policy.policyPosts?.length > 0 && (
+                                                <div className="flex flex-wrap gap-1 mt-2">
+                                                    {policy.policyPosts.map(pp => (
+                                                        <span
+                                                            key={pp.id}
+                                                            className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full"
+                                                        >
+                                                            {pp.post.name} ({pp.post.department?.name})
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
