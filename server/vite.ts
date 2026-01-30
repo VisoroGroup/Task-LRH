@@ -65,11 +65,32 @@ export async function setupVite(app: Express, server: any) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(__dirname, "public");
+  // In production ESM bundle, __dirname might not point where we expect
+  // Use process.cwd() which is the project root on Replit
+  const distPath = path.resolve(process.cwd(), "dist", "public");
+
+  console.log("[serveStatic] Attempting to serve from:", distPath);
+  console.log("[serveStatic] Directory exists:", fs.existsSync(distPath));
 
   if (!fs.existsSync(distPath)) {
+    // Fallback: try relative to __dirname
+    const fallbackPath = path.resolve(__dirname, "public");
+    console.log("[serveStatic] Trying fallback path:", fallbackPath);
+    console.log("[serveStatic] Fallback exists:", fs.existsSync(fallbackPath));
+
+    if (fs.existsSync(fallbackPath)) {
+      app.use(express.static(fallbackPath));
+      app.get("*", (req, res, next) => {
+        if (req.path.startsWith("/api")) {
+          return next();
+        }
+        res.sendFile(path.resolve(fallbackPath, "index.html"));
+      });
+      return;
+    }
+
     throw new Error(
-      `Could not find the production build directory at ${distPath}. Make sure to run "npm run build" first.`,
+      `Could not find the production build directory at ${distPath} or ${fallbackPath}. Make sure to run "npm run build" first.`,
     );
   }
 
