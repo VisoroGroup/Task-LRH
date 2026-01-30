@@ -75,7 +75,12 @@ export function serveStatic(app: Express) {
 
   app.use(express.static(distPath));
 
-  app.get("*", (_req, res) => {
+  // Catch-all for SPA routing - but EXCLUDE /api routes!
+  app.get("*", (req, res, next) => {
+    // If it's an API route, skip - let other handlers deal with it
+    if (req.path.startsWith("/api")) {
+      return next();
+    }
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
