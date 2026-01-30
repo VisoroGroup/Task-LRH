@@ -452,7 +452,17 @@ export function registerRoutes(app: Express) {
                 ? and(eq(mainGoals.departmentId, departmentId), eq(mainGoals.isActive, true))
                 : eq(mainGoals.isActive, true);
 
-            // Simplified query without deep nested user relations to avoid PostgreSQL subquery issues
+            // Fetch users and posts upfront for mapping
+            const [allUsers, allPosts] = await Promise.all([
+                db.query.users.findMany(),
+                db.query.posts.findMany({ where: eq(posts.isActive, true) }),
+            ]);
+
+            // Create lookup maps
+            const userMap = new Map(allUsers.map((u: any) => [u.id, { id: u.id, name: u.name }]));
+            const postUserMap = new Map(allPosts.map((p: any) => [p.id, p.userId ? userMap.get(p.userId) : null]));
+
+            // Simplified query without nested user relations
             const goals = await db.query.mainGoals.findMany({
                 where: whereCondition,
                 with: {
@@ -460,34 +470,17 @@ export function registerRoutes(app: Express) {
                     subgoals: {
                         where: eq(subgoals.isActive, true),
                         with: {
-                            assignedPost: {
-                                with: { user: true }
-                            },
                             plans: {
                                 where: eq(plans.isActive, true),
                                 with: {
-                                    assignedPost: {
-                                        with: { user: true }
-                                    },
                                     programs: {
                                         where: eq(programs.isActive, true),
                                         with: {
-                                            assignedPost: {
-                                                with: { user: true }
-                                            },
                                             projects: {
                                                 where: eq(projects.isActive, true),
                                                 with: {
-                                                    assignedPost: {
-                                                        with: { user: true }
-                                                    },
                                                     instructions: {
                                                         where: eq(instructions.isActive, true),
-                                                        with: {
-                                                            assignedPost: {
-                                                                with: { user: true }
-                                                            },
-                                                        },
                                                     },
                                                 },
                                             },
@@ -501,34 +494,24 @@ export function registerRoutes(app: Express) {
                 orderBy: [mainGoals.createdAt],
             });
 
-            // Transform response to add assignedUser from assignedPost.user
+            // Transform response to add assignedUser from postUserMap
             const transformedGoals = goals.map((goal: any) => ({
                 ...goal,
                 subgoals: goal.subgoals?.map((subgoal: any) => ({
                     ...subgoal,
-                    assignedUser: subgoal.assignedPost?.user
-                        ? { id: subgoal.assignedPost.user.id, name: subgoal.assignedPost.user.name }
-                        : null,
+                    assignedUser: subgoal.assignedPostId ? postUserMap.get(subgoal.assignedPostId) : null,
                     plans: subgoal.plans?.map((plan: any) => ({
                         ...plan,
-                        assignedUser: plan.assignedPost?.user
-                            ? { id: plan.assignedPost.user.id, name: plan.assignedPost.user.name }
-                            : null,
+                        assignedUser: plan.assignedPostId ? postUserMap.get(plan.assignedPostId) : null,
                         programs: plan.programs?.map((program: any) => ({
                             ...program,
-                            assignedUser: program.assignedPost?.user
-                                ? { id: program.assignedPost.user.id, name: program.assignedPost.user.name }
-                                : null,
+                            assignedUser: program.assignedPostId ? postUserMap.get(program.assignedPostId) : null,
                             projects: program.projects?.map((project: any) => ({
                                 ...project,
-                                assignedUser: project.assignedPost?.user
-                                    ? { id: project.assignedPost.user.id, name: project.assignedPost.user.name }
-                                    : null,
+                                assignedUser: project.assignedPostId ? postUserMap.get(project.assignedPostId) : null,
                                 instructions: project.instructions?.map((instruction: any) => ({
                                     ...instruction,
-                                    assignedUser: instruction.assignedPost?.user
-                                        ? { id: instruction.assignedPost.user.id, name: instruction.assignedPost.user.name }
-                                        : null,
+                                    assignedUser: instruction.assignedPostId ? postUserMap.get(instruction.assignedPostId) : null,
                                 })),
                             })),
                         })),
@@ -1723,7 +1706,7 @@ export function registerRoutes(app: Express) {
         }
     });
 
-    // Executive grid (users × status breakdown)
+    // Executive grid (users × status breakdown) - OPTIMIZED with batch queries
     app.get("/api/dashboard/grid", async (req: Request, res: Response) => {
         try {
             const stalledDays = await getStalledThreshold();
@@ -1731,67 +1714,59 @@ export function registerRoutes(app: Express) {
             stalledDate.setDate(stalledDate.getDate() - stalledDays);
             const now = new Date();
 
-            const userList = await db.query.users.findMany({
-                where: eq(users.isActive, true),
+            // Batch fetch all data upfront
+            const [userList, allPosts, allTasks, allSubgoals, allPlans, allPrograms, allProjects, allInstructions] = await Promise.all([
+                db.query.users.findMany({ where: eq(users.isActive, true) }),
+                db.query.posts.findMany({ where: eq(posts.isActive, true) }),
+                db.query.tasks.findMany(),
+                db.select({ id: subgoals.id, assignedPostId: subgoals.assignedPostId }).from(subgoals).where(eq(subgoals.isActive, true)),
+                db.select({ id: plans.id, assignedPostId: plans.assignedPostId }).from(plans).where(eq(plans.isActive, true)),
+                db.select({ id: programs.id, assignedPostId: programs.assignedPostId }).from(programs).where(eq(programs.isActive, true)),
+                db.select({ id: projects.id, assignedPostId: projects.assignedPostId }).from(projects).where(eq(projects.isActive, true)),
+                db.select({ id: instructions.id, assignedPostId: instructions.assignedPostId }).from(instructions).where(eq(instructions.isActive, true)),
+            ]);
+
+            // Create lookup maps
+            const postsByUserId = new Map<string, string[]>();
+            allPosts.forEach((p: any) => {
+                if (p.userId) {
+                    const existing = postsByUserId.get(p.userId) || [];
+                    existing.push(p.id);
+                    postsByUserId.set(p.userId, existing);
+                }
             });
 
-            const grid = await Promise.all(userList.map(async (user: any) => {
-                // First, find all posts assigned to this user
-                const userPosts = await db.query.posts.findMany({
-                    where: and(eq(posts.userId, user.id), eq(posts.isActive, true)),
-                });
-                const userPostIds = userPosts.map((p: any) => p.id);
+            // Build grid from aggregated data
+            const grid = userList.map((user: any) => {
+                const userPostIds = postsByUserId.get(user.id) || [];
+                const postIdSet = new Set(userPostIds);
 
-                // Get tasks assigned to any of user's posts
-                let userTasks: any[] = [];
-                if (userPostIds.length > 0) {
-                    userTasks = await db.query.tasks.findMany({
-                        where: inArray(tasks.responsiblePostId, userPostIds),
-                    });
-                }
+                // Filter tasks for this user's posts
+                const userTasks = allTasks.filter((t: any) => t.responsiblePostId && postIdSet.has(t.responsiblePostId));
 
-                // Count hierarchy items assigned to user's posts
-                let hierarchyCount = 0;
-                if (userPostIds.length > 0) {
-                    const [subgoalCount] = await db.select({ count: sql<number>`count(*)` })
-                        .from(subgoals)
-                        .where(and(inArray(subgoals.assignedPostId, userPostIds), eq(subgoals.isActive, true)));
-                    const [planCount] = await db.select({ count: sql<number>`count(*)` })
-                        .from(plans)
-                        .where(and(inArray(plans.assignedPostId, userPostIds), eq(plans.isActive, true)));
-                    const [programCount] = await db.select({ count: sql<number>`count(*)` })
-                        .from(programs)
-                        .where(and(inArray(programs.assignedPostId, userPostIds), eq(programs.isActive, true)));
-                    const [projectCount] = await db.select({ count: sql<number>`count(*)` })
-                        .from(projects)
-                        .where(and(inArray(projects.assignedPostId, userPostIds), eq(projects.isActive, true)));
-                    const [instructionCount] = await db.select({ count: sql<number>`count(*)` })
-                        .from(instructions)
-                        .where(and(inArray(instructions.assignedPostId, userPostIds), eq(instructions.isActive, true)));
-
-                    hierarchyCount = Number(subgoalCount.count || 0) +
-                        Number(planCount.count || 0) +
-                        Number(programCount.count || 0) +
-                        Number(projectCount.count || 0) +
-                        Number(instructionCount.count || 0);
-                }
+                // Count hierarchy items for this user's posts
+                const hierarchyCount =
+                    allSubgoals.filter((s: any) => s.assignedPostId && postIdSet.has(s.assignedPostId)).length +
+                    allPlans.filter((p: any) => p.assignedPostId && postIdSet.has(p.assignedPostId)).length +
+                    allPrograms.filter((p: any) => p.assignedPostId && postIdSet.has(p.assignedPostId)).length +
+                    allProjects.filter((p: any) => p.assignedPostId && postIdSet.has(p.assignedPostId)).length +
+                    allInstructions.filter((i: any) => i.assignedPostId && postIdSet.has(i.assignedPostId)).length;
 
                 const todoCount = userTasks.filter((t: any) => t.status === "TODO").length + hierarchyCount;
                 const doingCount = userTasks.filter((t: any) => t.status === "DOING").length;
                 const doneCount = userTasks.filter((t: any) => t.status === "DONE").length;
 
-                const overdueCount = userTasks.filter(t =>
+                const overdueCount = userTasks.filter((t: any) =>
                     (t.status === "TODO" || t.status === "DOING") &&
                     t.dueDate &&
                     new Date(t.dueDate) < now
                 ).length;
 
-                const stalledCount = userTasks.filter(t =>
+                const stalledCount = userTasks.filter((t: any) =>
                     t.status === "DOING" &&
                     new Date(t.lastUpdatedAt) < stalledDate
                 ).length;
 
-                // Determine flow status
                 let flowStatus: "normal" | "overload" | "stalled" = "normal";
                 if (stalledCount > 0 || overdueCount > 0) {
                     flowStatus = "stalled";
@@ -1811,7 +1786,7 @@ export function registerRoutes(app: Express) {
                     stalledCount,
                     flowStatus,
                 };
-            }));
+            });
 
             res.json(grid);
         } catch (error) {
