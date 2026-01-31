@@ -3,7 +3,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { AuthProvider, RequireAuth } from "@/components/AuthProvider";
 import { CEODashboard } from "@/pages/CEODashboard";
-import { MyTasks } from "@/pages/MyTasks";
 import { TeamTasks } from "@/pages/TeamTasks";
 import { TeamSettings } from "@/pages/TeamSettings";
 import { AcceptInvitation } from "@/pages/AcceptInvitation";
@@ -45,14 +44,11 @@ function AppRoutes() {
             </RequireAuth>
           </Route>
 
-          {/* All authenticated users */}
-          <Route path="/my-tasks" component={MyTasks} />
+          {/* All authenticated users - unified Sarcini page */}
+          <Route path="/my-tasks" component={TeamTasks} />
           <Route path="/recurring-tasks" component={RecurringTasks} />
-          <Route path="/team-tasks">
-            <RequireAuth roles={["CEO", "EXECUTIVE"]}>
-              <TeamTasks />
-            </RequireAuth>
-          </Route>
+          <Route path="/team-tasks" component={TeamTasks} />
+          <Route path="/sarcini" component={TeamTasks} />
           <Route path="/calendar" component={Calendar} />
 
           {/* CEO & EXECUTIVE routes */}

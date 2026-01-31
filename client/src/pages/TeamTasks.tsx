@@ -269,10 +269,13 @@ function TeamMemberColumn({
 
 export function TeamTasks() {
     const queryClient = useQueryClient();
-    const { user } = useAuth();
+    const { user, hasRole } = useAuth();
     const { toast } = useToast();
     const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
     const [completingItemId, setCompletingItemId] = useState<string | null>(null);
+
+    // Check if user is admin (CEO or EXECUTIVE can see all)
+    const isAdmin = hasRole("CEO", "EXECUTIVE");
 
     // Fetch hierarchy data
     const { data: hierarchy = [], isLoading } = useQuery<MainGoal[]>({
@@ -292,14 +295,28 @@ export function TeamTasks() {
         },
     });
 
-    // Fetch departments
-    const { data: departments = [] } = useQuery<Department[]>({
+    // Fetch departments with posts to know user's assigned posts
+    const { data: departments = [] } = useQuery<(Department & { posts?: { id: string; userId: string | null }[] })[]>({
         queryKey: ["departments"],
-        queryFn: async (): Promise<Department[]> => {
+        queryFn: async (): Promise<(Department & { posts?: { id: string; userId: string | null }[] })[]> => {
             const res = await apiRequest("/api/departments");
-            return res as Department[];
+            return res as any;
         },
     });
+
+    // Get current user's post IDs for filtering
+    const userPostIds = React.useMemo(() => {
+        if (!user || isAdmin) return null; // Null means show all
+        const postIds: string[] = [];
+        departments.forEach(dept => {
+            dept.posts?.forEach(post => {
+                if (post.userId === user.id) {
+                    postIds.push(post.id);
+                }
+            });
+        });
+        return postIds;
+    }, [user, departments, isAdmin]);
 
     // Complete hierarchy item mutation
     const completeHierarchyMutation = useMutation({
@@ -414,13 +431,24 @@ export function TeamTasks() {
         return result;
     }, [hierarchy, users, selectedDepartment]);
 
-    // Get users who have items assigned
+    // Get users who have items assigned (filtered by permissions)
     const usersWithItems = React.useMemo(() => {
+        // If regular user, only show their own column
+        if (userPostIds !== null && user) {
+            // Filter to only show current user if they have items
+            const currentUser = users.find(u => u.id === user.id);
+            const userItems = currentUser ? (itemsByUser.get(currentUser.id) || []) : [];
+            // Only include items that are assigned to user's posts
+            // Since hierarchy items use assignedPostId, we need to also check that
+            return userItems.length > 0 ? [currentUser!] : [];
+        }
+
+        // Admin sees all users with items
         return users.filter(u => {
             const items = itemsByUser.get(u.id) || [];
             return items.length > 0;
         });
-    }, [users, itemsByUser]);
+    }, [users, itemsByUser, userPostIds, user]);
 
     if (isLoading) {
         return (
@@ -436,23 +464,25 @@ export function TeamTasks() {
             <div className="flex items-center justify-between flex-shrink-0">
                 <div>
                     <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-pink-400">
-                        Sarcinile echipei
+                        Sarcini
                     </h1>
                     <p className="text-lg text-muted-foreground mt-1">
-                        Fiecare coleg cu sarcinile sale
+                        {isAdmin ? "Toate sarcinile echipei" : "Sarcinile tale"}
                     </p>
                 </div>
 
-                <select
-                    value={selectedDepartment || ""}
-                    onChange={(e) => setSelectedDepartment(e.target.value || null)}
-                    className="px-4 py-2 rounded-xl bg-background border text-sm font-medium"
-                >
-                    <option value="">Toate departamentele</option>
-                    {departments.map(dept => (
-                        <option key={dept.id} value={dept.id}>{dept.name}</option>
-                    ))}
-                </select>
+                <div className="flex items-center gap-3">
+                    <select
+                        value={selectedDepartment || ""}
+                        onChange={(e) => setSelectedDepartment(e.target.value || null)}
+                        className="px-4 py-2 rounded-xl bg-background border text-sm font-medium"
+                    >
+                        <option value="">Toate departamentele</option>
+                        {departments.map(dept => (
+                            <option key={dept.id} value={dept.id}>{dept.name}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
             {/* Team columns - horizontal scroll */}
