@@ -5,6 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, cn } from "@/lib/utils";
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
 import {
     Target,
     FileText,
@@ -16,6 +18,7 @@ import {
     Circle,
     Loader2,
     User,
+    Plus,
 } from "lucide-react";
 
 interface TeamMember {
@@ -507,6 +510,12 @@ export function TeamTasks() {
                 </div>
 
                 <div className="flex items-center gap-3">
+                    <Link href="/my-tasks">
+                        <Button className="flex items-center gap-2 bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-600 hover:to-pink-600">
+                            <Plus className="h-4 w-4" />
+                            Sarcină nouă
+                        </Button>
+                    </Link>
                     <select
                         value={selectedDepartment || ""}
                         onChange={(e) => setSelectedDepartment(e.target.value || null)}
@@ -546,6 +555,6 @@ export function TeamTasks() {
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

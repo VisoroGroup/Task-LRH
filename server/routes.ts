@@ -3159,4 +3159,65 @@ export function registerRoutes(app: Express) {
             res.status(500).json({ error: "Failed to delete checklist item" });
         }
     });
+
+    // Admin endpoint to clean all assignments for a specific user (by post)
+    app.post("/api/admin/clean-user-assignments/:userId", async (req: Request, res: Response) => {
+        try {
+            const { userId } = req.params;
+
+            // Get all posts for this user
+            const userPosts = await db.query.posts.findMany({
+                where: eq(posts.userId, userId),
+            });
+
+            const postIds = userPosts.map((p: any) => p.id);
+
+            if (postIds.length === 0) {
+                return res.json({ message: "No posts found for user, nothing to clean" });
+            }
+
+            // Clear assignments in all hierarchy levels
+            let cleanedCount = 0;
+
+            for (const postId of postIds) {
+                // Clear subgoals
+                const subgoalResult = await db.update(subgoals)
+                    .set({ assignedPostId: null })
+                    .where(eq(subgoals.assignedPostId, postId));
+
+                // Clear plans
+                const planResult = await db.update(plans)
+                    .set({ assignedPostId: null })
+                    .where(eq(plans.assignedPostId, postId));
+
+                // Clear programs
+                const programResult = await db.update(programs)
+                    .set({ assignedPostId: null })
+                    .where(eq(programs.assignedPostId, postId));
+
+                // Clear projects
+                const projectResult = await db.update(projects)
+                    .set({ assignedPostId: null })
+                    .where(eq(projects.assignedPostId, postId));
+
+                // Clear instructions
+                const instructionResult = await db.update(instructions)
+                    .set({ assignedPostId: null })
+                    .where(eq(instructions.assignedPostId, postId));
+
+                // Clear checklists
+                const checklistResult = await db.update(checklists)
+                    .set({ assignedPostId: null })
+                    .where(eq(checklists.assignedPostId, postId));
+            }
+
+            res.json({
+                success: true,
+                message: `Cleared all assignments for user's ${postIds.length} posts`
+            });
+        } catch (error) {
+            console.error("Error cleaning user assignments:", error);
+            res.status(500).json({ error: "Failed to clean user assignments" });
+        }
+    });
 }
