@@ -484,6 +484,12 @@ export function registerRoutes(app: Express) {
                                                     instructions: {
                                                         where: eq(instructions.isActive, true),
                                                     },
+                                                    checklists: {
+                                                        where: eq(checklists.isActive, true),
+                                                        with: {
+                                                            items: true,
+                                                        },
+                                                    },
                                                 },
                                             },
                                         },
@@ -514,6 +520,10 @@ export function registerRoutes(app: Express) {
                                 instructions: project.instructions?.map((instruction: any) => ({
                                     ...instruction,
                                     assignedUser: instruction.assignedPostId ? postUserMap.get(instruction.assignedPostId) : null,
+                                })),
+                                checklists: project.checklists?.map((checklist: any) => ({
+                                    ...checklist,
+                                    assignedUser: checklist.assignedPostId ? postUserMap.get(checklist.assignedPostId) : null,
                                 })),
                             })),
                         })),

@@ -11,6 +11,7 @@ import {
     Layers,
     FolderKanban,
     ListChecks,
+    CheckSquare,
     CheckCircle2,
     Circle,
     Loader2,
@@ -28,9 +29,10 @@ interface TeamMember {
 interface HierarchyItem {
     id: string;
     title: string;
-    type: "subgoal" | "plan" | "program" | "project" | "instruction";
+    type: "subgoal" | "plan" | "program" | "project" | "instruction" | "checklist";
     completedAt?: string | null;
     assignedUser?: { id: string; name: string } | null;
+    checklistProgress?: { completed: number; total: number } | null;
 }
 
 interface MainGoal {
@@ -71,6 +73,7 @@ interface Project {
     assignedUser?: { id: string; name: string } | null;
     completedAt?: string | null;
     instructions?: Instruction[];
+    checklists?: Checklist[];
 }
 
 interface Instruction {
@@ -78,6 +81,13 @@ interface Instruction {
     title: string;
     assignedUser?: { id: string; name: string } | null;
     completedAt?: string | null;
+}
+
+interface Checklist {
+    id: string;
+    title: string;
+    assignedUser?: { id: string; name: string } | null;
+    items?: { id: string; isCompleted: boolean }[];
 }
 
 interface Department {
@@ -121,6 +131,13 @@ const LEVEL_CONFIG = {
         bg: "bg-rose-500/20",
         border: "border-rose-500/50",
         label: "De făcut"
+    },
+    checklist: {
+        icon: CheckSquare,
+        color: "text-cyan-400",
+        bg: "bg-cyan-500/20",
+        border: "border-cyan-500/50",
+        label: "Checklist"
     },
 };
 
@@ -420,6 +437,24 @@ export function TeamTasks() {
                                         assignedUser: instruction.assignedUser,
                                     });
                                     result.set(instruction.assignedUser.id, items);
+                                }
+                            });
+
+                            // Add checklists
+                            project.checklists?.forEach((checklist) => {
+                                if (checklist.assignedUser) {
+                                    const items = result.get(checklist.assignedUser.id) || [];
+                                    const completed = checklist.items?.filter(i => i.isCompleted).length || 0;
+                                    const total = checklist.items?.length || 0;
+                                    items.push({
+                                        id: checklist.id,
+                                        title: checklist.title,
+                                        type: "checklist",
+                                        completedAt: total > 0 && completed === total ? new Date().toISOString() : null,
+                                        assignedUser: checklist.assignedUser,
+                                        checklistProgress: { completed, total },
+                                    });
+                                    result.set(checklist.assignedUser.id, items);
                                 }
                             });
                         });
