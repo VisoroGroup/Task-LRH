@@ -484,12 +484,7 @@ export function registerRoutes(app: Express) {
                                                     instructions: {
                                                         where: eq(instructions.isActive, true),
                                                     },
-                                                    checklists: {
-                                                        where: eq(checklists.isActive, true),
-                                                        with: {
-                                                            items: true,
-                                                        },
-                                                    },
+                                                    // checklists feature disabled - table doesn't exist in production yet
                                                 },
                                             },
                                         },
@@ -521,10 +516,7 @@ export function registerRoutes(app: Express) {
                                     ...instruction,
                                     assignedUser: instruction.assignedPostId ? postUserMap.get(instruction.assignedPostId) : null,
                                 })),
-                                checklists: project.checklists?.map((checklist: any) => ({
-                                    ...checklist,
-                                    assignedUser: checklist.assignedPostId ? postUserMap.get(checklist.assignedPostId) : null,
-                                })),
+                                // checklists feature disabled - table doesn't exist in production yet
                             })),
                         })),
                     })),
@@ -3205,10 +3197,10 @@ export function registerRoutes(app: Express) {
                     .set({ assignedPostId: null })
                     .where(eq(instructions.assignedPostId, postId));
 
-                // Clear checklists
-                const checklistResult = await db.update(checklists)
-                    .set({ assignedPostId: null })
-                    .where(eq(checklists.assignedPostId, postId));
+                // Clear checklists - DISABLED: table doesn't exist in production yet
+                // const checklistResult = await db.update(checklists)
+                //     .set({ assignedPostId: null })
+                //     .where(eq(checklists.assignedPostId, postId));
             }
 
             res.json({
