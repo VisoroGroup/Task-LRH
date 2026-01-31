@@ -3168,48 +3168,50 @@ export function registerRoutes(app: Express) {
                 return res.json({ message: "No posts found for user, nothing to clean" });
             }
 
-            // Clear assignments in all hierarchy levels
-            let cleanedCount = 0;
+            let deletedTasksCount = 0;
 
             for (const postId of postIds) {
-                // Clear subgoals
-                const subgoalResult = await db.update(subgoals)
+                // 1. Delete all TASKS assigned to this post
+                const deletedTasks = await db.delete(tasks)
+                    .where(eq(tasks.responsiblePostId, postId))
+                    .returning();
+                deletedTasksCount += deletedTasks.length;
+
+                // 2. Clear hierarchy assignments
+                await db.update(subgoals)
                     .set({ assignedPostId: null })
                     .where(eq(subgoals.assignedPostId, postId));
 
-                // Clear plans
-                const planResult = await db.update(plans)
+                await db.update(plans)
                     .set({ assignedPostId: null })
                     .where(eq(plans.assignedPostId, postId));
 
-                // Clear programs
-                const programResult = await db.update(programs)
+                await db.update(programs)
                     .set({ assignedPostId: null })
                     .where(eq(programs.assignedPostId, postId));
 
-                // Clear projects
-                const projectResult = await db.update(projects)
+                await db.update(projects)
                     .set({ assignedPostId: null })
                     .where(eq(projects.assignedPostId, postId));
 
-                // Clear instructions
-                const instructionResult = await db.update(instructions)
+                await db.update(instructions)
                     .set({ assignedPostId: null })
                     .where(eq(instructions.assignedPostId, postId));
 
-                // Clear checklists - DISABLED: table doesn't exist in production yet
-                // const checklistResult = await db.update(checklists)
-                //     .set({ assignedPostId: null })
-                //     .where(eq(checklists.assignedPostId, postId));
+                // 3. Deactivate the post itself (soft delete)
+                await db.update(posts)
+                    .set({ isActive: false, userId: null, updatedAt: new Date() })
+                    .where(eq(posts.id, postId));
             }
 
             res.json({
                 success: true,
-                message: `Cleared all assignments for user's ${postIds.length} posts`
+                message: `Cleaned user: deleted ${deletedTasksCount} tasks, cleared ${postIds.length} posts`
             });
         } catch (error) {
             console.error("Error cleaning user assignments:", error);
             res.status(500).json({ error: "Failed to clean user assignments" });
         }
     });
+
 }
