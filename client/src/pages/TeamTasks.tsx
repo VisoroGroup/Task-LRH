@@ -5,8 +5,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, cn } from "@/lib/utils";
-import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { HierarchyTreeSelector } from "@/components/tasks/HierarchyTreeSelector";
 import {
     Target,
     FileText,
@@ -19,6 +27,9 @@ import {
     Loader2,
     User,
     Plus,
+    Calendar,
+    Building2,
+    FolderTree,
 } from "lucide-react";
 
 interface TeamMember {
@@ -294,6 +305,21 @@ export function TeamTasks() {
     const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
     const [completingItemId, setCompletingItemId] = useState<string | null>(null);
 
+    // Task creation modal state
+    const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
+    const [newTaskTitle, setNewTaskTitle] = useState("");
+    const [newTaskDate, setNewTaskDate] = useState("");
+    const [newTaskTime, setNewTaskTime] = useState("");
+    const [newTaskDepartmentId, setNewTaskDepartmentId] = useState("");
+    const [newTaskResponsiblePostId, setNewTaskResponsiblePostId] = useState("");
+    const [hierarchyPath, setHierarchyPath] = useState({
+        subgoalId: "",
+        planId: "",
+        programId: "",
+        projectId: "",
+        instructionId: "",
+    });
+
     // Check if user is admin (CEO or EXECUTIVE can see all)
     const isAdmin = hasRole("CEO", "EXECUTIVE");
 
@@ -316,9 +342,9 @@ export function TeamTasks() {
     });
 
     // Fetch departments with posts to know user's assigned posts
-    const { data: departments = [] } = useQuery<(Department & { posts?: { id: string; userId: string | null }[] })[]>({
+    const { data: departments = [] } = useQuery<(Department & { posts?: { id: string; name: string; userId: string | null; user: { id: string; name: string } | null }[] })[]>({
         queryKey: ["departments"],
-        queryFn: async (): Promise<(Department & { posts?: { id: string; userId: string | null }[] })[]> => {
+        queryFn: async (): Promise<(Department & { posts?: { id: string; name: string; userId: string | null; user: { id: string; name: string } | null }[] })[]> => {
             const res = await apiRequest("/api/departments");
             return res as any;
         },
@@ -510,12 +536,13 @@ export function TeamTasks() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <Link href="/my-tasks">
-                        <Button className="flex items-center gap-2 bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-600 hover:to-pink-600">
-                            <Plus className="h-4 w-4" />
-                            Sarcină nouă
-                        </Button>
-                    </Link>
+                    <Button
+                        onClick={() => setIsNewTaskOpen(true)}
+                        className="flex items-center gap-2 bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-600 hover:to-pink-600"
+                    >
+                        <Plus className="h-4 w-4" />
+                        Sarcină nouă
+                    </Button>
                     <select
                         value={selectedDepartment || ""}
                         onChange={(e) => setSelectedDepartment(e.target.value || null)}
@@ -555,6 +582,201 @@ export function TeamTasks() {
                     )}
                 </div>
             </div>
+
+            {/* New Task Dialog */}
+            <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
+                <DialogContent className="max-w-4xl w-[80vw] max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Creează sarcină nouă</DialogTitle>
+                        <DialogDescription>
+                            Adaugă o sarcină nouă cu toate informațiile necesare
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+                        {/* Left column - Basic Info */}
+                        <div className="space-y-4">
+                            {/* Task Title */}
+                            <div>
+                                <label className="text-sm font-medium">Titlul sarcinii *</label>
+                                <input
+                                    type="text"
+                                    value={newTaskTitle}
+                                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                                    className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                    placeholder="Ce trebuie făcut?"
+                                />
+                            </div>
+
+                            {/* Department Selection */}
+                            <div>
+                                <label className="text-sm font-medium flex items-center gap-2">
+                                    <Building2 className="h-4 w-4" />
+                                    Departament *
+                                </label>
+                                <select
+                                    value={newTaskDepartmentId}
+                                    onChange={(e) => {
+                                        setNewTaskDepartmentId(e.target.value);
+                                        setNewTaskResponsiblePostId("");
+                                        setHierarchyPath({ subgoalId: "", planId: "", programId: "", projectId: "", instructionId: "" });
+                                    }}
+                                    className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                >
+                                    <option value="">Selectează departament...</option>
+                                    {departments?.map(dept => (
+                                        <option key={dept.id} value={dept.id}>{dept.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Responsible Post */}
+                            <div>
+                                <label className="text-sm font-medium flex items-center gap-2">
+                                    <User className="h-4 w-4" />
+                                    Postul responsabil *
+                                </label>
+                                <select
+                                    value={newTaskResponsiblePostId}
+                                    onChange={(e) => setNewTaskResponsiblePostId(e.target.value)}
+                                    className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                    disabled={!newTaskDepartmentId}
+                                >
+                                    <option value="">{newTaskDepartmentId ? "Selectează postul..." : "Întâi selectează departament"}</option>
+                                    {departments?.find(d => d.id === newTaskDepartmentId)?.posts?.map(post => (
+                                        <option key={post.id} value={post.id}>
+                                            📌 {post.name} {post.user ? `(${post.user.name})` : "(Vacant)"}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Due Date */}
+                            <div>
+                                <label className="text-sm font-medium flex items-center gap-2">
+                                    <Calendar className="h-4 w-4" />
+                                    Data limită *
+                                </label>
+                                <input
+                                    type="date"
+                                    value={newTaskDate}
+                                    onChange={(e) => setNewTaskDate(e.target.value)}
+                                    className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                    required
+                                />
+                            </div>
+
+                            {/* Time (optional) */}
+                            <div>
+                                <label className="text-sm font-medium">Ora (opțional)</label>
+                                <input
+                                    type="time"
+                                    value={newTaskTime}
+                                    onChange={(e) => setNewTaskTime(e.target.value)}
+                                    className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Right column - Hierarchy Tree */}
+                        <div className="border-l pl-6">
+                            <div className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                                <FolderTree className="h-4 w-4" />
+                                Ierarhie *
+                            </div>
+                            <HierarchyTreeSelector
+                                departmentId={newTaskDepartmentId}
+                                idealScene={hierarchy || []}
+                                selectedPath={hierarchyPath}
+                                onSelectionChange={setHierarchyPath}
+                                onCreateSubgoal={() => { }}
+                                onCreatePlan={() => { }}
+                                onCreateProgram={() => { }}
+                                onCreateProject={() => { }}
+                                onCreateInstruction={() => { }}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsNewTaskOpen(false)}>
+                            Renunță
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                // Validate all required fields
+                                if (!newTaskTitle.trim()) {
+                                    toast({ title: "Titlul este obligatoriu", variant: "destructive" });
+                                    return;
+                                }
+                                if (!newTaskDate) {
+                                    toast({ title: "Data limită este obligatorie", variant: "destructive" });
+                                    return;
+                                }
+                                if (!newTaskDepartmentId) {
+                                    toast({ title: "Departamentul este obligatoriu", variant: "destructive" });
+                                    return;
+                                }
+                                if (!newTaskResponsiblePostId) {
+                                    toast({ title: "Persoana responsabilă este obligatorie", variant: "destructive" });
+                                    return;
+                                }
+
+                                // Get the lowest selected hierarchy level
+                                let hierarchyLevel = "";
+                                let parentItemId = "";
+                                if (hierarchyPath.projectId) { hierarchyLevel = "PROJECT"; parentItemId = hierarchyPath.projectId; }
+                                else if (hierarchyPath.programId) { hierarchyLevel = "PROGRAM"; parentItemId = hierarchyPath.programId; }
+                                else if (hierarchyPath.planId) { hierarchyLevel = "PLAN"; parentItemId = hierarchyPath.planId; }
+                                else if (hierarchyPath.subgoalId) { hierarchyLevel = "SUBGOAL"; parentItemId = hierarchyPath.subgoalId; }
+
+                                if (!parentItemId) {
+                                    toast({ title: "Selectează cel puțin un Obiectiv", variant: "destructive" });
+                                    return;
+                                }
+
+                                const dueDate = newTaskTime
+                                    ? `${newTaskDate}T${newTaskTime}:00`
+                                    : `${newTaskDate}T23:59:59`;
+
+                                // Create task
+                                apiRequest("/api/tasks", {
+                                    method: "POST",
+                                    body: JSON.stringify({
+                                        title: newTaskTitle,
+                                        dueDate,
+                                        departmentId: newTaskDepartmentId,
+                                        responsiblePostId: newTaskResponsiblePostId,
+                                        hierarchyLevel,
+                                        parentItemId,
+                                        creatorId: user?.id || "",
+                                    }),
+                                }).then(() => {
+                                    queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
+                                    toast({ title: "Sarcină creată!", variant: "success" as any });
+                                    setIsNewTaskOpen(false);
+                                    // Reset form
+                                    setNewTaskTitle("");
+                                    setNewTaskDate("");
+                                    setNewTaskTime("");
+                                    setNewTaskDepartmentId("");
+                                    setNewTaskResponsiblePostId("");
+                                    setHierarchyPath({ subgoalId: "", planId: "", programId: "", projectId: "", instructionId: "" });
+                                }).catch((error: Error) => {
+                                    toast({ title: "Nu s-a putut crea sarcina", description: error.message, variant: "destructive" });
+                                });
+                            }}
+                            disabled={
+                                !newTaskTitle.trim() ||
+                                !newTaskDate ||
+                                !newTaskDepartmentId ||
+                                !newTaskResponsiblePostId ||
+                                !hierarchyPath.subgoalId
+                            }
+                        >
+                            Creează sarcină
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div >
     );
 }
