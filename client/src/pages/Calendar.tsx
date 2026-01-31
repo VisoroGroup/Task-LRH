@@ -2,16 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiRequest, cn, formatDate } from "@/lib/utils";
 import { useAuth } from "@/components/AuthProvider";
-import { Calendar as CalendarIcon, Clock, Target, FileText, Layers, FolderKanban, ListChecks } from "lucide-react";
-
-interface Task {
-    id: string;
-    title: string;
-    status: string;
-    hierarchyLevel: string;
-    dueDate: string | null;
-    department: { name: string };
-}
+import { Calendar as CalendarIcon, Target, FileText, Layers, FolderKanban, ListChecks } from "lucide-react";
 
 interface HierarchyItem {
     id: string;
@@ -45,22 +36,12 @@ interface CalendarItem {
 export function Calendar() {
     const { user } = useAuth();
 
-    // Only fetch tasks assigned to current user's posts
-    const { data: tasks, isLoading: tasksLoading } = useQuery({
-        queryKey: ["calendar-tasks", user?.id],
-        queryFn: () => {
-            if (!user?.id) return [];
-            return apiRequest<Task[]>(`/api/tasks/my/${user.id}`);
-        },
-        enabled: !!user?.id,
-    });
-
-    const { data: idealScene, isLoading: hierarchyLoading } = useQuery({
+    // Using only ideal-scene data for calendar (tasks table is deprecated)
+    const { data: idealScene, isLoading } = useQuery({
         queryKey: ["ideal-scene"],
         queryFn: () => apiRequest<IdealScene[]>("/api/ideal-scene"),
+        enabled: !!user?.id,
     });
-
-    const isLoading = tasksLoading || hierarchyLoading;
 
     // Collect all hierarchy items with due dates
     const hierarchyItems: CalendarItem[] = [];
@@ -118,20 +99,8 @@ export function Calendar() {
         });
     });
 
-    // Convert tasks to CalendarItems
-    const taskItems: CalendarItem[] = (tasks || [])
-        .filter(t => t.dueDate && t.status !== "DONE")
-        .map(t => ({
-            id: t.id,
-            title: t.title,
-            dueDate: t.dueDate!,
-            type: "task" as const,
-            status: t.status,
-            department: t.department?.name,
-        }));
-
-    // Merge all items
-    const allItems = [...taskItems, ...hierarchyItems];
+    // No longer using deprecated tasks table
+    const allItems = [...hierarchyItems];
 
     // Group by date
     const groupedByDate: Record<string, CalendarItem[]> = {};
