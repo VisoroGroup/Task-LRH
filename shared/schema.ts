@@ -392,6 +392,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
         references: [posts.id],
     }),
     instructions: many(instructions),
+    checklists: many(checklists),
     tasks: many(tasks, { relationName: "projectTasks" }),
 }));
 
@@ -438,6 +439,76 @@ export const instructionsRelations = relations(instructions, ({ one, many }) => 
         references: [posts.id],
     }),
     tasks: many(tasks, { relationName: "instructionTasks" }),
+}));
+
+// ============================================================================
+// Level 5 Alternative: Checklists (multiple checkable items under a project)
+// ============================================================================
+
+export const checklists = pgTable(
+    "checklists",
+    {
+        id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+        title: varchar("title").notNull(),
+        description: text("description"),
+        projectId: varchar("project_id").references(() => projects.id, { onDelete: "cascade" }).notNull(),
+        departmentId: varchar("department_id").references(() => departments.id).notNull(),
+        assignedPostId: varchar("assigned_post_id").references(() => posts.id),
+        dueDate: timestamp("due_date", { withTimezone: true }).notNull(),
+        isActive: boolean("is_active").default(true).notNull(),
+        createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    },
+    (table) => [
+        index("idx_checklists_project").on(table.projectId),
+        index("idx_checklists_department").on(table.departmentId),
+    ]
+);
+
+export const checklistsRelations = relations(checklists, ({ one, many }) => ({
+    project: one(projects, {
+        fields: [checklists.projectId],
+        references: [projects.id],
+    }),
+    department: one(departments, {
+        fields: [checklists.departmentId],
+        references: [departments.id],
+    }),
+    assignedPost: one(posts, {
+        fields: [checklists.assignedPostId],
+        references: [posts.id],
+    }),
+    items: many(checklistItems),
+}));
+
+export const checklistItems = pgTable(
+    "checklist_items",
+    {
+        id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+        checklistId: varchar("checklist_id").references(() => checklists.id, { onDelete: "cascade" }).notNull(),
+        title: varchar("title").notNull(),
+        sortOrder: integer("sort_order").default(0).notNull(),
+        isCompleted: boolean("is_completed").default(false).notNull(),
+        completedAt: timestamp("completed_at", { withTimezone: true }),
+        completedByUserId: varchar("completed_by_user_id").references(() => users.id),
+        createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    },
+    (table) => [
+        index("idx_checklist_items_checklist").on(table.checklistId),
+        index("idx_checklist_items_sort_order").on(table.checklistId, table.sortOrder),
+    ]
+);
+
+export const checklistItemsRelations = relations(checklistItems, ({ one }) => ({
+    checklist: one(checklists, {
+        fields: [checklistItems.checklistId],
+        references: [checklists.id],
+    }),
+    completedByUser: one(users, {
+        fields: [checklistItems.completedByUserId],
+        references: [users.id],
+    }),
 }));
 
 // ============================================================================

@@ -25,6 +25,8 @@ import {
     policyDepartments,
     recurringTasks,
     recurringTaskCompletions,
+    checklists,
+    checklistItems,
     insertDepartmentSchema,
     insertTaskSchema,
     insertCompletionReportSchema,
@@ -2922,6 +2924,229 @@ export function registerRoutes(app: Express) {
         } catch (error) {
             console.error("Error completing hierarchy item:", error);
             res.status(500).json({ error: "Failed to complete hierarchy item" });
+        }
+    });
+
+    // ============================================================================
+    // CHECKLISTS API
+    // ============================================================================
+
+    // Get all checklists (optionally filtered by project)
+    app.get("/api/checklists", async (req: Request, res: Response) => {
+        try {
+            const projectId = req.query.projectId as string | undefined;
+
+            const whereCondition = projectId
+                ? and(eq(checklists.projectId, projectId), eq(checklists.isActive, true))
+                : eq(checklists.isActive, true);
+
+            const checklistList = await db.query.checklists.findMany({
+                where: whereCondition,
+                with: {
+                    items: {
+                        orderBy: [checklistItems.sortOrder],
+                    },
+                    project: true,
+                    department: true,
+                    assignedPost: { with: { user: true } },
+                },
+                orderBy: [desc(checklists.createdAt)],
+            });
+
+            res.json(checklistList);
+        } catch (error) {
+            console.error("Error fetching checklists:", error);
+            res.status(500).json({ error: "Failed to fetch checklists" });
+        }
+    });
+
+    // Get single checklist with items
+    app.get("/api/checklists/:id", async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+
+            const checklist = await db.query.checklists.findFirst({
+                where: eq(checklists.id, id),
+                with: {
+                    items: {
+                        orderBy: [checklistItems.sortOrder],
+                    },
+                    project: true,
+                    department: true,
+                    assignedPost: { with: { user: true } },
+                },
+            });
+
+            if (!checklist) {
+                return res.status(404).json({ error: "Checklist not found" });
+            }
+
+            res.json(checklist);
+        } catch (error) {
+            console.error("Error fetching checklist:", error);
+            res.status(500).json({ error: "Failed to fetch checklist" });
+        }
+    });
+
+    // Create checklist with items
+    app.post("/api/checklists", async (req: Request, res: Response) => {
+        try {
+            const { title, description, projectId, departmentId, assignedPostId, dueDate, items } = req.body;
+
+            if (!title || !projectId || !departmentId || !dueDate) {
+                return res.status(400).json({ error: "title, projectId, departmentId, and dueDate are required" });
+            }
+
+            // Create the checklist
+            const [checklist] = await db.insert(checklists).values({
+                title,
+                description,
+                projectId,
+                departmentId,
+                assignedPostId,
+                dueDate: new Date(dueDate),
+            }).returning();
+
+            // Create items if provided
+            if (items && Array.isArray(items) && items.length > 0) {
+                await db.insert(checklistItems).values(
+                    items.map((item: { title: string }, index: number) => ({
+                        checklistId: checklist.id,
+                        title: item.title,
+                        sortOrder: index,
+                    }))
+                );
+            }
+
+            // Fetch complete checklist with items
+            const fullChecklist = await db.query.checklists.findFirst({
+                where: eq(checklists.id, checklist.id),
+                with: {
+                    items: { orderBy: [checklistItems.sortOrder] },
+                },
+            });
+
+            res.status(201).json(fullChecklist);
+        } catch (error) {
+            console.error("Error creating checklist:", error);
+            res.status(500).json({ error: "Failed to create checklist" });
+        }
+    });
+
+    // Update checklist
+    app.put("/api/checklists/:id", async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+            const { title, description, assignedPostId, dueDate } = req.body;
+
+            const [updated] = await db.update(checklists)
+                .set({
+                    title,
+                    description,
+                    assignedPostId,
+                    dueDate: dueDate ? new Date(dueDate) : undefined,
+                    updatedAt: new Date(),
+                })
+                .where(eq(checklists.id, id))
+                .returning();
+
+            res.json(updated);
+        } catch (error) {
+            console.error("Error updating checklist:", error);
+            res.status(500).json({ error: "Failed to update checklist" });
+        }
+    });
+
+    // Delete checklist (soft delete)
+    app.delete("/api/checklists/:id", async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+
+            await db.update(checklists)
+                .set({ isActive: false, updatedAt: new Date() })
+                .where(eq(checklists.id, id));
+
+            res.json({ success: true });
+        } catch (error) {
+            console.error("Error deleting checklist:", error);
+            res.status(500).json({ error: "Failed to delete checklist" });
+        }
+    });
+
+    // Add item to checklist
+    app.post("/api/checklists/:id/items", async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+            const { title } = req.body;
+
+            if (!title) {
+                return res.status(400).json({ error: "title is required" });
+            }
+
+            // Get max sortOrder
+            const existingItems = await db.select({ sortOrder: checklistItems.sortOrder })
+                .from(checklistItems)
+                .where(eq(checklistItems.checklistId, id))
+                .orderBy(desc(checklistItems.sortOrder))
+                .limit(1);
+
+            const maxOrder = existingItems[0]?.sortOrder ?? -1;
+
+            const [item] = await db.insert(checklistItems).values({
+                checklistId: id,
+                title,
+                sortOrder: maxOrder + 1,
+            }).returning();
+
+            res.status(201).json(item);
+        } catch (error) {
+            console.error("Error adding checklist item:", error);
+            res.status(500).json({ error: "Failed to add checklist item" });
+        }
+    });
+
+    // Toggle checklist item completion
+    app.put("/api/checklist-items/:id/toggle", async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+            const { userId } = req.body;
+
+            const item = await db.query.checklistItems.findFirst({
+                where: eq(checklistItems.id, id),
+            });
+
+            if (!item) {
+                return res.status(404).json({ error: "Checklist item not found" });
+            }
+
+            const [updated] = await db.update(checklistItems)
+                .set({
+                    isCompleted: !item.isCompleted,
+                    completedAt: !item.isCompleted ? new Date() : null,
+                    completedByUserId: !item.isCompleted ? userId : null,
+                    updatedAt: new Date(),
+                })
+                .where(eq(checklistItems.id, id))
+                .returning();
+
+            res.json(updated);
+        } catch (error) {
+            console.error("Error toggling checklist item:", error);
+            res.status(500).json({ error: "Failed to toggle checklist item" });
+        }
+    });
+
+    // Delete checklist item
+    app.delete("/api/checklist-items/:id", async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+
+            await db.delete(checklistItems).where(eq(checklistItems.id, id));
+
+            res.json({ success: true });
+        } catch (error) {
+            console.error("Error deleting checklist item:", error);
+            res.status(500).json({ error: "Failed to delete checklist item" });
         }
     });
 }
