@@ -28,12 +28,13 @@ export function IdealScene() {
     const [isEditing, setIsEditing] = useState(false);
     const [content, setContent] = useState("");
 
-    const { data: idealScene, isLoading } = useQuery({
-        queryKey: ["ideal-scene"],
-        queryFn: () => apiRequest<MainGoal[]>("/api/ideal-scene"),
+    // Use /api/main-goals - same as Settings page
+    const { data: mainGoals, isLoading } = useQuery({
+        queryKey: ["main-goals"],
+        queryFn: () => apiRequest<MainGoal[]>("/api/main-goals"),
     });
 
-    const mainGoal = idealScene?.[0];
+    const mainGoal = mainGoals?.[0];
 
     // Initialize content when data loads
     useEffect(() => {
