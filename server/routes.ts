@@ -3214,4 +3214,59 @@ export function registerRoutes(app: Express) {
         }
     });
 
+    // Admin endpoint to delete orphan hierarchy items (no assignedPostId)
+    app.post("/api/admin/delete-orphan-hierarchy", async (req: Request, res: Response) => {
+        try {
+            const deleted: Record<string, number> = {
+                subgoals: 0,
+                plans: 0,
+                programs: 0,
+                projects: 0,
+                instructions: 0
+            };
+
+            // Delete orphan instructions (no assigned post)
+            const deletedInstructions = await db.delete(instructions)
+                .where(isNull(instructions.assignedPostId))
+                .returning();
+            deleted.instructions = deletedInstructions.length;
+
+            // Delete orphan projects
+            const deletedProjects = await db.delete(projects)
+                .where(isNull(projects.assignedPostId))
+                .returning();
+            deleted.projects = deletedProjects.length;
+
+            // Delete orphan programs
+            const deletedPrograms = await db.delete(programs)
+                .where(isNull(programs.assignedPostId))
+                .returning();
+            deleted.programs = deletedPrograms.length;
+
+            // Delete orphan plans
+            const deletedPlans = await db.delete(plans)
+                .where(isNull(plans.assignedPostId))
+                .returning();
+            deleted.plans = deletedPlans.length;
+
+            // Delete orphan subgoals
+            const deletedSubgoals = await db.delete(subgoals)
+                .where(isNull(subgoals.assignedPostId))
+                .returning();
+            deleted.subgoals = deletedSubgoals.length;
+
+            const total = deleted.subgoals + deleted.plans + deleted.programs + deleted.projects + deleted.instructions;
+
+            res.json({
+                success: true,
+                message: `Deleted ${total} orphan hierarchy items`,
+                deleted
+            });
+        } catch (error) {
+            console.error("Error deleting orphan hierarchy:", error);
+            res.status(500).json({ error: "Failed to delete orphan hierarchy items" });
+        }
+    });
+
 }
+
