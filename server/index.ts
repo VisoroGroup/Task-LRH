@@ -2,12 +2,14 @@ import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import helmet from "helmet";
 import { createServer } from "http";
+import cron from "node-cron";
 
 import { seedDatabase } from "./seed";
 import { registerRoutes } from "./routes";
 import { registerAuthRoutes } from "./auth";
 import { setupVite, serveStatic, log } from "./vite";
 import { startupDiagnostics, runHealthCheck } from "./healthcheck";
+import { sendDailyTasksToAllUsers } from "./jobs/dailyTasksNotification";
 
 const app = express();
 
@@ -95,6 +97,21 @@ async function start() {
         server.listen(PORT, "0.0.0.0", () => {
             log(`Server running on port ${PORT}`);
             log(`Environment: ${process.env.NODE_ENV || "development"}`);
+
+            // Schedule daily email notifications at 7:00 AM (Europe/Bucharest timezone)
+            // Cron format: minute hour day month weekday
+            cron.schedule("0 7 * * *", async () => {
+                log("Running scheduled daily task email job...");
+                try {
+                    const result = await sendDailyTasksToAllUsers();
+                    log(`Daily emails: ${result.sent} sent, ${result.failed} failed, ${result.skipped} skipped`);
+                } catch (error) {
+                    console.error("Daily email job failed:", error);
+                }
+            }, {
+                timezone: "Europe/Bucharest"
+            });
+            log("Daily email notification cron job scheduled for 7:00 AM");
         });
     } catch (error) {
         console.error("Failed to start server:", error);

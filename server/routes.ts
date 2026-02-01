@@ -34,6 +34,7 @@ import {
 } from "@shared/schema";
 import { sendRecurringTaskCompletedEmail, sendHierarchyCompletionEmail, HierarchyChainItem } from "./email";
 import { syncTaskToCalendar, syncAllTasksToCalendar, hasCalendarConnected } from "./calendar";
+import { sendDailyTasksToAllUsers } from "./jobs/dailyTasksNotification";
 
 // Helper to get stalled threshold from settings
 async function getStalledThreshold(): Promise<number> {
@@ -3344,6 +3345,39 @@ export function registerRoutes(app: Express) {
         } catch (error) {
             console.error("Error deleting orphan hierarchy:", error);
             res.status(500).json({ error: "Failed to delete orphan hierarchy items" });
+        }
+    });
+
+    // ==========================================
+    // ADMIN: Manual trigger for daily emails (CEO only)
+    // ==========================================
+    app.post("/api/admin/send-daily-emails", async (req: Request, res: Response) => {
+        try {
+            // Check if user is CEO
+            const userId = (req.session as any)?.userId;
+            if (!userId) {
+                return res.status(401).json({ error: "Not authenticated" });
+            }
+
+            const user = await db.query.users.findFirst({
+                where: eq(users.id, userId),
+            });
+
+            if (!user || user.role !== "CEO") {
+                return res.status(403).json({ error: "Only CEO can trigger manual email sends" });
+            }
+
+            console.log("Manual daily email trigger by CEO:", user.name);
+            const result = await sendDailyTasksToAllUsers();
+
+            res.json({
+                success: true,
+                message: `Email job completed`,
+                ...result
+            });
+        } catch (error) {
+            console.error("Error sending daily emails:", error);
+            res.status(500).json({ error: "Failed to send daily emails" });
         }
     });
 
