@@ -791,6 +791,10 @@ export const recurringTasks = pgTable(
         description: text("description"),
         departmentId: varchar("department_id").references(() => departments.id).notNull(),
         assignedUserId: varchar("assigned_user_id").references(() => users.id).notNull(),
+        // Link to Obiectiv (mandatory)
+        subgoalId: varchar("subgoal_id").references(() => subgoals.id).notNull(),
+        // Time of day when task should be done (e.g., "09:00", "14:30")
+        dueTime: varchar("due_time", { length: 5 }),
         recurrenceType: recurringTasksRecurrenceEnum("recurrence_type").notNull(),
         recurrenceDays: jsonb("recurrence_days").$type<number[]>(), // For WEEKLY: [1,5] means Monday and Friday (0=Sun, 1=Mon...)
         createdById: varchar("created_by_id").references(() => users.id).notNull(),
@@ -813,6 +817,10 @@ export const recurringTasksRelations = relations(recurringTasks, ({ one, many })
     assignedUser: one(users, {
         fields: [recurringTasks.assignedUserId],
         references: [users.id],
+    }),
+    subgoal: one(subgoals, {
+        fields: [recurringTasks.subgoalId],
+        references: [subgoals.id],
     }),
     createdBy: one(users, {
         fields: [recurringTasks.createdById],

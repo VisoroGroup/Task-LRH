@@ -2568,6 +2568,7 @@ export function registerRoutes(app: Express) {
                 with: {
                     department: true,
                     assignedUser: true,
+                    subgoal: true,
                     createdBy: true,
                     completions: true,
                 },
@@ -2633,10 +2634,10 @@ export function registerRoutes(app: Express) {
     app.post("/api/recurring-tasks", async (req: Request, res: Response) => {
         try {
             const userId = (req.session as any)?.userId;
-            const { title, description, departmentId, assignedUserId, recurrenceType, recurrenceDays } = req.body;
+            const { title, description, departmentId, assignedUserId, subgoalId, dueTime, recurrenceType, recurrenceDays } = req.body;
 
-            if (!title || !departmentId || !assignedUserId || !recurrenceType) {
-                return res.status(400).json({ error: "Title, department, assigned user, and recurrence type are required" });
+            if (!title || !departmentId || !assignedUserId || !subgoalId || !recurrenceType) {
+                return res.status(400).json({ error: "Title, department, assigned user, obiectiv, and recurrence type are required" });
             }
 
             const [newTask] = await db.insert(recurringTasks).values({
@@ -2644,6 +2645,8 @@ export function registerRoutes(app: Express) {
                 description,
                 departmentId,
                 assignedUserId,
+                subgoalId,
+                dueTime: dueTime || null,
                 recurrenceType,
                 recurrenceDays: recurrenceDays || null,
                 createdById: userId,
@@ -2655,6 +2658,7 @@ export function registerRoutes(app: Express) {
                 with: {
                     department: true,
                     assignedUser: true,
+                    subgoal: true,
                     createdBy: true,
                     completions: true,
                 },

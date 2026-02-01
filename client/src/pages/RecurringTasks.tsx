@@ -19,6 +19,7 @@ import {
     User,
     Calendar,
     Trash2,
+    Target,
 } from "lucide-react";
 
 interface Department {
@@ -33,18 +34,27 @@ interface User {
     avatarUrl?: string | null;
 }
 
+interface Subgoal {
+    id: string;
+    title: string;
+    mainGoal?: { title: string };
+}
+
 interface RecurringTask {
     id: string;
     title: string;
     description?: string | null;
     departmentId: string;
     assignedUserId: string;
+    subgoalId: string;
+    dueTime?: string | null;
     recurrenceType: "DAILY" | "WEEKLY" | "IRREGULAR";
     recurrenceDays?: number[] | null;
     isActive: boolean;
     createdAt: string;
     department: Department;
     assignedUser: User;
+    subgoal?: Subgoal;
     createdBy: User;
     isCompletedForPeriod: boolean;
     periodStart: string;
@@ -69,6 +79,8 @@ export function RecurringTasks() {
         description: "",
         departmentId: "",
         assignedUserId: "",
+        subgoalId: "",
+        dueTime: "",
         recurrenceType: "WEEKLY" as "DAILY" | "WEEKLY" | "IRREGULAR",
         recurrenceDays: [5] as number[], // Default Friday
     });
@@ -93,6 +105,12 @@ export function RecurringTasks() {
         queryFn: () => apiRequest("/api/users"),
     });
 
+    // Fetch subgoals (Obiectivek)
+    const { data: subgoals = [] } = useQuery<Subgoal[]>({
+        queryKey: ["subgoals"],
+        queryFn: () => apiRequest("/api/ideal-scene/subgoals"),
+    });
+
     // Create task mutation
     const createMutation = useMutation({
         mutationFn: async (data: typeof newTask) => {
@@ -109,6 +127,8 @@ export function RecurringTasks() {
                 description: "",
                 departmentId: "",
                 assignedUserId: "",
+                subgoalId: "",
+                dueTime: "",
                 recurrenceType: "WEEKLY",
                 recurrenceDays: [5],
             });
@@ -148,7 +168,7 @@ export function RecurringTasks() {
     });
 
     const handleCreate = () => {
-        if (!newTask.title || !newTask.departmentId || !newTask.assignedUserId) {
+        if (!newTask.title || !newTask.departmentId || !newTask.assignedUserId || !newTask.subgoalId) {
             toast({ title: "Completează toate câmpurile obligatorii", variant: "destructive" });
             return;
         }
@@ -207,7 +227,7 @@ export function RecurringTasks() {
                                     <label className="text-sm font-medium">Titlu *</label>
                                     <Input
                                         value={newTask.title}
-                                        onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTask({ ...newTask, title: e.target.value })}
                                         placeholder="ex: Trimite raportul săptămânal"
                                     />
                                 </div>
@@ -216,7 +236,7 @@ export function RecurringTasks() {
                                     <label className="text-sm font-medium">Descriere</label>
                                     <Textarea
                                         value={newTask.description}
-                                        onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewTask({ ...newTask, description: e.target.value })}
                                         placeholder="Detalii suplimentare..."
                                         rows={2}
                                     />
@@ -227,7 +247,7 @@ export function RecurringTasks() {
                                         <label className="text-sm font-medium">Departament *</label>
                                         <Select
                                             value={newTask.departmentId}
-                                            onValueChange={(v) => setNewTask({ ...newTask, departmentId: v })}
+                                            onValueChange={(v: string) => setNewTask({ ...newTask, departmentId: v })}
                                         >
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Selectează..." />
@@ -246,7 +266,7 @@ export function RecurringTasks() {
                                         <label className="text-sm font-medium">Responsabil *</label>
                                         <Select
                                             value={newTask.assignedUserId}
-                                            onValueChange={(v) => setNewTask({ ...newTask, assignedUserId: v })}
+                                            onValueChange={(v: string) => setNewTask({ ...newTask, assignedUserId: v })}
                                         >
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Selectează..." />
@@ -262,11 +282,48 @@ export function RecurringTasks() {
                                     </div>
                                 </div>
 
+                                {/* Obiectiv - Mandatory */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium flex items-center gap-2">
+                                        <Target className="h-4 w-4 text-primary" />
+                                        Obiectiv *
+                                    </label>
+                                    <Select
+                                        value={newTask.subgoalId}
+                                        onValueChange={(v: string) => setNewTask({ ...newTask, subgoalId: v })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Selectează obiectivul..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {subgoals.map((sg) => (
+                                                <SelectItem key={sg.id} value={sg.id}>
+                                                    {sg.title}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Time Picker */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium flex items-center gap-2">
+                                        <Clock className="h-4 w-4 text-primary" />
+                                        Ora (opțional)
+                                    </label>
+                                    <Input
+                                        type="time"
+                                        value={newTask.dueTime}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTask({ ...newTask, dueTime: e.target.value })}
+                                        className="w-full"
+                                    />
+                                </div>
+
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium">Frecvență</label>
                                     <Select
                                         value={newTask.recurrenceType}
-                                        onValueChange={(v: any) => setNewTask({ ...newTask, recurrenceType: v })}
+                                        onValueChange={(v: "DAILY" | "WEEKLY" | "IRREGULAR") => setNewTask({ ...newTask, recurrenceType: v })}
                                     >
                                         <SelectTrigger>
                                             <SelectValue />
