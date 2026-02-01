@@ -14,16 +14,19 @@ Ez egy LRH (L. Ron Hubbard) alapú task management rendszer, ami a következőke
 
 - **Recurring Tasks** - ismétlődő feladatok követése
 - **Team Management** - supervisor hierarchia, role-based access
-- **Email Notifications** - Microsoft Graph API-val, hierarchy completion értesítések
+- **Post-Based Access Control** - felhasználók csak saját posztjaik tartalmát látják
+- **Email Notifications**:
+  - Napi email (7:00 H-P) - aznapi feladatok
+  - Heti riport (Csütörtök 14:00) - statisztikák per user
 - **Completion Tracking** - completedAt/completedById minden hierarchy szinten
 
 ### Tech Stack
 - **Backend:** Express.js + TypeScript
-- **Database:** PostgreSQL + Drizzle ORM
+- **Database:** PostgreSQL + Drizzle ORM (NeonDB)
 - **Frontend:** React + Vite + TailwindCSS
 - **Auth:** Microsoft OAuth (Azure AD)
-- **Email:** Microsoft Graph API
-- **Hosting:** Replit
+- **Email:** Resend API
+- **Hosting:** Railway (production)
 
 ### Szervezeti Hierarchia (supervisor)
 ```
@@ -43,21 +46,34 @@ Róbert LEDÉNYI (CEO)
     └── Árpád Nagy
 ```
 
-### Utolsó Session Változtatásai (2026-01-28)
-1. ✅ Type safety javítások - `HierarchyTable` típus
-2. ✅ Cascade delete - hierarchy táblák FK-in
-3. ✅ Toast notifications - success/error a completion-höz
-4. ✅ Loading spinner - Loader2 ikon mutation közben
-5. ✅ Supervisor migration script létrehozva
+### Utolsó Session Változtatásai (2026-02-01)
+1. ✅ Post-based access control - backend filtering
+2. ✅ Frontend conditional rendering (edit buttons hidden for non-managers)
+3. ✅ Napi email értesítések (7:00 H-P) - Resend API
+4. ✅ Heti riport email (Csütörtök 14:00) - összesítő statisztikák
+5. ✅ Lazy Resend initialization (server starts without API key)
 
 ### GitHub Repo
 `https://github.com/VisoroGroup/Task-LRH`
 
-### Replit Deployment Parancsok
+### Railway Environment Variables
 ```bash
-# Frissítés GitHub-ról
-git reset --hard origin/main && npm run db:push
+RESEND_API_KEY=re_xxx...
+CEO_EMAIL=ledenyi.robert@visoro-global.ro
+APP_URL=https://task-lrh-production.up.railway.app
+```
 
-# Migration futtatása
-psql $DATABASE_URL -f server/migrations/update_supervisor_relationships.sql
+### Email Cron Jobs
+```typescript
+// Napi: Hétfő-Péntek 7:00 (Europe/Bucharest)
+cron.schedule("0 7 * * 1-5", sendDailyTasksToAllUsers);
+
+// Heti riport: Csütörtök 14:00 (Europe/Bucharest)
+cron.schedule("0 14 * * 4", sendWeeklyReportEmail);
+```
+
+### Teszt Parancsok
+```bash
+# Teszt email küldése lokálisan
+RESEND_API_KEY=re_xxx npx tsx server/test-email.ts
 ```
