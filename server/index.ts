@@ -10,6 +10,7 @@ import { registerAuthRoutes } from "./auth";
 import { setupVite, serveStatic, log } from "./vite";
 import { startupDiagnostics, runHealthCheck } from "./healthcheck";
 import { sendDailyTasksToAllUsers } from "./jobs/dailyTasksNotification";
+import { sendWeeklyReportEmail } from "./jobs/weeklyReportNotification";
 
 const app = express();
 
@@ -112,6 +113,21 @@ async function start() {
                 timezone: "Europe/Bucharest"
             });
             log("Daily email notification cron job scheduled for 7:00 AM (Mon-Fri)");
+
+            // Schedule weekly report email on Thursday at 14:00 (Europe/Bucharest timezone)
+            // Cron format: minute hour day month weekday (4 = Thursday)
+            cron.schedule("0 14 * * 4", async () => {
+                log("Running scheduled weekly report email job...");
+                try {
+                    const success = await sendWeeklyReportEmail();
+                    log(`Weekly report: ${success ? "sent successfully" : "failed to send"}`);
+                } catch (error) {
+                    console.error("Weekly report job failed:", error);
+                }
+            }, {
+                timezone: "Europe/Bucharest"
+            });
+            log("Weekly report cron job scheduled for Thursday 14:00");
         });
     } catch (error) {
         console.error("Failed to start server:", error);
