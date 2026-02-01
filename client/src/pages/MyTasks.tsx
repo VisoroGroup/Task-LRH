@@ -352,7 +352,7 @@ export function MyTasks() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
-            toast({ title: "Sarcină creată", variant: "success" as any });
+            toast({ title: "De făcut creat", variant: "success" as any });
             setIsNewTaskOpen(false);
             // Reset all fields
             setNewTaskTitle("");
@@ -365,7 +365,7 @@ export function MyTasks() {
         },
         onError: (error: Error) => {
             toast({
-                title: "Nu s-a putut crea sarcina",
+                title: "Nu s-a putut crea de făcut",
                 description: error.message,
                 variant: "destructive"
             });
@@ -560,7 +560,7 @@ export function MyTasks() {
             <CardContent className="space-y-3">
                 {tasks.length === 0 ? (
                     <div className="text-center py-4 text-sm text-muted-foreground">
-                        Nicio sarcină {title.toLowerCase()}
+                        Niciun de făcut {title.toLowerCase()}
                     </div>
                 ) : (
                     statusKey === "DONE"
@@ -569,7 +569,7 @@ export function MyTasks() {
                 )}
                 {statusKey === "DONE" && tasks.length > 5 && (
                     <div className="text-center text-sm text-muted-foreground">
-                        +{tasks.length - 5} sarcini finalizateîn plus
+                        +{tasks.length - 5} de făcut finalizate în plus
                     </div>
                 )}
             </CardContent>
@@ -577,7 +577,7 @@ export function MyTasks() {
     );
 
     if (isLoading) {
-        return <div className="text-center py-8 text-muted-foreground">Se încarcă sarcinile...</div>;
+        return <div className="text-center py-8 text-muted-foreground">Se încarcă de făcut...</div>;
     }
 
     return (
@@ -585,12 +585,12 @@ export function MyTasks() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold">Sarcini Visoro</h2>
-                    <p className="text-muted-foreground">Creează și gestionează sarcinile echipei</p>
+                    <h2 className="text-2xl font-bold">De făcut Visoro</h2>
+                    <p className="text-muted-foreground">Creează și gestionează de făcut echipei</p>
                 </div>
                 <Button onClick={() => setIsNewTaskOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Sarcină nouă
+                    De făcut nou
                 </Button>
             </div>
 
@@ -598,9 +598,9 @@ export function MyTasks() {
             <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
                 <DialogContent className="max-w-4xl w-[80vw] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>Creează sarcină nouă</DialogTitle>
+                        <DialogTitle>Creează de făcut nou</DialogTitle>
                         <DialogDescription>
-                            Adaugă o sarcină nouă cu toate informațiile necesare
+                            Adaugă de făcut nou cu toate informațiile necesare
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
@@ -608,7 +608,7 @@ export function MyTasks() {
                         <div className="space-y-4">
                             {/* Task Title */}
                             <div>
-                                <label className="text-sm font-medium">Titlul sarcinii *</label>
+                                <label className="text-sm font-medium">Titlu *</label>
                                 <input
                                     type="text"
                                     value={newTaskTitle}
@@ -696,7 +696,7 @@ export function MyTasks() {
                                         onChange={(e) => setIsRecurring(e.target.checked)}
                                         className="w-5 h-5 rounded border-gray-300"
                                     />
-                                    <span className="text-sm font-medium">🔄 Sarcină repetitivă</span>
+                                    <span className="text-sm font-medium">🔄 De făcut repetitiv</span>
                                 </label>
 
                                 {isRecurring && (
@@ -842,7 +842,7 @@ export function MyTasks() {
                                 !hierarchyPath.subgoalId
                             }
                         >
-                            Creează sarcină
+                            Creează de făcut
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -854,7 +854,7 @@ export function MyTasks() {
                     <DialogHeader>
                         <DialogTitle>Raport de Finalizare</DialogTitle>
                         <DialogDescription>
-                            {completingTaskTitle} - Trimiteți dovada pentru a finaliza această sarcină
+                            {completingTaskTitle} - Trimiteți dovada pentru a finaliza acest de făcut
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
@@ -865,7 +865,7 @@ export function MyTasks() {
                                 value={whatWasDone}
                                 onChange={(e) => setWhatWasDone(e.target.value)}
                                 className="w-full mt-1 px-3 py-2 border rounded-md bg-background min-h-[80px]"
-                                placeholder="Descrieți în detaliu ce ați făcut pentru a finaliza această sarcină..."
+                                placeholder="Descrieți în detaliu ce ați făcut pentru a finaliza acest de făcut..."
                             />
                             <p className="text-xs text-muted-foreground mt-1">
                                 ⚠️ "Gata", "OK", "Ready" nu sunt acceptabile!
@@ -947,7 +947,7 @@ export function MyTasks() {
                                 (evidenceType === "URL" && !evidenceUrl.trim())
                             }
                         >
-                            ✓ Finalizează sarcina
+                            ✓ Finalizează de făcut
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -962,7 +962,7 @@ export function MyTasks() {
                             Fluxul complet
                         </DialogTitle>
                         <DialogDescription>
-                            Structura completă de la misiune până la sarcina curentă
+                            Structura completă de la misiune până la de făcut curent
                         </DialogDescription>
                     </DialogHeader>
                     {hierarchyTask && (
@@ -1060,7 +1060,7 @@ export function MyTasks() {
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2">
                                             <span className="text-xs uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-semibold">
-                                                Sarcina curentă
+                                                De făcut curent
                                             </span>
                                             <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-medium">
                                                 {statusLabels[hierarchyTask.status]}

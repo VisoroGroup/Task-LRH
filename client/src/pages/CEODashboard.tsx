@@ -111,7 +111,7 @@ export function CEODashboard() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                 <Card className="kpi-card">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Sarcini active</CardTitle>
+                        <CardTitle className="text-sm font-medium">De făcut active</CardTitle>
                         <Activity className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -170,7 +170,7 @@ export function CEODashboard() {
                         <div className="text-2xl font-bold">
                             {summaryLoading ? "..." : summary?.avgTasksPerPost || 0}
                         </div>
-                        <p className="text-xs text-muted-foreground">Sarcini pe persoană</p>
+                        <p className="text-xs text-muted-foreground">De făcut pe persoană</p>
                     </CardContent>
                 </Card>
             </div>
@@ -293,7 +293,7 @@ export function CEODashboard() {
                             <div>
                                 <h3 className="font-semibold">{selectedUser.userName}</h3>
                                 <p className="text-sm text-muted-foreground">
-                                    {selectedUser.status ? `Sarcini ${selectedUser.status}` : "Toate Sarcinile"}
+                                    {selectedUser.status ? `De făcut ${selectedUser.status}` : "Toate De Făcut"}
                                 </p>
                             </div>
                             <Button variant="ghost" size="icon" onClick={() => setSelectedUser(null)}>
@@ -331,7 +331,7 @@ export function CEODashboard() {
                                 ))
                             ) : (
                                 <div className="text-center py-8 text-muted-foreground">
-                                    Nu există sarcini
+                                    Nu există de făcut
                                 </div>
                             )}
                         </div>

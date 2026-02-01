@@ -151,12 +151,12 @@ export function Calendar() {
             instruction: "bg-teal-500/20 text-teal-700 dark:text-teal-300",
         };
         const labels: Record<string, string> = {
-            task: "Sarcină",
-            subgoal: "Subobiectiv",
+            task: "De făcut",
+            subgoal: "Obiectiv",
             plan: "Plan",
             program: "Program",
             project: "Proiect",
-            instruction: "Instrucțiune",
+            instruction: "De făcut",
         };
         return (
             <span className={cn("px-2 py-0.5 rounded text-xs font-medium", styles[type])}>
@@ -171,7 +171,7 @@ export function Calendar() {
             <div>
                 <h2 className="text-2xl font-bold">Calendar</h2>
                 <p className="text-muted-foreground">
-                    Termene pentru sarcini și elemente de ierarhie
+                    Termene pentru de făcut și elemente de ierarhie
                 </p>
             </div>
 
@@ -184,7 +184,7 @@ export function Calendar() {
                         <CalendarIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                         <h3 className="text-lg font-medium mb-2">Niciun termen</h3>
                         <p className="text-muted-foreground">
-                            Sarcinile și elementele cu termene vor apărea aici
+                            De făcut și elementele cu termene vor apărea aici
                         </p>
                     </CardContent>
                 </Card>

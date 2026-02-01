@@ -246,7 +246,7 @@ export function Settings() {
                                 Control flux
                             </CardTitle>
                             <CardDescription>
-                                Configurează modul în care sistemul detectează sarcinile blocate și condițiile de supraîncărcare
+                                Configurează modul în care sistemul detectează de făcut blocate și condițiile de supraîncărcare
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">

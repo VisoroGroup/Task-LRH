@@ -184,7 +184,7 @@ export function HierarchyFlowSelector({
         return (
             <div className="space-y-4">
                 <div className="text-sm font-medium text-muted-foreground mb-3">
-                    Cum vrei să atașezi sarcina?
+                    Cum vrei să atașezi de făcut?
                 </div>
 
                 <button

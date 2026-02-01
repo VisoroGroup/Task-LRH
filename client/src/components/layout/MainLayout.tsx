@@ -28,8 +28,8 @@ interface NavItem {
 
 const navItems: NavItem[] = [
     { href: "/", label: "Panou de control", icon: <LayoutDashboard className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
-    { href: "/sarcini", label: "Sarcini", icon: <CheckSquare className="h-5 w-5" /> },
-    { href: "/recurring-tasks", label: "Sarcini recurente", icon: <RefreshCw className="h-5 w-5" /> },
+    { href: "/sarcini", label: "De făcut", icon: <CheckSquare className="h-5 w-5" /> },
+    { href: "/recurring-tasks", label: "De făcut recurent", icon: <RefreshCw className="h-5 w-5" /> },
     { href: "/ideal-scene", label: "Imaginea ideală", icon: <Target className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
     { href: "/departments", label: "Departamente", icon: <Building2 className="h-5 w-5" />, roles: ["CEO", "EXECUTIVE"] },
     { href: "/policies", label: "Directive", icon: <FileText className="h-5 w-5" />, roles: ["CEO"] },

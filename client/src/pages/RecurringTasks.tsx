@@ -112,7 +112,7 @@ export function RecurringTasks() {
                 recurrenceType: "WEEKLY",
                 recurrenceDays: [5],
             });
-            toast({ title: "Sarcină creată cu succes!" });
+            toast({ title: "De făcut creat cu succes!" });
         },
         onError: (error: Error) => {
             toast({ title: "Eroare", description: error.message, variant: "destructive" });
@@ -129,7 +129,7 @@ export function RecurringTasks() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["recurring-tasks"] });
-            toast({ title: "✅ Sarcină finalizată!", description: "Notificarea a fost trimisă." });
+            toast({ title: "✅ De făcut finalizat!", description: "Notificarea a fost trimisă." });
         },
         onError: (error: Error) => {
             toast({ title: "Eroare", description: error.message, variant: "destructive" });
@@ -143,7 +143,7 @@ export function RecurringTasks() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["recurring-tasks"] });
-            toast({ title: "Sarcină ștearsă" });
+            toast({ title: "De făcut ștears" });
         },
     });
 
@@ -183,7 +183,7 @@ export function RecurringTasks() {
                 <div>
                     <h1 className="text-3xl font-bold flex items-center gap-3">
                         <RefreshCw className="h-8 w-8 text-primary" />
-                        Sarcini recurente
+                        De făcut recurent
                     </h1>
                     <p className="text-muted-foreground mt-1">
                         Teendők care se repetă regulat
@@ -195,12 +195,12 @@ export function RecurringTasks() {
                         <DialogTrigger asChild>
                             <Button>
                                 <Plus className="h-4 w-4 mr-2" />
-                                Adaugă sarcină
+                                Adaugă de făcut
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-[500px]">
                             <DialogHeader>
-                                <DialogTitle>Sarcină recurentă nouă</DialogTitle>
+                                <DialogTitle>De făcut recurent nou</DialogTitle>
                             </DialogHeader>
                             <div className="space-y-4 pt-4">
                                 <div className="space-y-2">
@@ -308,7 +308,7 @@ export function RecurringTasks() {
                                     disabled={createMutation.isPending}
                                     className="w-full"
                                 >
-                                    {createMutation.isPending ? "Se creează..." : "Creează sarcina"}
+                                    {createMutation.isPending ? "Se creează..." : "Creează de făcut"}
                                 </Button>
                             </div>
                         </DialogContent>
@@ -352,7 +352,7 @@ export function RecurringTasks() {
                             </div>
                             <div>
                                 <p className="text-2xl font-bold">{tasks.length}</p>
-                                <p className="text-sm text-muted-foreground">Total sarcini</p>
+                                <p className="text-sm text-muted-foreground">Total de făcut</p>
                             </div>
                         </div>
                     </CardContent>
@@ -366,12 +366,12 @@ export function RecurringTasks() {
                         <Clock className="h-5 w-5 text-amber-500" />
                         De făcut
                     </CardTitle>
-                    <CardDescription>Sarcini care trebuie finalizate în această perioadă</CardDescription>
+                    <CardDescription>De făcut care trebuie finalizate în această perioadă</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {pendingTasks.length === 0 ? (
                         <p className="text-muted-foreground text-center py-8">
-                            ✨ Toate sarcinile au fost finalizate!
+                            ✨ Toate de făcut au fost finalizate!
                         </p>
                     ) : (
                         <div className="space-y-3">
@@ -442,7 +442,7 @@ export function RecurringTasks() {
                             <Check className="h-5 w-5 text-green-500" />
                             Finalizate
                         </CardTitle>
-                        <CardDescription>Sarcini completate în această perioadă</CardDescription>
+                        <CardDescription>De făcut completate în această perioadă</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-3">

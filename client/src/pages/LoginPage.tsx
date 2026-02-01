@@ -58,7 +58,7 @@ export function LoginPage() {
                     <Feature
                         icon={<BarChart3 className="h-5 w-5" />}
                         title="Tablou de bord în timp real"
-                        description="Urmărește sarcinile, fluxul și KPI"
+                        description="Urmărește de făcut, fluxul și KPI"
                         gradient="from-blue-400 to-cyan-500"
                     />
                     <Feature

@@ -281,7 +281,7 @@ function TeamMemberColumn({
                 {items.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground text-sm">
                         <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        Nicio sarcină atribuită
+                        Niciun de făcut atribuit
                     </div>
                 ) : (
                     items.map((item) => (
@@ -523,10 +523,10 @@ export function TeamTasks() {
             <div className="flex items-center justify-between flex-shrink-0">
                 <div>
                     <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-pink-400">
-                        Sarcini
+                        De făcut
                     </h1>
                     <p className="text-lg text-muted-foreground mt-1">
-                        {isAdmin ? "Toate sarcinile echipei" : "Sarcinile tale"}
+                        {isAdmin ? "Toate de făcut ale echipei" : "De făcut tale"}
                     </p>
                 </div>
 
@@ -536,7 +536,7 @@ export function TeamTasks() {
                         className="flex items-center gap-2 bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-600 hover:to-pink-600"
                     >
                         <Plus className="h-4 w-4" />
-                        Sarcină nouă
+                        De făcut nou
                     </Button>
                     <select
                         value={selectedDepartment || ""}
@@ -558,9 +558,9 @@ export function TeamTasks() {
                         <Card className="w-full">
                             <CardContent className="py-12 text-center text-muted-foreground">
                                 <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                                <p>Nu există sarcini atribuite.</p>
+                                <p>Nu există de făcut atribuite.</p>
                                 <p className="text-sm mt-1">
-                                    Atribuiți responsabili în Ideal Scene pentru a vedea sarcinile aici.
+                                    Atribuiți responsabili în Ideal Scene pentru a vedea de făcut aici.
                                 </p>
                             </CardContent>
                         </Card>
@@ -582,9 +582,9 @@ export function TeamTasks() {
             <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
                 <DialogContent className="max-w-4xl w-[80vw] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>Creează sarcină nouă</DialogTitle>
+                        <DialogTitle>Creează de făcut nou</DialogTitle>
                         <DialogDescription>
-                            Adaugă o sarcină nouă cu toate informațiile necesare
+                            Adaugă un de făcut nou cu toate informațiile necesare
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
@@ -592,7 +592,7 @@ export function TeamTasks() {
                         <div className="space-y-4">
                             {/* Task Title */}
                             <div>
-                                <label className="text-sm font-medium">Titlul sarcinii *</label>
+                                <label className="text-sm font-medium">Titlu *</label>
                                 <input
                                     type="text"
                                     value={newTaskTitle}
@@ -794,7 +794,7 @@ export function TeamTasks() {
                                     });
 
                                     queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
-                                    toast({ title: "Sarcină creată!", variant: "success" as any });
+                                    toast({ title: "De făcut creat!", variant: "success" as any });
                                     setIsNewTaskOpen(false);
                                     // Reset form
                                     setNewTaskTitle("");
@@ -804,7 +804,7 @@ export function TeamTasks() {
                                     setNewTaskResponsiblePostId("");
                                     setHierarchyResult(null);
                                 } catch (error: any) {
-                                    toast({ title: "Nu s-a putut crea sarcina", description: error.message, variant: "destructive" });
+                                    toast({ title: "Nu s-a putut crea de făcut", description: error.message, variant: "destructive" });
                                 }
                             }}
                             disabled={
@@ -815,7 +815,7 @@ export function TeamTasks() {
                                 !hierarchyResult
                             }
                         >
-                            {isCreatingHierarchy ? "Creează ierarhie și sarcină" : "Creează sarcină"}
+                            {isCreatingHierarchy ? "Creează ierarhie și de făcut" : "Creează de făcut"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
