@@ -14,7 +14,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { HierarchyTreeSelector } from "@/components/tasks/HierarchyTreeSelector";
+import { HierarchyFlowSelector, HierarchyFlowResult } from "@/components/tasks/HierarchyFlowSelector";
 import {
     Target,
     FileText,
@@ -312,13 +312,8 @@ export function TeamTasks() {
     const [newTaskTime, setNewTaskTime] = useState("");
     const [newTaskDepartmentId, setNewTaskDepartmentId] = useState("");
     const [newTaskResponsiblePostId, setNewTaskResponsiblePostId] = useState("");
-    const [hierarchyPath, setHierarchyPath] = useState({
-        subgoalId: "",
-        planId: "",
-        programId: "",
-        projectId: "",
-        instructionId: "",
-    });
+    const [hierarchyResult, setHierarchyResult] = useState<HierarchyFlowResult | null>(null);
+    const [isCreatingHierarchy, setIsCreatingHierarchy] = useState(false);
 
     // Check if user is admin (CEO or EXECUTIVE can see all)
     const isAdmin = hasRole("CEO", "EXECUTIVE");
@@ -618,7 +613,7 @@ export function TeamTasks() {
                                     onChange={(e) => {
                                         setNewTaskDepartmentId(e.target.value);
                                         setNewTaskResponsiblePostId("");
-                                        setHierarchyPath({ subgoalId: "", planId: "", programId: "", projectId: "", instructionId: "" });
+                                        setHierarchyResult(null);
                                     }}
                                     className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
                                 >
@@ -677,22 +672,17 @@ export function TeamTasks() {
                             </div>
                         </div>
 
-                        {/* Right column - Hierarchy Tree */}
+                        {/* Right column - Hierarchy Flow */}
                         <div className="border-l pl-6">
                             <div className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
                                 <FolderTree className="h-4 w-4" />
                                 Ierarhie *
                             </div>
-                            <HierarchyTreeSelector
+                            <HierarchyFlowSelector
                                 departmentId={newTaskDepartmentId}
                                 idealScene={hierarchy || []}
-                                selectedPath={hierarchyPath}
-                                onSelectionChange={setHierarchyPath}
-                                onCreateSubgoal={() => { }}
-                                onCreatePlan={() => { }}
-                                onCreateProgram={() => { }}
-                                onCreateProject={() => { }}
-                                onCreateInstruction={() => { }}
+                                onSelectionComplete={setHierarchyResult}
+                                onCreatingChange={setIsCreatingHierarchy}
                             />
                         </div>
                     </div>
@@ -701,7 +691,7 @@ export function TeamTasks() {
                             Renunță
                         </Button>
                         <Button
-                            onClick={() => {
+                            onClick={async () => {
                                 // Validate all required fields
                                 if (!newTaskTitle.trim()) {
                                     toast({ title: "Titlul este obligatoriu", variant: "destructive" });
@@ -720,16 +710,8 @@ export function TeamTasks() {
                                     return;
                                 }
 
-                                // Get the lowest selected hierarchy level
-                                let hierarchyLevel = "";
-                                let parentItemId = "";
-                                if (hierarchyPath.projectId) { hierarchyLevel = "PROJECT"; parentItemId = hierarchyPath.projectId; }
-                                else if (hierarchyPath.programId) { hierarchyLevel = "PROGRAM"; parentItemId = hierarchyPath.programId; }
-                                else if (hierarchyPath.planId) { hierarchyLevel = "PLAN"; parentItemId = hierarchyPath.planId; }
-                                else if (hierarchyPath.subgoalId) { hierarchyLevel = "SUBGOAL"; parentItemId = hierarchyPath.subgoalId; }
-
-                                if (!parentItemId) {
-                                    toast({ title: "Selectează cel puțin un Obiectiv", variant: "destructive" });
+                                if (!hierarchyResult) {
+                                    toast({ title: "Selectează sau creează ierarhia", variant: "destructive" });
                                     return;
                                 }
 
@@ -737,19 +719,80 @@ export function TeamTasks() {
                                     ? `${newTaskDate}T${newTaskTime}:00`
                                     : `${newTaskDate}T23:59:59`;
 
-                                // Create task
-                                apiRequest("/api/tasks", {
-                                    method: "POST",
-                                    body: JSON.stringify({
-                                        title: newTaskTitle,
-                                        dueDate,
-                                        departmentId: newTaskDepartmentId,
-                                        responsiblePostId: newTaskResponsiblePostId,
-                                        hierarchyLevel,
-                                        parentItemId,
-                                        creatorId: user?.id || "",
-                                    }),
-                                }).then(() => {
+                                try {
+                                    let parentItemId = hierarchyResult.parentItemId;
+                                    let hierarchyLevel = hierarchyResult.hierarchyLevel;
+
+                                    // Handle new hierarchy creation mode
+                                    if (hierarchyResult.mode === "new" && hierarchyResult.newSubgoal) {
+                                        // Create subgoal
+                                        const subgoalRes = await apiRequest("/api/ideal-scene/subgoal", {
+                                            method: "POST",
+                                            body: JSON.stringify({
+                                                title: hierarchyResult.newSubgoal,
+                                                departmentId: newTaskDepartmentId,
+                                                dueDate: dueDate,
+                                            }),
+                                        });
+                                        const newSubgoalId = (subgoalRes as any).id;
+
+                                        // Create plan
+                                        const planRes = await apiRequest("/api/ideal-scene/plan", {
+                                            method: "POST",
+                                            body: JSON.stringify({
+                                                title: hierarchyResult.newPlan,
+                                                subgoalId: newSubgoalId,
+                                                departmentId: newTaskDepartmentId,
+                                                dueDate: dueDate,
+                                            }),
+                                        });
+                                        const newPlanId = (planRes as any).id;
+
+                                        // Create program
+                                        const programRes = await apiRequest("/api/ideal-scene/program", {
+                                            method: "POST",
+                                            body: JSON.stringify({
+                                                title: hierarchyResult.newProgram,
+                                                planId: newPlanId,
+                                                departmentId: newTaskDepartmentId,
+                                                dueDate: dueDate,
+                                            }),
+                                        });
+                                        const newProgramId = (programRes as any).id;
+
+                                        // Create project if needed
+                                        if (hierarchyResult.newProject) {
+                                            const projectRes = await apiRequest("/api/ideal-scene/project", {
+                                                method: "POST",
+                                                body: JSON.stringify({
+                                                    title: hierarchyResult.newProject,
+                                                    programId: newProgramId,
+                                                    departmentId: newTaskDepartmentId,
+                                                    dueDate: dueDate,
+                                                }),
+                                            });
+                                            parentItemId = (projectRes as any).id;
+                                            hierarchyLevel = "PROJECT";
+                                        } else {
+                                            parentItemId = newProgramId;
+                                            hierarchyLevel = "PROGRAM";
+                                        }
+                                    }
+
+                                    // Create the task
+                                    await apiRequest("/api/tasks", {
+                                        method: "POST",
+                                        body: JSON.stringify({
+                                            title: newTaskTitle,
+                                            dueDate,
+                                            departmentId: newTaskDepartmentId,
+                                            responsiblePostId: newTaskResponsiblePostId,
+                                            hierarchyLevel,
+                                            parentItemId,
+                                            creatorId: user?.id || "",
+                                        }),
+                                    });
+
                                     queryClient.invalidateQueries({ queryKey: ["ideal-scene"] });
                                     toast({ title: "Sarcină creată!", variant: "success" as any });
                                     setIsNewTaskOpen(false);
@@ -759,20 +802,20 @@ export function TeamTasks() {
                                     setNewTaskTime("");
                                     setNewTaskDepartmentId("");
                                     setNewTaskResponsiblePostId("");
-                                    setHierarchyPath({ subgoalId: "", planId: "", programId: "", projectId: "", instructionId: "" });
-                                }).catch((error: Error) => {
+                                    setHierarchyResult(null);
+                                } catch (error: any) {
                                     toast({ title: "Nu s-a putut crea sarcina", description: error.message, variant: "destructive" });
-                                });
+                                }
                             }}
                             disabled={
                                 !newTaskTitle.trim() ||
                                 !newTaskDate ||
                                 !newTaskDepartmentId ||
                                 !newTaskResponsiblePostId ||
-                                !hierarchyPath.subgoalId
+                                !hierarchyResult
                             }
                         >
-                            Creează sarcină
+                            {isCreatingHierarchy ? "Creează ierarhie și sarcină" : "Creează sarcină"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
