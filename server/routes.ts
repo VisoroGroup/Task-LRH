@@ -42,6 +42,24 @@ async function getStalledThreshold(): Promise<number> {
     });
     return (setting?.value as { days: number })?.days || 3;
 }
+
+// Helper to get all posts assigned to a user
+async function getUserPosts(userId: string): Promise<{ postIds: string[]; departmentIds: string[] }> {
+    const userPosts = await db.query.posts.findMany({
+        where: eq(posts.userId, userId),
+    });
+
+    const postIds: string[] = userPosts.map((p: { id: string }) => p.id);
+    const deptIdSet = new Set(userPosts.map((p: { departmentId: string }) => p.departmentId));
+    const departmentIds: string[] = Array.from(deptIdSet);
+
+    return { postIds, departmentIds };
+}
+
+// Helper to check if user is a manager (CEO or EXECUTIVE)
+function isManager(role: string | undefined): boolean {
+    return role === "CEO" || role === "EXECUTIVE";
+}
 // Multer configuration for avatar uploads
 const uploadDir = path.join(process.cwd(), "uploads", "avatars");
 if (!fs.existsSync(uploadDir)) {
@@ -946,12 +964,25 @@ export function registerRoutes(app: Express) {
     app.get("/api/tasks", async (req: Request, res: Response) => {
         try {
             const { status, departmentId, responsiblePostId, hierarchyLevel } = req.query;
+            const userId = (req.session as any)?.userId;
+            const userRole = (req.session as any)?.userRole;
 
             const conditions = [];
             if (status) conditions.push(eq(tasks.status, status as any));
             if (departmentId) conditions.push(eq(tasks.departmentId, departmentId as string));
             if (responsiblePostId) conditions.push(eq(tasks.responsiblePostId, responsiblePostId as string));
             if (hierarchyLevel) conditions.push(eq(tasks.hierarchyLevel, hierarchyLevel as any));
+
+            // For non-managers (USER role), filter by their assigned posts
+            if (!isManager(userRole) && userId) {
+                const { postIds } = await getUserPosts(userId);
+                if (postIds.length > 0) {
+                    conditions.push(inArray(tasks.responsiblePostId, postIds));
+                } else {
+                    // User has no posts assigned - return empty list
+                    return res.json([]);
+                }
+            }
 
             const taskList = await db.query.tasks.findMany({
                 where: conditions.length > 0 ? and(...conditions) : undefined,
@@ -2251,6 +2282,8 @@ export function registerRoutes(app: Express) {
     app.get("/api/policies", async (req: Request, res: Response) => {
         try {
             const { scope } = req.query;
+            const userId = (req.session as any)?.userId;
+            const userRole = (req.session as any)?.userRole;
 
             const policyList = await db.query.policies.findMany({
                 where: scope
@@ -2277,7 +2310,32 @@ export function registerRoutes(app: Express) {
                 orderBy: [desc(policies.createdAt)],
             });
 
-            res.json(policyList);
+            // For non-managers, filter policies
+            let filteredPolicies = policyList;
+            if (!isManager(userRole) && userId) {
+                const { postIds, departmentIds } = await getUserPosts(userId);
+
+                filteredPolicies = policyList.filter((policy: any) => {
+                    // Company-wide policies are visible to everyone
+                    if (policy.scope === "COMPANY") return true;
+
+                    // Department policies - check if user has posts in that department
+                    if (policy.scope === "DEPARTMENT") {
+                        const policyDeptIds = policy.policyDepartments.map((pd: any) => pd.departmentId);
+                        return policyDeptIds.some((deptId: string) => departmentIds.includes(deptId));
+                    }
+
+                    // Post policies - check if policy targets user's posts
+                    if (policy.scope === "POST") {
+                        const policyPostIds = policy.policyPosts.map((pp: any) => pp.postId);
+                        return policyPostIds.some((postId: string) => postIds.includes(postId));
+                    }
+
+                    return false;
+                });
+            }
+
+            res.json(filteredPolicies);
         } catch (error) {
             console.error("Error fetching policies:", error);
             res.status(500).json({ error: "Failed to fetch policies" });

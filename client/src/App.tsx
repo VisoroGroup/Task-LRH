@@ -37,50 +37,28 @@ function AppRoutes() {
     <RequireAuth>
       <MainLayout>
         <Switch>
-          {/* CEO & EXECUTIVE routes */}
-          <Route path="/">
-            <RequireAuth roles={["CEO", "EXECUTIVE"]}>
-              <CEODashboard />
-            </RequireAuth>
-          </Route>
-
-          {/* All authenticated users - unified Sarcini page */}
+          {/* All authenticated users routes */}
+          <Route path="/" component={CEODashboard} />
           <Route path="/my-tasks" component={TeamTasks} />
           <Route path="/recurring-tasks" component={RecurringTasks} />
           <Route path="/team-tasks" component={TeamTasks} />
           <Route path="/sarcini" component={TeamTasks} />
           <Route path="/calendar" component={Calendar} />
+          <Route path="/ideal-scene" component={IdealScene} />
+          <Route path="/departments" component={Departments} />
+          <Route path="/policies" component={PoliciesPage} />
 
-          {/* CEO & EXECUTIVE routes */}
-          <Route path="/ideal-scene">
-            <RequireAuth roles={["CEO", "EXECUTIVE"]}>
-              <IdealScene />
-            </RequireAuth>
-          </Route>
-
-          <Route path="/departments">
-            <RequireAuth roles={["CEO", "EXECUTIVE"]}>
-              <Departments />
-            </RequireAuth>
-          </Route>
-
-          {/* CEO only */}
+          {/* CEO only - Settings */}
           <Route path="/settings">
             <RequireAuth roles={["CEO"]}>
               <Settings />
             </RequireAuth>
           </Route>
 
+          {/* CEO & EXECUTIVE only - Team Settings */}
           <Route path="/team-settings">
             <RequireAuth roles={["CEO", "EXECUTIVE"]}>
               <TeamSettings />
-            </RequireAuth>
-          </Route>
-
-          {/* CEO only - Policies */}
-          <Route path="/policies">
-            <RequireAuth roles={["CEO"]}>
-              <PoliciesPage />
             </RequireAuth>
           </Route>
         </Switch>

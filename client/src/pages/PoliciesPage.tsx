@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { apiRequest, cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/components/AuthProvider";
 import {
     Plus,
     FileText,
@@ -60,6 +61,8 @@ interface Department {
 
 export function PoliciesPage() {
     const { toast } = useToast();
+    const { user } = useAuth();
+    const isManager = user?.role === "CEO" || user?.role === "EXECUTIVE";
     const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState<"COMPANY" | "DEPARTMENT" | "POST">("COMPANY");
     const [isNewPolicyOpen, setIsNewPolicyOpen] = useState(false);
@@ -235,10 +238,12 @@ export function PoliciesPage() {
                     <h2 className="text-2xl font-bold">Directive de funcționare</h2>
                     <p className="text-muted-foreground">Directive operaționale (la nivel de companie / departament / post)</p>
                 </div>
-                <Button onClick={() => setIsNewPolicyOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Politică nouă
-                </Button>
+                {isManager && (
+                    <Button onClick={() => setIsNewPolicyOpen(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Politică nouă
+                    </Button>
+                )}
             </div>
 
             {/* Tabs - 3 tabs now */}
@@ -287,10 +292,14 @@ export function PoliciesPage() {
                     <Card>
                         <CardContent className="py-8 text-center text-muted-foreground">
                             Nu există {getScopeLabel(activeTab)} directivă de funcționare.
-                            <br />
-                            <Button variant="link" onClick={() => setIsNewPolicyOpen(true)}>
-                                Crează una!
-                            </Button>
+                            {isManager && (
+                                <>
+                                    <br />
+                                    <Button variant="link" onClick={() => setIsNewPolicyOpen(true)}>
+                                        Crează una!
+                                    </Button>
+                                </>
+                            )}
                         </CardContent>
                     </Card>
                 ) : (
@@ -339,22 +348,24 @@ export function PoliciesPage() {
                                             )}
                                         </div>
                                     </div>
-                                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => openEditDialog(policy)}
-                                        >
-                                            <Edit2 className="h-4 w-4" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => deletePolicyMutation.mutate(policy.id)}
-                                        >
-                                            <Trash2 className="h-4 w-4 text-red-500" />
-                                        </Button>
-                                    </div>
+                                    {isManager && (
+                                        <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => openEditDialog(policy)}
+                                            >
+                                                <Edit2 className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => deletePolicyMutation.mutate(policy.id)}
+                                            >
+                                                <Trash2 className="h-4 w-4 text-red-500" />
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
                             </CardHeader>
                             {expandedPolicyId === policy.id && (

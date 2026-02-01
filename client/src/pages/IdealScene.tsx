@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { apiRequest } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/components/AuthProvider";
 import { Link } from "wouter";
 import {
     Save,
@@ -24,6 +25,8 @@ interface MainGoal {
 
 export function IdealScene() {
     const { toast } = useToast();
+    const { hasRole } = useAuth();
+    const canEdit = hasRole("CEO", "EXECUTIVE");
     const queryClient = useQueryClient();
     const [isEditing, setIsEditing] = useState(false);
     const [content, setContent] = useState("");
@@ -146,33 +149,35 @@ export function IdealScene() {
                                     Descrie în detaliu cum vrei să arate compania, cum vrei să funcționeze, unde vrei să ajungă
                                 </CardDescription>
                             </div>
-                            <div className="flex gap-2">
-                                {isEditing ? (
-                                    <>
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => {
-                                                setContent(mainGoal.idealSceneContent || "");
-                                                setIsEditing(false);
-                                            }}
-                                        >
-                                            Anulează
+                            {canEdit && (
+                                <div className="flex gap-2">
+                                    {isEditing ? (
+                                        <>
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => {
+                                                    setContent(mainGoal.idealSceneContent || "");
+                                                    setIsEditing(false);
+                                                }}
+                                            >
+                                                Anulează
+                                            </Button>
+                                            <Button
+                                                onClick={handleSave}
+                                                disabled={updateContentMutation.isPending}
+                                            >
+                                                <Save className="h-4 w-4 mr-2" />
+                                                {updateContentMutation.isPending ? "Se salvează..." : "Salvează"}
+                                            </Button>
+                                        </>
+                                    ) : (
+                                        <Button onClick={() => setIsEditing(true)}>
+                                            <Edit3 className="h-4 w-4 mr-2" />
+                                            Editează
                                         </Button>
-                                        <Button
-                                            onClick={handleSave}
-                                            disabled={updateContentMutation.isPending}
-                                        >
-                                            <Save className="h-4 w-4 mr-2" />
-                                            {updateContentMutation.isPending ? "Se salvează..." : "Salvează"}
-                                        </Button>
-                                    </>
-                                ) : (
-                                    <Button onClick={() => setIsEditing(true)}>
-                                        <Edit3 className="h-4 w-4 mr-2" />
-                                        Editează
-                                    </Button>
-                                )}
-                            </div>
+                                    )}
+                                </div>
+                            )}
                         </CardHeader>
                         <CardContent>
                             {isEditing ? (
@@ -201,12 +206,16 @@ Care sunt rezultatele ideale pe care le aștepți?"
                                                 Niciun conținut încă
                                             </p>
                                             <p className="text-sm max-w-md mb-4">
-                                                Apasă pe "Editează" pentru a începe să scrii viziunea companiei tale.
+                                                {canEdit
+                                                    ? "Apasă pe \"Editează\" pentru a începe să scrii viziunea companiei tale."
+                                                    : "Imaginea ideală nu a fost încă definită."}
                                             </p>
-                                            <Button onClick={() => setIsEditing(true)}>
-                                                <Edit3 className="h-4 w-4 mr-2" />
-                                                Începe să scrii
-                                            </Button>
+                                            {canEdit && (
+                                                <Button onClick={() => setIsEditing(true)}>
+                                                    <Edit3 className="h-4 w-4 mr-2" />
+                                                    Începe să scrii
+                                                </Button>
+                                            )}
                                         </div>
                                     )}
                                 </div>

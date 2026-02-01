@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { apiRequest } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/components/AuthProvider";
 import {
     Plus,
     Building2,
@@ -77,6 +78,8 @@ interface Policy {
 
 export function Departments() {
     const { toast } = useToast();
+    const { hasRole } = useAuth();
+    const canEdit = hasRole("CEO", "EXECUTIVE");
     const queryClient = useQueryClient();
     const [editingDept, setEditingDept] = useState<Department | null>(null);
     const [newDeptName, setNewDeptName] = useState("");
@@ -260,52 +263,54 @@ export function Departments() {
                         Structură organizațională cu posturi și responsabilități
                     </p>
                 </div>
-                <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                    <DialogTrigger asChild>
-                        <Button>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Departament nou
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Creează departament</DialogTitle>
-                            <DialogDescription>
-                                Adaugă o nouă funcție organizațională
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4 py-4">
-                            <div>
-                                <label className="text-sm font-medium">Nume *</label>
-                                <input
-                                    type="text"
-                                    value={newDeptName}
-                                    onChange={(e) => setNewDeptName(e.target.value)}
-                                    className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
-                                    placeholder="ex., Marketing"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium">Descriere</label>
-                                <textarea
-                                    value={newDeptDescription}
-                                    onChange={(e) => setNewDeptDescription(e.target.value)}
-                                    className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
-                                    rows={3}
-                                    placeholder="Pentru ce este responsabil acest departament..."
-                                />
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-                                Anulează
+                {canEdit && (
+                    <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                        <DialogTrigger asChild>
+                            <Button>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Departament nou
                             </Button>
-                            <Button onClick={handleCreate} disabled={!newDeptName.trim()}>
-                                Creează departament
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Creează departament</DialogTitle>
+                                <DialogDescription>
+                                    Adaugă o nouă funcție organizațională
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div>
+                                    <label className="text-sm font-medium">Nume *</label>
+                                    <input
+                                        type="text"
+                                        value={newDeptName}
+                                        onChange={(e) => setNewDeptName(e.target.value)}
+                                        className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                        placeholder="ex., Marketing"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium">Descriere</label>
+                                    <textarea
+                                        value={newDeptDescription}
+                                        onChange={(e) => setNewDeptDescription(e.target.value)}
+                                        className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                                        rows={3}
+                                        placeholder="Pentru ce este responsabil acest departament..."
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+                                    Anulează
+                                </Button>
+                                <Button onClick={handleCreate} disabled={!newDeptName.trim()}>
+                                    Creează departament
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                )}
             </div>
 
             {/* Edit Department Dialog */}
@@ -402,19 +407,21 @@ export function Departments() {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <Button size="sm" variant="outline" onClick={() => setEditingDept(dept)}>
-                                            <Edit2 className="h-3 w-3" />
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="text-muted-foreground"
-                                            onClick={() => deleteMutation.mutate(dept.id)}
-                                        >
-                                            <Archive className="h-3 w-3" />
-                                        </Button>
-                                    </div>
+                                    {canEdit && (
+                                        <div className="flex gap-2">
+                                            <Button size="sm" variant="outline" onClick={() => setEditingDept(dept)}>
+                                                <Edit2 className="h-3 w-3" />
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="text-muted-foreground"
+                                                onClick={() => deleteMutation.mutate(dept.id)}
+                                            >
+                                                <Archive className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
                             </CardHeader>
 
