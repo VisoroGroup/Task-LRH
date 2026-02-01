@@ -79,7 +79,7 @@ export function RequireAuth({
     children: ReactNode;
     roles?: string[];
 }) {
-    const { user, isLoading, isAuthenticated, hasRole } = useAuth();
+    const { isLoading, isAuthenticated, hasRole } = useAuth();
 
     if (isLoading) {
         return (
