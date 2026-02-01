@@ -99,8 +99,8 @@ async function start() {
             log(`Environment: ${process.env.NODE_ENV || "development"}`);
 
             // Schedule daily email notifications at 7:00 AM (Europe/Bucharest timezone)
-            // Cron format: minute hour day month weekday
-            cron.schedule("0 7 * * *", async () => {
+            // Cron format: minute hour day month weekday (1-5 = Monday-Friday)
+            cron.schedule("0 7 * * 1-5", async () => {
                 log("Running scheduled daily task email job...");
                 try {
                     const result = await sendDailyTasksToAllUsers();
@@ -111,7 +111,7 @@ async function start() {
             }, {
                 timezone: "Europe/Bucharest"
             });
-            log("Daily email notification cron job scheduled for 7:00 AM");
+            log("Daily email notification cron job scheduled for 7:00 AM (Mon-Fri)");
         });
     } catch (error) {
         console.error("Failed to start server:", error);

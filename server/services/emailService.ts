@@ -1,18 +1,7 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-// Outlook SMTP configuration
-const transporter = nodemailer.createTransport({
-    host: "smtp.office365.com",
-    port: 587,
-    secure: false, // TLS
-    auth: {
-        user: process.env.SMTP_USER || "office@visoro-global.ro",
-        pass: process.env.SMTP_PASS,
-    },
-    tls: {
-        ciphers: "SSLv3",
-    },
-});
+// Initialize Resend with API key
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export interface DailyTaskEmail {
     recipientEmail: string;
@@ -27,8 +16,8 @@ export interface DailyTaskEmail {
 }
 
 export async function sendDailyTasksEmail(data: DailyTaskEmail): Promise<boolean> {
-    if (!process.env.SMTP_PASS) {
-        console.warn("SMTP_PASS not configured, skipping email send");
+    if (!process.env.RESEND_API_KEY) {
+        console.warn("RESEND_API_KEY not configured, skipping email send");
         return false;
     }
 
@@ -91,7 +80,7 @@ export async function sendDailyTasksEmail(data: DailyTaskEmail): Promise<boolean
     <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
         <!-- Header -->
         <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 32px; text-align: center;">
-            <h1 style="color: white; margin: 0; font-size: 24px;">📋 Teendőid mára</h1>
+            <h1 style="color: white; margin: 0; font-size: 24px;">📋 Sarcinile tale pentru azi</h1>
             <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 14px;">${dateStr}</p>
         </div>
         
@@ -121,7 +110,7 @@ export async function sendDailyTasksEmail(data: DailyTaskEmail): Promise<boolean
         
         <!-- CTA Button -->
         <div style="padding: 0 32px 32px 32px; text-align: center;">
-            <a href="${process.env.APP_URL || "https://your-app.railway.app"}" 
+            <a href="${process.env.APP_URL || "https://task-lrh-production.up.railway.app"}" 
                style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 14px;">
                 Deschide aplicația →
             </a>
@@ -140,12 +129,18 @@ export async function sendDailyTasksEmail(data: DailyTaskEmail): Promise<boolean
     `;
 
     try {
-        await transporter.sendMail({
-            from: `"Task Manager" <${process.env.SMTP_USER || "office@visoro-global.ro"}>`,
+        const { error } = await resend.emails.send({
+            from: "Task Manager <onboarding@resend.dev>",
             to: data.recipientEmail,
             subject: `📋 Sarcinile tale pentru ${dateStr}`,
             html,
         });
+
+        if (error) {
+            console.error(`Failed to send email to ${data.recipientEmail}:`, error);
+            return false;
+        }
+
         console.log(`Daily tasks email sent to ${data.recipientEmail}`);
         return true;
     } catch (error) {
@@ -154,13 +149,32 @@ export async function sendDailyTasksEmail(data: DailyTaskEmail): Promise<boolean
     }
 }
 
-export async function verifyEmailConnection(): Promise<boolean> {
-    try {
-        await transporter.verify();
-        console.log("SMTP connection verified successfully");
-        return true;
-    } catch (error) {
-        console.error("SMTP connection failed:", error);
-        return false;
-    }
+export async function sendTestEmail(recipientEmail: string): Promise<boolean> {
+    const testData: DailyTaskEmail = {
+        recipientEmail,
+        recipientName: "Test User",
+        tasks: [
+            {
+                title: "Finalizează raportul lunar",
+                postName: "Director Executiv",
+                departmentName: "Management",
+                dueTime: "10:00",
+            },
+            {
+                title: "Verifică contractele",
+                postName: "Director Executiv",
+                departmentName: "Management",
+                dueTime: "14:00",
+            },
+            {
+                title: "Sună partenerii",
+                postName: "Sales Manager",
+                departmentName: "Sales",
+                dueTime: null,
+            },
+        ],
+        date: new Date(),
+    };
+
+    return sendDailyTasksEmail(testData);
 }
