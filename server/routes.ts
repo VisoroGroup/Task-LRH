@@ -533,6 +533,23 @@ export function registerRoutes(app: Express) {
         }
     });
 
+    // Get all subgoals (for dropdown in recurring tasks)
+    app.get("/api/ideal-scene/subgoals", async (req: Request, res: Response) => {
+        try {
+            const allSubgoals = await db.query.subgoals.findMany({
+                where: eq(subgoals.isActive, true),
+                with: {
+                    mainGoal: true,
+                },
+                orderBy: [subgoals.title],
+            });
+            res.json(allSubgoals);
+        } catch (error) {
+            console.error("Error fetching subgoals:", error);
+            res.status(500).json({ error: "Failed to fetch subgoals" });
+        }
+    });
+
     // Create Main Goal (for Ideal Scene - requires departmentId)
     app.post("/api/ideal-scene/main-goals", async (req: Request, res: Response) => {
         try {

@@ -791,8 +791,8 @@ export const recurringTasks = pgTable(
         description: text("description"),
         departmentId: varchar("department_id").references(() => departments.id).notNull(),
         assignedUserId: varchar("assigned_user_id").references(() => users.id).notNull(),
-        // Link to Obiectiv (mandatory)
-        subgoalId: varchar("subgoal_id").references(() => subgoals.id).notNull(),
+        // Link to Obiectiv (required for new entries, validated at API level)
+        subgoalId: varchar("subgoal_id").references(() => subgoals.id),
         // Time of day when task should be done (e.g., "09:00", "14:30")
         dueTime: varchar("due_time", { length: 5 }),
         recurrenceType: recurringTasksRecurrenceEnum("recurrence_type").notNull(),
